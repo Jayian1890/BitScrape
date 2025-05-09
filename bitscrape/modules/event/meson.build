@@ -3,8 +3,14 @@ inc_dir = include_directories('include')
 
 # Dependencies
 types_inc = include_directories('../types/include')
-types_lib = meson.get_compiler('cpp').find_library('bitscrape-types', dirs: meson.current_build_dir() + '/../types')
-types_dep = declare_dependency(include_directories: types_inc, dependencies: [types_lib])
+types_dep = dependency('bitscrape-types', required: false)
+if not types_dep.found()
+    # If not found as a system dependency, use the local one
+    types_dep = declare_dependency(
+        include_directories: types_inc,
+        link_with: meson.get_variable('types_lib', []),
+    )
+endif
 
 # Source files
 src_files = [

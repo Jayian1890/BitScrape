@@ -22,6 +22,9 @@ types_lib = library('bitscrape-types', src_files, include_directories: inc_dir, 
 # Dependency object
 types_dep = declare_dependency(include_directories: inc_dir, link_with: types_lib)
 
+# Make the library available to other modules
+meson.override_dependency('bitscrape-types', types_dep)
+
 # Tests
 if get_option('build_tests')
     gtest_dep = dependency('gtest', required: false)

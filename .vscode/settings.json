@@ -67,6 +67,17 @@
             "cwd": "${workspaceFolder}"
         }
     ],
+    "testMate.cpp.debug.configTemplate": {
+        "type": "lldb",
+        "program": "${exec}",
+        "cwd": "${workspaceFolder}",
+        "args": [
+            "--gtest_filter=${tests}"
+        ],
+        "env": {
+            "GTEST_COLOR": "1"
+        }
+    },
     "testMate.cpp.test.framework": "googletest",
     // Terminal settings
     "terminal.integrated.cwd": "${workspaceFolder}",

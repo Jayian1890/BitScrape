@@ -1,0 +1,46 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "CLI Debug",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/builddir/apps/cli/bitscrape_cli",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "meson: build cli",
+            "internalConsoleOptions": "neverOpen",
+            "terminal": "integrated"
+        },
+        {
+            "name": "GUI Debug (.app)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/builddir/apps/gui/bitscrape_gui.app/Contents/MacOS/bitscrape_gui",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "meson: build gui",
+            "internalConsoleOptions": "neverOpen",
+            "terminal": "integrated"
+        },
+        {
+            "name": "Test Debug",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/builddir/tests/${input:testName}",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "meson: build",
+            "internalConsoleOptions": "neverOpen",
+            "terminal": "integrated"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testName",
+            "type": "promptString",
+            "description": "Name of the test executable to debug",
+            "default": "test_executable"
+        }
+    ]
+}

@@ -61,11 +61,11 @@
     "mesonbuild.buildOptions": [
         "-j8"
     ],
-    "testMate.cpp.test.executables": "builddir/modules/**/*{test,Test,TEST}*",
+    "testMate.cpp.test.executables": "bitscrape/builddir/modules/**/*{test,Test,TEST}*",
     "testMate.cpp.log.logSentry": "disable",
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "builddir/modules/**/*{test,Test,TEST}*",
+            "pattern": "bitscrape/builddir/modules/**/*{test,Test,TEST}*",
             "cwd": "${workspaceFolder}"
         }
     ],

@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "ms-vscode.cpptools",
+        "mesonbuild.mesonbuild",
+        "matepek.vscode-catch2-test-adapter"
+    ]
+}

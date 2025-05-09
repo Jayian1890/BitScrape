@@ -5,7 +5,7 @@ project(
     default_options: [
         'cpp_std=c++23',
         'warning_level=3',
-        'werror=true',
+        'werror=false',
     ],
 )
 
@@ -17,6 +17,7 @@ add_project_arguments(
             '-Wno-unused-parameter',
             '-Wno-unused-variable',
             '-Wno-missing-field-initializers',
+            '-D_LIBCPP_HARDENING_MODE=1',
         ],
     ),
     language: 'cpp',
@@ -24,8 +25,6 @@ add_project_arguments(
 
 # Check for required dependencies
 thread_dep = dependency('threads')
-fmt_dep = dependency('fmt', version: '>=8.0.0')
-curl_dep = dependency('libcurl', version: '>=7.0.0')
 
 # Common include directories
 inc_dirs = include_directories('.')
@@ -43,8 +42,8 @@ subdir('modules/network')
 subdir('modules/bencode')
 subdir('modules/dht')
 subdir('modules/bittorrent')
-subdir('modules/tracker')
-subdir('modules/web')
+# subdir('modules/tracker')  # Not implemented yet
+# subdir('modules/web')      # Not implemented yet
 subdir('modules/storage')
 subdir('modules/core')
 

@@ -50,12 +50,7 @@ subdir('modules/core')
 # Build applications
 subdir('apps')
 
-# Build tools if requested
-if get_option('build_tools')
-    subdir('tools')
-endif
-
 # Build tests if requested
 if get_option('build_tests')
-    subdir('tests')
+    # subdir('tests')
 endif

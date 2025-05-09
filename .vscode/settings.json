@@ -63,6 +63,12 @@
     ],
     "testMate.cpp.test.executables": "builddir/modules/**/*{test,Test,TEST}*",
     "testMate.cpp.log.logSentry": "disable",
+    "testMate.cpp.test.advancedExecutables": [
+        {
+            "pattern": "builddir/modules/**/*{test,Test,TEST}*",
+            "cwd": "${workspaceFolder}"
+        }
+    ],
     "testMate.cpp.debug.configTemplate": {
         "type": "lldb",
         "program": "${exec}",

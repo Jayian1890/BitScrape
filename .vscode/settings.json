@@ -58,7 +58,10 @@
     "mesonbuild.configureOptions": [
         "--buildtype=debug"
     ],
-    // Test settings
+    "mesonbuild.buildOptions": [
+        "-j8"
+    ],
+    "mesonbuild.testController": false,
     "testMate.cpp.test.executables": "builddir/modules/**/*{test,Test,TEST}*",
     "testMate.cpp.log.logSentry": "disable",
     "testMate.cpp.test.advancedExecutables": [

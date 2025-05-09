@@ -59,14 +59,15 @@
         "--buildtype=debug"
     ],
     // Test settings
-    "testMate.cpp.test.executables": "builddir/tests/**/*{test,Test,TEST}*",
+    "testMate.cpp.test.executables": "builddir/modules/**/*{test,Test,TEST}*",
     "testMate.cpp.log.logSentry": "disable",
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "builddir/tests/**/*{test,Test,TEST}*",
+            "pattern": "builddir/modules/**/*{test,Test,TEST}*",
             "cwd": "${workspaceFolder}"
         }
     ],
+    "testMate.cpp.test.framework": "googletest",
     // Terminal settings
     "terminal.integrated.cwd": "${workspaceFolder}",
     // Explorer settings

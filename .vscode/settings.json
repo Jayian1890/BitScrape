@@ -1,23 +1,4 @@
 {
-  // C/C++ IntelliSense Configuration
-  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
-  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
-  "C_Cpp.default.cppStandard": "c++23",
-  "C_Cpp.default.intelliSenseMode": "clang-x64",
-  // Disable Microsoft C/C++ IntelliSense in favor of clangd
-  "C_Cpp.intelliSenseEngine": "disabled",
-  "C_Cpp.autocomplete": "disabled",
-  "C_Cpp.errorSquiggles": "disabled",
-  "C_Cpp.enhancedColorization": "disabled",
-  "C_Cpp.suggestSnippets": false,
-  "C_Cpp.vcpkg.enabled": false,
-  "C_Cpp.default.includePath": [
-    "${workspaceFolder}/**",
-    "${workspaceFolder}/modules/*/include"
-  ],
-  "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
-  "C_Cpp.default.browse.databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
-
   // Editor Settings
   "editor.formatOnSave": false,
   "editor.rulers": [100],
@@ -122,7 +103,6 @@
       "cwd": "${workspaceFolder}"
     }
   ],
-  "cmake.testExplorerIntegrationEnabled": false,
   "testMate.cpp.debug.configTemplate": {
     "type": "lldb",
     "program": "${exec}",
@@ -135,8 +115,7 @@
     }
   },
   "testMate.cpp.test.framework": "googletest",
-  "testMate.cpp.discovery.runtimeLimit": 30000,
-  "testExplorer.useNativeTesting": false,
+  "testMate.cpp.discovery.runtimeLimit": 900,
 
   // Terminal and Explorer Settings
   "terminal.integrated.cwd": "${workspaceFolder}",

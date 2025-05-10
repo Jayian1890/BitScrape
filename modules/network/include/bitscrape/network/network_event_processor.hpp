@@ -285,6 +285,40 @@ public:
   ~NetworkEventProcessor() override = default;
 
   /**
+   * @brief Start processing events
+   *
+   * @param event_bus Event bus to process events from
+   */
+  void start(event::EventBus &event_bus) override;
+
+  /**
+   * @brief Stop processing events
+   */
+  void stop() override;
+
+  /**
+   * @brief Check if the processor is running
+   *
+   * @return true if the processor is running, false otherwise
+   */
+  bool is_running() const override;
+
+  /**
+   * @brief Process an event
+   *
+   * @param event Event to process
+   */
+  void process(const types::Event &event) override;
+
+  /**
+   * @brief Process an event asynchronously
+   *
+   * @param event Event to process
+   * @return Future that will be completed when the event has been processed
+   */
+  std::future<void> process_async(const types::Event &event) override;
+
+  /**
    * @brief Process an event
    *
    * @param event The event to process
@@ -293,6 +327,9 @@ public:
   bool process_event(const types::Event &event) override;
 
 private:
+  std::atomic<bool> running_;
+  event::EventBus *event_bus_;
+  types::SubscriptionToken token_;
   std::unique_ptr<UDPSocket> udp_socket_;
   std::unique_ptr<TCPSocket> tcp_socket_;
   std::unique_ptr<HTTPClient> http_client_;

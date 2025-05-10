@@ -1,7 +1,10 @@
 #include "bitscrape/network/nat_traversal.hpp"
 
+#include <future>
+#include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace bitscrape::network {
 

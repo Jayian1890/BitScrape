@@ -3,11 +3,11 @@ inc_dir = include_directories('include')
 
 # Dependencies
 types_inc = include_directories('../types/include')
-types_lib = meson.get_compiler('cpp').find_library('bitscrape-types', dirs: meson.current_build_dir() + '/../types')
+types_lib = dependency('bitscrape-types', fallback: ['types', 'types_dep'])
 types_dep = declare_dependency(include_directories: types_inc, dependencies: [types_lib])
 
 event_inc = include_directories('../event/include')
-event_lib = meson.get_compiler('cpp').find_library('bitscrape-event', dirs: meson.current_build_dir() + '/../event')
+event_lib = dependency('bitscrape-event', fallback: ['event', 'event_dep'])
 event_dep = declare_dependency(include_directories: event_inc, dependencies: [event_lib])
 
 # Source files

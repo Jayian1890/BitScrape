@@ -37,15 +37,6 @@ endif
 
 # Build modules
 subdir('modules/types')
-subdir('modules/event')
-subdir('modules/network')
-subdir('modules/bencode')
-subdir('modules/dht')
-subdir('modules/bittorrent')
-# subdir('modules/tracker')  # Not implemented yet
-# subdir('modules/web')      # Not implemented yet
-subdir('modules/storage')
-subdir('modules/core')
 
 # Build applications
 subdir('apps')

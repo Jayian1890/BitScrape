@@ -3,19 +3,19 @@ inc_dir = include_directories('include')
 
 # Dependencies
 types_inc = include_directories('../types/include')
-types_lib = meson.get_compiler('cpp').find_library('bitscrape-types', dirs: meson.current_build_dir() + '/../types')
+types_lib = dependency('bitscrape-types', fallback: ['types', 'types_dep'])
 types_dep = declare_dependency(include_directories: types_inc, dependencies: [types_lib])
 
 event_inc = include_directories('../event/include')
-event_lib = meson.get_compiler('cpp').find_library('bitscrape-event', dirs: meson.current_build_dir() + '/../event')
+event_lib = dependency('bitscrape-event', fallback: ['event', 'event_dep'])
 event_dep = declare_dependency(include_directories: event_inc, dependencies: [event_lib])
 
 bencode_inc = include_directories('../bencode/include')
-bencode_lib = meson.get_compiler('cpp').find_library('bitscrape-bencode', dirs: meson.current_build_dir() + '/../bencode')
+bencode_lib = dependency('bitscrape-bencode', fallback: ['bencode', 'bencode_dep'])
 bencode_dep = declare_dependency(include_directories: bencode_inc, dependencies: [bencode_lib])
 
 network_inc = include_directories('../network/include')
-network_lib = meson.get_compiler('cpp').find_library('bitscrape-network', dirs: meson.current_build_dir() + '/../network')
+network_lib = dependency('bitscrape-network', fallback: ['network', 'network_dep'])
 network_dep = declare_dependency(include_directories: network_inc, dependencies: [network_lib])
 
 # Source files
@@ -25,7 +25,6 @@ src_files = [
     'src/routing_table.cpp',
     'src/k_bucket.cpp',
     'src/node_lookup.cpp',
-    'src/peer_lookup.cpp',
     'src/bootstrap.cpp',
     'src/dht_session.cpp',
     'src/token_manager.cpp',
@@ -58,7 +57,6 @@ if get_option('build_tests')
             'tests/unit/routing_table_test.cpp',
             'tests/unit/k_bucket_test.cpp',
             'tests/unit/node_lookup_test.cpp',
-            'tests/unit/peer_lookup_test.cpp',
             'tests/unit/bootstrap_test.cpp',
             'tests/unit/dht_session_test.cpp',
             'tests/unit/token_manager_test.cpp',
@@ -82,7 +80,6 @@ install_headers(
     'include/bitscrape/dht/routing_table.hpp',
     'include/bitscrape/dht/k_bucket.hpp',
     'include/bitscrape/dht/node_lookup.hpp',
-    'include/bitscrape/dht/peer_lookup.hpp',
     'include/bitscrape/dht/bootstrap.hpp',
     'include/bitscrape/dht/dht_session.hpp',
     'include/bitscrape/dht/token_manager.hpp',

@@ -2,6 +2,9 @@
 build/
 builddir/
 
+# Cache files
+.cache/
+
 # IDE files
 .vscode/*
 !.vscode/settings.json
@@ -51,4 +54,4 @@ builddir/
 .mesonpy-native-file.ini
 
 # Memory bank
-memory-bank/
+.memory-bank/

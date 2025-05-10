@@ -1,12 +1,20 @@
 #include "bitscrape/network/network_event_processor.hpp"
 
 #include "bitscrape/event/event_bus.hpp"
+#include "bitscrape/event/event_processor.hpp"
+#include "bitscrape/types/event_types.hpp"
+
+#include <atomic>
+#include <future>
+#include <map>
+#include <memory>
+#include <string>
 
 namespace bitscrape::network {
 
 // NetworkEvent implementation
 NetworkEvent::NetworkEvent(NetworkEventType type)
-    : types::Event(types::Type::CUSTOM, static_cast<uint32_t>(type)),
+    : types::Event(types::Event::Type::CUSTOM, static_cast<uint32_t>(type)),
       network_event_type_(type) {}
 
 NetworkEventType NetworkEvent::network_event_type() const {
@@ -74,11 +82,58 @@ const HTTPResponse &HTTPResponseEvent::response() const { return response_; }
 
 // NetworkEventProcessor implementation
 NetworkEventProcessor::NetworkEventProcessor()
-    : udp_socket_(std::make_unique<UDPSocket>()),
+    : running_(false), event_bus_(nullptr),
+      udp_socket_(std::make_unique<UDPSocket>()),
       tcp_socket_(std::make_unique<TCPSocket>()),
       http_client_(std::make_unique<HTTPClient>()) {}
 
-bool NetworkEventProcessor::process_event(const event::Event &event) {
+void NetworkEventProcessor::start(event::EventBus &event_bus) {
+  if (running_) {
+    return;
+  }
+
+  running_ = true;
+  event_bus_ = &event_bus;
+
+  // Subscribe to all network events
+  token_ = event_bus_->subscribe<NetworkEvent>(
+      [this](const NetworkEvent &event) { this->process(event); });
+}
+
+void NetworkEventProcessor::stop() {
+  if (!running_) {
+    return;
+  }
+
+  running_ = false;
+
+  if (event_bus_) {
+    event_bus_->unsubscribe(token_);
+    event_bus_ = nullptr;
+  }
+}
+
+bool NetworkEventProcessor::is_running() const { return running_; }
+
+void NetworkEventProcessor::process(const types::Event &event) {
+  if (!running_) {
+    return;
+  }
+
+  // Check if the event is a NetworkEvent
+  if (event.type() == types::Event::Type::CUSTOM) {
+    // Try to process the event
+    process_event(event);
+  }
+}
+
+std::future<void>
+NetworkEventProcessor::process_async(const types::Event &event) {
+  return std::async(std::launch::async,
+                    [this, event = event.clone()]() { this->process(*event); });
+}
+
+bool NetworkEventProcessor::process_event(const types::Event &event) {
   // Check if the event is a NetworkEvent
   if (event.type() < static_cast<uint32_t>(NetworkEventType::UDP_SEND) ||
       event.type() > static_cast<uint32_t>(NetworkEventType::HTTP_REQUEST)) {

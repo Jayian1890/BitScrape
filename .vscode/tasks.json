@@ -2,9 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "meson: configure (debug)",
+            "label": "cmake: configure (debug)",
             "type": "shell",
-            "command": "meson setup builddir --buildtype=debug",
+            "command": "cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -14,9 +14,9 @@
             "problemMatcher": []
         },
         {
-            "label": "meson: configure (release)",
+            "label": "cmake: configure (release)",
             "type": "shell",
-            "command": "meson setup builddir --buildtype=release",
+            "command": "cmake -S . -B build -DCMAKE_BUILD_TYPE=Release",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -26,9 +26,9 @@
             "problemMatcher": []
         },
         {
-            "label": "meson: configure (debug with ASAN)",
+            "label": "cmake: configure (debug with ASAN)",
             "type": "shell",
-            "command": "meson setup builddir --buildtype=debug -Denable_asan=true",
+            "command": "cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -38,9 +38,9 @@
             "problemMatcher": []
         },
         {
-            "label": "meson: build",
+            "label": "cmake: build",
             "type": "shell",
-            "command": "meson compile -C builddir",
+            "command": "cmake --build build --config ${input:buildType}",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -54,7 +54,7 @@
                 "owner": "cpp",
                 "fileLocation": [
                     "relative",
-                    "${workspaceFolder}/builddir"
+                    "${workspaceFolder}/build"
                 ],
                 "pattern": {
                     "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
@@ -67,9 +67,9 @@
             }
         },
         {
-            "label": "meson: clean",
+            "label": "cmake: clean",
             "type": "shell",
-            "command": "rm -rf builddir && meson setup builddir",
+            "command": "rm -rf build && cmake -S . -B build",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -79,9 +79,9 @@
             "problemMatcher": []
         },
         {
-            "label": "meson: test",
+            "label": "cmake: test",
             "type": "shell",
-            "command": "meson test -C builddir -v",
+            "command": "cd build && ctest --output-on-failure",
             "group": {
                 "kind": "test",
                 "isDefault": true
@@ -94,9 +94,9 @@
             "problemMatcher": []
         },
         {
-            "label": "meson: rebuild",
+            "label": "cmake: rebuild",
             "type": "shell",
-            "command": "meson compile -C builddir --reconfigure",
+            "command": "cmake --build build --config ${input:buildType} --clean-first",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -107,7 +107,7 @@
                 "owner": "cpp",
                 "fileLocation": [
                     "relative",
-                    "${workspaceFolder}/builddir"
+                    "${workspaceFolder}/build"
                 ],
                 "pattern": {
                     "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
@@ -120,9 +120,9 @@
             }
         },
         {
-            "label": "meson: build cli",
+            "label": "cmake: build cli",
             "type": "shell",
-            "command": "meson compile -C builddir bitscrape_cli",
+            "command": "cmake --build build --config ${input:buildType} --target bitscrape_cli",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -133,7 +133,7 @@
                 "owner": "cpp",
                 "fileLocation": [
                     "relative",
-                    "${workspaceFolder}/builddir"
+                    "${workspaceFolder}/build"
                 ],
                 "pattern": {
                     "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
@@ -146,9 +146,9 @@
             }
         },
         {
-            "label": "meson: build gui",
+            "label": "cmake: build gui",
             "type": "shell",
-            "command": "meson compile -C builddir bitscrape_gui",
+            "command": "cmake --build build --config ${input:buildType} --target bitscrape_gui",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -159,7 +159,7 @@
                 "owner": "cpp",
                 "fileLocation": [
                     "relative",
-                    "${workspaceFolder}/builddir"
+                    "${workspaceFolder}/build"
                 ],
                 "pattern": {
                     "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
@@ -172,9 +172,9 @@
             }
         },
         {
-            "label": "meson: build module",
+            "label": "cmake: build module test",
             "type": "shell",
-            "command": "meson compile -C builddir modules/${input:moduleDir}/${input:moduleDir}_test",
+            "command": "cmake --build build --config ${input:buildType} --target ${input:moduleDir}_test",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -185,7 +185,7 @@
                 "owner": "cpp",
                 "fileLocation": [
                     "relative",
-                    "${workspaceFolder}/builddir"
+                    "${workspaceFolder}/build"
                 ],
                 "pattern": {
                     "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
@@ -198,9 +198,9 @@
             }
         },
         {
-            "label": "meson: test module",
+            "label": "cmake: test module",
             "type": "shell",
-            "command": "meson test -C builddir modules/${input:moduleDir}:${input:moduleDir}_test -v",
+            "command": "cd build && ctest -R ${input:moduleDir}_test --output-on-failure",
             "group": "test",
             "presentation": {
                 "reveal": "always",
@@ -210,9 +210,9 @@
             "problemMatcher": []
         },
         {
-            "label": "meson: generate compile_commands.json",
+            "label": "cmake: generate compile_commands.json",
             "type": "shell",
-            "command": "meson setup --reconfigure builddir",
+            "command": "cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
             "group": "none",
             "presentation": {
                 "reveal": "always",
@@ -237,6 +237,18 @@
                 "network",
                 "storage",
                 "types"
+            ]
+        },
+        {
+            "id": "buildType",
+            "type": "pickString",
+            "description": "Select build type",
+            "default": "Debug",
+            "options": [
+                "Debug",
+                "Release",
+                "RelWithDebInfo",
+                "MinSizeRel"
             ]
         }
     ]

@@ -1,7 +1,7 @@
 {
   // C/C++ IntelliSense Configuration
-  "C_Cpp.default.compileCommands": "${workspaceFolder}/builddir/compile_commands.json",
-  "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "C_Cpp.default.cppStandard": "c++23",
   "C_Cpp.default.intelliSenseMode": "clang-x64",
   "C_Cpp.intelliSenseEngine": "default",
@@ -29,9 +29,10 @@
 
   // File Associations
   "files.associations": {
-    "*.build": "meson",
-    "meson.build": "meson",
-    "meson_options.txt": "meson",
+    "*.build": "cmake",
+    "CMakeLists.txt": "cmake",
+    "*.cmake": "cmake",
+    "*.cmake.in": "cmake",
     "future": "cpp",
     "vector": "cpp",
     "string": "cpp",
@@ -88,35 +89,32 @@
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
   "files.watcherExclude": {
-    "builddir/**": true,
+    "build/**": true,
     ".cache/**": true,
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true
   },
   "search.exclude": {
-    "builddir/**": true,
+    "build/**": true,
     ".cache/**": true,
     "**/.git/**": true
   },
 
-  // Meson Build Configuration
-  "mesonbuild.configureOnOpen": true,
-  "mesonbuild.buildFolder": "builddir",
-  "mesonbuild.downloadLanguageServer": true,
-  "mesonbuild.mesonPath": "meson",
-  "mesonbuild.configureOptions": [
-    "--buildtype=debug"
-  ],
-  "mesonbuild.buildOptions": [
-    "-j8"
-  ],
+  // CMake Configuration
+  "cmake.configureOnOpen": true,
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.configureSettings": {
+    "CMAKE_BUILD_TYPE": "Debug"
+  },
+  "cmake.parallelJobs": 8,
+  "cmake.generator": "Ninja",
 
   // Test Configuration
-  "testMate.cpp.test.executables": "builddir/modules/**/*{test,Test,TEST}*",
+  "testMate.cpp.test.executables": "build/bin/*{test,Test,TEST}*",
   "testMate.cpp.log.logSentry": "disable",
   "testMate.cpp.test.advancedExecutables": [
     {
-      "pattern": "builddir/modules/**/*{test,Test,TEST}*",
+      "pattern": "build/bin/*{test,Test,TEST}*",
       "cwd": "${workspaceFolder}"
     }
   ],
@@ -147,9 +145,9 @@
     "--completion-style=detailed",
     "--header-insertion=iwyu",
     "--suggest-missing-includes",
-    "--compile-commands-dir=./builddir"
+    "--compile-commands-dir=./build"
   ],
 
   // SonarLint Settings
-  "sonarlint.pathToCompileCommands": "${workspaceFolder}/builddir/compile_commands.json"
+  "sonarlint.pathToCompileCommands": "${workspaceFolder}/build/compile_commands.json"
 }

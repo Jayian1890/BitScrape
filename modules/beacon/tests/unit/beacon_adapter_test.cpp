@@ -39,7 +39,7 @@ public:
 
     void log(BeaconSeverity severity, const std::string& message,
             BeaconCategory category = BeaconCategory::GENERAL,
-            const std::source_location& location = std::source_location::current()) override {
+            const std::source_location& location = std::source_location::current()) {
         entries.push_back({severity, category, message});
     }
 

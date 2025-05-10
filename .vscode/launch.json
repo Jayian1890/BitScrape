@@ -5,10 +5,10 @@
             "name": "CLI Debug",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/builddir/apps/bitscrape_cli",
+            "program": "${workspaceFolder}/build/bin/bitscrape_cli",
             "args": [],
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "meson: build cli",
+            "preLaunchTask": "cmake: build",
             "internalConsoleOptions": "neverOpen",
             "terminal": "integrated",
             "env": {
@@ -16,13 +16,13 @@
             }
         },
         {
-            "name": "GUI Debug (.app)",
+            "name": "GUI Debug",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/builddir/apps/gui/bitscrape_gui.app/Contents/MacOS/bitscrape_gui",
+            "program": "${workspaceFolder}/build/bin/bitscrape_gui",
             "args": [],
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "meson: build gui",
+            "preLaunchTask": "cmake: build",
             "internalConsoleOptions": "neverOpen",
             "terminal": "integrated",
             "env": {
@@ -33,10 +33,10 @@
             "name": "Module Test Debug",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/builddir/modules/${input:moduleDir}/${input:moduleDir}_test",
+            "program": "${workspaceFolder}/build/bin/${input:moduleDir}_test",
             "args": ["--gtest_filter=${input:testFilter}"],
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "meson: build",
+            "preLaunchTask": "cmake: build",
             "internalConsoleOptions": "neverOpen",
             "terminal": "integrated",
             "env": {
@@ -48,10 +48,10 @@
             "name": "Run Specific Test",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/builddir/${input:testPath}",
+            "program": "${workspaceFolder}/build/bin/${input:testPath}",
             "args": ["--gtest_filter=${input:testFilter}"],
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "meson: build",
+            "preLaunchTask": "cmake: build",
             "internalConsoleOptions": "neverOpen",
             "terminal": "integrated",
             "env": {
@@ -80,8 +80,8 @@
         {
             "id": "testPath",
             "type": "promptString",
-            "description": "Path to test executable (relative to builddir)",
-            "default": "modules/types/types_test"
+            "description": "Test executable name",
+            "default": "types_test"
         },
         {
             "id": "testFilter",

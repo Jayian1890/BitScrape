@@ -57,8 +57,8 @@ Key architectural principles:
 ## Requirements
 
 - C++23 compatible compiler (GCC 11+, Clang 14+, or MSVC 19.29+)
-- Meson build system
-- Ninja build tool
+- CMake 3.20 or higher
+- Ninja build tool (optional, but recommended)
 
 ## Building
 
@@ -66,42 +66,58 @@ Key architectural principles:
 
 #### macOS
 ```bash
-brew install meson ninja
+brew install cmake ninja
 ```
 
 #### Ubuntu/Debian
 ```bash
-sudo apt install meson ninja-build
+sudo apt install cmake ninja-build
 ```
 
 #### Windows
 ```bash
 # Using Chocolatey
-choco install meson ninja
+choco install cmake ninja
 ```
 
 ### Building the Project
 
 ```bash
 # Configure and build
-meson setup builddir
-meson compile -C builddir
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
 
 # Run tests
-meson test -C builddir
+cd build && ctest --output-on-failure
 
 # Install
-meson install -C builddir
+cmake --install build
 ```
 
-### Building Specific Modules
+### Building with Options
 
 ```bash
-# Build a specific module
-cd bitscrape/modules/types
-meson setup builddir
-meson compile -C builddir
-meson test -C builddir
+# Configure with options
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_ASAN=OFF -DBUILD_TESTS=ON
+
+# Build specific target
+cmake --build build --target bitscrape_cli
+```
+
+### Using the Build Script
+
+```bash
+# Build with default options (Debug mode with tests)
+./build-cmake.sh
+
+# Build in release mode
+./build-cmake.sh --release
+
+# Build with AddressSanitizer
+./build-cmake.sh --asan
+
+# Build without tests
+./build-cmake.sh --no-tests
 ```
 
 ## Usage
@@ -149,8 +165,8 @@ bitscrape/
 ├── tests/                    # Integration tests
 ├── docs/                     # Documentation
 ├── scripts/                  # Utility scripts
-├── meson.build              # Main build file
-└── meson_options.txt        # Build options
+├── CMakeLists.txt           # Main build file
+└── cmake/                   # CMake modules and configuration
 ```
 
 ## Module Overview

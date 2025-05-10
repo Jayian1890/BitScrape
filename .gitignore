@@ -50,8 +50,14 @@ builddir/
 *.idb
 *.pdb
 
-# Meson files
-.mesonpy-native-file.ini
+# CMake files
+cmake/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+_deps/
 
 # Memory bank
 .memory-bank/

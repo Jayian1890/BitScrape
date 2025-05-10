@@ -127,7 +127,7 @@ namespace bitscrape::types
     std::future<NodeID> NodeID::random_async()
     {
         return std::async(std::launch::async, []()
-                          { return random(); });
+                          { return secure_random(); });
     }
 
     NodeID NodeID::secure_random()

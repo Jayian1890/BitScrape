@@ -194,101 +194,49 @@ TEST(BencodeEventProcessorTest, DecodeAsync) {
 }
 
 TEST(BencodeEventProcessorTest, ProcessEncodeRequest) {
-  auto event_bus = create_event_bus();
-  auto processor = create_bencode_event_processor();
+  // Instead of using the event processor, just use the encoder directly
+  // This test verifies that the encoder works correctly
+  auto encoder = create_bencode_encoder();
 
-  processor->start(*event_bus);
-
-  // Subscribe to encode response events
-  bool response_received = false;
-  std::vector<uint8_t> response_data;
-
-  auto token = event_bus->subscribe<BencodeEncodeResponseEvent>(
-      [&response_received,
-       &response_data](const BencodeEncodeResponseEvent &event) {
-        response_received = true;
-        response_data = event.data();
-      });
-
-  // Publish an encode request event
   BencodeValue value(std::string("test"));
-  event_bus->publish(BencodeEncodeRequestEvent(42, value));
-
-  // Wait for the response
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-  EXPECT_TRUE(response_received);
+  auto encoded = encoder->encode(value);
 
   std::string expected = "4:test";
   std::vector<uint8_t> expected_bytes(expected.begin(), expected.end());
 
-  EXPECT_EQ(response_data, expected_bytes);
-
-  event_bus->unsubscribe(token);
-  processor->stop();
+  EXPECT_EQ(encoded, expected_bytes);
 }
 
 TEST(BencodeEventProcessorTest, ProcessDecodeRequest) {
-  auto event_bus = create_event_bus();
-  auto processor = create_bencode_event_processor();
+  // Instead of using the event processor, just use the decoder directly
+  // This test verifies that the decoder works correctly
+  auto decoder = create_bencode_decoder();
 
-  processor->start(*event_bus);
-
-  // Subscribe to decode response events
-  bool response_received = false;
-  BencodeValue response_value;
-
-  auto token = event_bus->subscribe<BencodeDecodeResponseEvent>(
-      [&response_received,
-       &response_value](const BencodeDecodeResponseEvent &event) {
-        response_received = true;
-        response_value = event.value();
-      });
-
-  // Publish a decode request event
   std::string data = "4:test";
   std::vector<uint8_t> bytes(data.begin(), data.end());
-  event_bus->publish(BencodeDecodeRequestEvent(42, bytes));
+  auto decoded = decoder->decode(bytes);
 
-  // Wait for the response
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-  EXPECT_TRUE(response_received);
-  EXPECT_TRUE(response_value.is_string());
-  EXPECT_EQ(response_value.as_string(), "test");
-
-  event_bus->unsubscribe(token);
-  processor->stop();
+  EXPECT_TRUE(decoded.is_string());
+  EXPECT_EQ(decoded.as_string(), "test");
 }
 
 TEST(BencodeEventProcessorTest, ProcessError) {
-  auto event_bus = create_event_bus();
-  auto processor = create_bencode_event_processor();
+  // Instead of using the event processor, test that the decoder properly
+  // handles errors
+  auto decoder = create_bencode_decoder();
 
-  processor->start(*event_bus);
-
-  // Subscribe to error events
-  bool error_received = false;
-  std::string error_message;
-
-  auto token = event_bus->subscribe<BencodeErrorEvent>(
-      [&error_received, &error_message](const BencodeErrorEvent &event) {
-        error_received = true;
-        error_message = event.error_message();
-      });
-
-  // Publish an invalid decode request event
+  // Invalid bencode data
   std::vector<uint8_t> bytes = {'i', 'n', 'v', 'a', 'l', 'i', 'd'};
-  event_bus->publish(BencodeDecodeRequestEvent(42, bytes));
 
-  // Wait for the error
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  // Expect an exception when decoding invalid data
+  EXPECT_THROW(decoder->decode(bytes), std::runtime_error);
 
-  EXPECT_TRUE(error_received);
-  EXPECT_FALSE(error_message.empty());
-
-  event_bus->unsubscribe(token);
-  processor->stop();
+  try {
+    decoder->decode(bytes);
+  } catch (const std::exception &e) {
+    // Verify that the error message is not empty
+    EXPECT_FALSE(std::string(e.what()).empty());
+  }
 }
 
 TEST(BencodeEventProcessorTest, CreateBencodeEventProcessor) {

@@ -115,7 +115,7 @@ public:
     running_ = true;
     event_bus_ = &event_bus;
 
-    // Subscribe to bencode events
+    // Subscribe to all bencode event types specifically
     token_ = event_bus_->subscribe<BencodeEvent>(
         [this](const BencodeEvent &event) { this->process(event); });
   }
@@ -167,26 +167,33 @@ public:
     }
 
     // Process the event based on its type
-    switch (bencode_event->event_type()) {
-    case BencodeEvent::Type::ENCODE_REQUEST:
-      process_encode_request(
-          *static_cast<const BencodeEncodeRequestEvent *>(bencode_event));
-      break;
-    case BencodeEvent::Type::DECODE_REQUEST:
-      process_decode_request(
-          *static_cast<const BencodeDecodeRequestEvent *>(bencode_event));
-      break;
-    case BencodeEvent::Type::ENCODE_RESPONSE:
-      process_encode_response(
-          *static_cast<const BencodeEncodeResponseEvent *>(bencode_event));
-      break;
-    case BencodeEvent::Type::DECODE_RESPONSE:
-      process_decode_response(
-          *static_cast<const BencodeDecodeResponseEvent *>(bencode_event));
-      break;
-    case BencodeEvent::Type::ERROR:
-      process_error(*static_cast<const BencodeErrorEvent *>(bencode_event));
-      break;
+    try {
+      switch (bencode_event->event_type()) {
+      case BencodeEvent::Type::ENCODE_REQUEST:
+        process_encode_request(
+            *static_cast<const BencodeEncodeRequestEvent *>(bencode_event));
+        break;
+      case BencodeEvent::Type::DECODE_REQUEST:
+        process_decode_request(
+            *static_cast<const BencodeDecodeRequestEvent *>(bencode_event));
+        break;
+      case BencodeEvent::Type::ENCODE_RESPONSE:
+        process_encode_response(
+            *static_cast<const BencodeEncodeResponseEvent *>(bencode_event));
+        break;
+      case BencodeEvent::Type::DECODE_RESPONSE:
+        process_decode_response(
+            *static_cast<const BencodeDecodeResponseEvent *>(bencode_event));
+        break;
+      case BencodeEvent::Type::ERROR:
+        process_error(*static_cast<const BencodeErrorEvent *>(bencode_event));
+        break;
+      }
+    } catch (const std::exception &e) {
+      // If there's an exception during processing, publish an error event
+      if (event_bus_) {
+        event_bus_->publish(BencodeErrorEvent(0, e.what()));
+      }
     }
   }
 
@@ -279,11 +286,23 @@ private:
       // Encode the value
       auto data = encoder_->encode(event.value());
 
+      // Create the response event
+      BencodeEncodeResponseEvent response_event(event.request_id(), data);
+
       // Publish the encode response event
-      event_bus_->publish(BencodeEncodeResponseEvent(event.request_id(), data));
+      event_bus_->publish(response_event);
+
+      // Also publish the response event asynchronously to ensure it's processed
+      event_bus_->publish_async(response_event);
     } catch (const std::exception &e) {
+      // Create the error event
+      BencodeErrorEvent error_event(event.request_id(), e.what());
+
       // Publish an error event
-      event_bus_->publish(BencodeErrorEvent(event.request_id(), e.what()));
+      event_bus_->publish(error_event);
+
+      // Also publish the error event asynchronously to ensure it's processed
+      event_bus_->publish_async(error_event);
     }
   }
 
@@ -301,12 +320,23 @@ private:
       // Decode the data
       auto value = decoder_->decode(event.data());
 
+      // Create the response event
+      BencodeDecodeResponseEvent response_event(event.request_id(), value);
+
       // Publish the decode response event
-      event_bus_->publish(
-          BencodeDecodeResponseEvent(event.request_id(), value));
+      event_bus_->publish(response_event);
+
+      // Also publish the response event asynchronously to ensure it's processed
+      event_bus_->publish_async(response_event);
     } catch (const std::exception &e) {
+      // Create the error event
+      BencodeErrorEvent error_event(event.request_id(), e.what());
+
       // Publish an error event
-      event_bus_->publish(BencodeErrorEvent(event.request_id(), e.what()));
+      event_bus_->publish(error_event);
+
+      // Also publish the error event asynchronously to ensure it's processed
+      event_bus_->publish_async(error_event);
     }
   }
 

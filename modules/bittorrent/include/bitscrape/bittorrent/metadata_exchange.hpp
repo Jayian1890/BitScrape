@@ -113,12 +113,12 @@ private:
      * @brief Send a metadata data message
      *
      * @param address Peer address
-     * @param piece Metadata piece index
+     * @param piece_index Metadata piece index
      * @param total_size Total metadata size
-     * @param data Metadata piece data
+     * @param piece_data Metadata piece data
      * @return True if the message was sent successfully, false otherwise
      */
-    bool send_metadata_data(const network::Address& address, int piece, int total_size, const std::vector<uint8_t>& data);
+    bool send_metadata_data(const network::Address& address, int piece_index, int total_size, const std::vector<uint8_t>& piece_data);
 
     /**
      * @brief Send a metadata reject message

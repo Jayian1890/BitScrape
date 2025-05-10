@@ -22,28 +22,28 @@ PeerWireProtocol::~PeerWireProtocol() {
 
 bool PeerWireProtocol::connect_to_peer(const network::Address& address) {
     std::lock_guard<std::mutex> lock(connections_mutex_);
-    
+
     // Check if already connected
     std::string address_str = address.to_string();
     auto it = connections_.find(address_str);
     if (it != connections_.end()) {
         return it->second->state() == PeerConnection::State::CONNECTED;
     }
-    
+
     // Create connection
     auto connection = std::make_shared<PeerConnection>(address, info_hash_, peer_id_);
-    
+
     // Connect
     bool success = connection->connect();
-    
+
     // Store connection if successful
     if (success) {
         connections_[address_str] = connection;
-        
+
         // Start receive loop
         start_receive_loop(connection);
     }
-    
+
     return success;
 }
 
@@ -55,14 +55,14 @@ std::future<bool> PeerWireProtocol::connect_to_peer_async(const network::Address
 
 void PeerWireProtocol::disconnect_from_peer(const network::Address& address) {
     std::lock_guard<std::mutex> lock(connections_mutex_);
-    
+
     // Find connection
     std::string address_str = address.to_string();
     auto it = connections_.find(address_str);
     if (it != connections_.end()) {
         // Disconnect
         it->second->disconnect();
-        
+
         // Remove connection
         connections_.erase(it);
     }
@@ -70,26 +70,26 @@ void PeerWireProtocol::disconnect_from_peer(const network::Address& address) {
 
 void PeerWireProtocol::disconnect_all_peers() {
     std::lock_guard<std::mutex> lock(connections_mutex_);
-    
+
     // Disconnect all peers
     for (auto& pair : connections_) {
         pair.second->disconnect();
     }
-    
+
     // Clear connections
     connections_.clear();
 }
 
 bool PeerWireProtocol::send_message(const network::Address& address, const PeerMessage& message) {
     std::lock_guard<std::mutex> lock(connections_mutex_);
-    
+
     // Find connection
     std::string address_str = address.to_string();
     auto it = connections_.find(address_str);
     if (it == connections_.end()) {
         return false;
     }
-    
+
     // Send message
     return it->second->send_message(message);
 }
@@ -100,10 +100,24 @@ std::future<bool> PeerWireProtocol::send_message_async(const network::Address& a
     });
 }
 
-void PeerWireProtocol::register_message_handler(PeerMessageType type, 
+bool PeerWireProtocol::send_raw_data(const network::Address& address, const std::vector<uint8_t>& data) {
+    std::lock_guard<std::mutex> lock(connections_mutex_);
+
+    // Find connection
+    std::string address_str = address.to_string();
+    auto it = connections_.find(address_str);
+    if (it == connections_.end()) {
+        return false;
+    }
+
+    // Send data
+    return it->second->send_raw_data(data.data(), data.size()) == static_cast<int>(data.size());
+}
+
+void PeerWireProtocol::register_message_handler(PeerMessageType type,
                                               std::function<void(const network::Address&, const PeerMessage&)> handler) {
     std::lock_guard<std::mutex> lock(handlers_mutex_);
-    
+
     // Register handler
     message_handlers_[type] = handler;
 }
@@ -118,7 +132,7 @@ const std::vector<uint8_t>& PeerWireProtocol::peer_id() const {
 
 std::vector<network::Address> PeerWireProtocol::connected_peers() const {
     std::lock_guard<std::mutex> lock(connections_mutex_);
-    
+
     // Collect connected peers
     std::vector<network::Address> result;
     for (const auto& pair : connections_) {
@@ -126,27 +140,27 @@ std::vector<network::Address> PeerWireProtocol::connected_peers() const {
             result.push_back(pair.second->address());
         }
     }
-    
+
     return result;
 }
 
 bool PeerWireProtocol::is_peer_connected(const network::Address& address) const {
     std::lock_guard<std::mutex> lock(connections_mutex_);
-    
+
     // Find connection
     std::string address_str = address.to_string();
     auto it = connections_.find(address_str);
     if (it == connections_.end()) {
         return false;
     }
-    
+
     // Check if connected
     return it->second->state() == PeerConnection::State::CONNECTED;
 }
 
 void PeerWireProtocol::process_message(const network::Address& address, const PeerMessage& message) {
     std::lock_guard<std::mutex> lock(handlers_mutex_);
-    
+
     // Find handler
     auto it = message_handlers_.find(message.type());
     if (it != message_handlers_.end()) {

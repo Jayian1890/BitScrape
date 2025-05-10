@@ -129,6 +129,11 @@ bool BitTorrentEventProcessor::is_running() const {
 }
 
 bool BitTorrentEventProcessor::process_event(const types::Event& event) {
+    // Check if processor is running
+    if (!running_) {
+        return true;
+    }
+
     // Check if event is a BitTorrent event
     if (event.custom_type_id() >= static_cast<uint32_t>(BitTorrentEventType::PEER_DISCOVERED) &&
         event.custom_type_id() <= static_cast<uint32_t>(BitTorrentEventType::METADATA_REJECTED)) {
@@ -151,11 +156,11 @@ bool BitTorrentEventProcessor::process_event(const types::Event& event) {
 
             default:
                 // Unhandled event type
-                return false;
+                return true;
         }
     }
 
-    return false;
+    return true;
 }
 
 void BitTorrentEventProcessor::add_peer_manager(const types::InfoHash& info_hash, std::shared_ptr<PeerManager> peer_manager) {
@@ -186,7 +191,7 @@ void BitTorrentEventProcessor::remove_metadata_exchange(const types::InfoHash& i
     metadata_exchanges_.erase(info_hash.to_hex());
 }
 
-void BitTorrentEventProcessor::handle_peer_discovered(const PeerDiscoveredEvent& event) {
+bool BitTorrentEventProcessor::handle_peer_discovered(const PeerDiscoveredEvent& event) {
     std::lock_guard<std::mutex> lock(peer_managers_mutex_);
 
     // Find peer manager
@@ -195,10 +200,20 @@ void BitTorrentEventProcessor::handle_peer_discovered(const PeerDiscoveredEvent&
         // Add peer to manager
         it->second->add_peer(event.address());
     }
+
+    return true;
 }
 
-void BitTorrentEventProcessor::handle_metadata_received(const MetadataReceivedEvent& /* event */) {
-    // TODO: Implement metadata received handling
+bool BitTorrentEventProcessor::handle_metadata_received(const MetadataReceivedEvent& event) {
+    std::lock_guard<std::mutex> lock(metadata_exchanges_mutex_);
+
+    // Find metadata exchange
+    auto it = metadata_exchanges_.find(event.info_hash().to_hex());
+    if (it != metadata_exchanges_.end()) {
+        // TODO: Implement metadata received handling
+    }
+
+    return true;
 }
 
 } // namespace bitscrape::bittorrent

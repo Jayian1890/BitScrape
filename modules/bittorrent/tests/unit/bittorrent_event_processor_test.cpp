@@ -15,7 +15,7 @@ using namespace bitscrape::network;
 // Mock EventBus for testing
 class MockEventBus : public EventBus {
 public:
-    MockEventBus() = default;
+    MockEventBus() : next_token_id_(1) {}
     ~MockEventBus() override = default;
 
     // Delete copy and move operations
@@ -54,10 +54,14 @@ private:
     struct Handler {
         SubscriptionToken token;
         std::function<void(const Event&)> handler;
+
+        Handler(SubscriptionToken t, std::function<void(const Event&)> h)
+            : token(t), handler(h) {}
     };
 
     std::vector<Handler> handlers_;
     std::mutex mutex_;
+    uint64_t next_token_id_;
 };
 
 TEST(BitTorrentEventProcessorTest, Construction) {
@@ -213,4 +217,165 @@ TEST(BitTorrentEventProcessorTest, ProcessPeerDiscoveredEvent) {
 
     // Stop
     processor.stop();
+}
+
+TEST(BitTorrentEventProcessorTest, ProcessPeerDiscoveredEventWithoutPeerManager) {
+    // Create event bus
+    MockEventBus event_bus;
+
+    // Create info hash
+    InfoHash info_hash(std::string("0102030405060708090a0b0c0d0e0f1011121314"));
+
+    // Create event processor
+    BitTorrentEventProcessor processor;
+
+    // Start
+    processor.start(event_bus);
+
+    // Create address
+    Address address("127.0.0.1", 6881);
+
+    // Create peer discovered event
+    PeerDiscoveredEvent event(info_hash, address);
+
+    // Process event (should succeed even if there's no peer manager for the info hash)
+    bool success = processor.process_event(event);
+
+    // Check result
+    EXPECT_TRUE(success);
+
+    // Stop
+    processor.stop();
+}
+
+TEST(BitTorrentEventProcessorTest, ProcessMetadataReceivedEvent) {
+    // Create event bus
+    MockEventBus event_bus;
+
+    // Create info hash and peer ID
+    InfoHash info_hash(std::string("0102030405060708090a0b0c0d0e0f1011121314"));
+    std::vector<uint8_t> peer_id(20, 0x01);
+
+    // Create peer wire protocol
+    PeerWireProtocol protocol(info_hash, peer_id);
+
+    // Create metadata exchange
+    auto metadata_exchange = std::make_shared<MetadataExchange>(protocol);
+
+    // Create event processor
+    BitTorrentEventProcessor processor;
+
+    // Start
+    processor.start(event_bus);
+
+    // Add metadata exchange
+    processor.add_metadata_exchange(info_hash, metadata_exchange);
+
+    // Create metadata
+    MetadataInfo metadata;
+
+    // Create metadata received event
+    MetadataReceivedEvent event(info_hash, metadata);
+
+    // Process event
+    bool success = processor.process_event(event);
+
+    // Check result
+    EXPECT_TRUE(success);
+
+    // Stop
+    processor.stop();
+}
+
+TEST(BitTorrentEventProcessorTest, ProcessMetadataReceivedEventWithoutMetadataExchange) {
+    // Create event bus
+    MockEventBus event_bus;
+
+    // Create info hash
+    InfoHash info_hash(std::string("0102030405060708090a0b0c0d0e0f1011121314"));
+
+    // Create event processor
+    BitTorrentEventProcessor processor;
+
+    // Start
+    processor.start(event_bus);
+
+    // Create metadata
+    MetadataInfo metadata;
+
+    // Create metadata received event
+    MetadataReceivedEvent event(info_hash, metadata);
+
+    // Process event (should succeed even if there's no metadata exchange for the info hash)
+    bool success = processor.process_event(event);
+
+    // Check result
+    EXPECT_TRUE(success);
+
+    // Stop
+    processor.stop();
+}
+
+TEST(BitTorrentEventProcessorTest, ProcessEventWhenNotRunning) {
+    // Create info hash and address
+    InfoHash info_hash(std::string("0102030405060708090a0b0c0d0e0f1011121314"));
+    Address address("127.0.0.1", 6881);
+
+    // Create peer discovered event
+    PeerDiscoveredEvent event(info_hash, address);
+
+    // Create event processor
+    BitTorrentEventProcessor processor;
+
+    // Process event (should succeed even if the processor is not running)
+    bool success = processor.process_event(event);
+
+    // Check result
+    EXPECT_TRUE(success);
+}
+
+TEST(BitTorrentEventProcessorTest, StartTwice) {
+    // Create event bus
+    MockEventBus event_bus;
+
+    // Create event processor
+    BitTorrentEventProcessor processor;
+
+    // Start
+    processor.start(event_bus);
+
+    // Check if running
+    EXPECT_TRUE(processor.is_running());
+
+    // Start again (should be a no-op)
+    processor.start(event_bus);
+
+    // Check if still running
+    EXPECT_TRUE(processor.is_running());
+
+    // Stop
+    processor.stop();
+}
+
+TEST(BitTorrentEventProcessorTest, StopTwice) {
+    // Create event bus
+    MockEventBus event_bus;
+
+    // Create event processor
+    BitTorrentEventProcessor processor;
+
+    // Start
+    processor.start(event_bus);
+
+    // Stop
+    processor.stop();
+
+    // Check if stopped
+    EXPECT_FALSE(processor.is_running());
+
+    // Stop again (should be a no-op)
+    processor.stop();
+
+    // Check if still stopped
+    EXPECT_FALSE(processor.is_running());
 }

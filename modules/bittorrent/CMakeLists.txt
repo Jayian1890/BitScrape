@@ -6,6 +6,7 @@ add_library(bitscrape-bittorrent
     src/metadata_exchange.cpp
     src/peer_manager.cpp
     src/bittorrent_event_processor.cpp
+    src/extended_message.cpp
 )
 
 # If files don't exist yet, create empty files
@@ -15,6 +16,7 @@ file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/peer_wire_protocol.cpp)
 file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/metadata_exchange.cpp)
 file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/peer_manager.cpp)
 file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/bittorrent_event_processor.cpp)
+file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/extended_message.cpp)
 
 # Set include directories
 target_include_directories(bitscrape-bittorrent
@@ -87,4 +89,7 @@ if(BUILD_TESTS)
 
     # Add to protocol tests group
     add_dependencies(protocol_tests bittorrent_test)
+
+    # Add test to CTest
+    add_test(NAME bittorrent_test COMMAND bittorrent_test)
 endif()

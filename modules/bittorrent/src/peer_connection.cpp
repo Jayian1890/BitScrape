@@ -8,7 +8,7 @@ PeerConnection::PeerConnection(network::Address address,
                              types::InfoHash info_hash,
                              std::vector<uint8_t> peer_id)
     : address_(std::move(address)),
-      info_hash_(std::move(info_hash)),
+      info_hash_(info_hash),
       peer_id_(std::move(peer_id)),
       socket_(std::make_unique<network::TCPSocket>()),
       state_(State::DISCONNECTED),
@@ -123,8 +123,40 @@ std::shared_ptr<PeerMessage> PeerConnection::receive_message() {
         return nullptr;
     }
 
-    // TODO: Implement message receiving
-    return nullptr;
+    // First read the message length (4 bytes)
+    uint32_t length = 0;
+    if (socket_->receive(reinterpret_cast<uint8_t*>(&length), sizeof(length)) != sizeof(length)) {
+        return nullptr;
+    }
+
+    // Convert from network byte order to host byte order
+    length = ntohl(length);
+
+    // If length is 0, it's a keep-alive message
+    if (length == 0) {
+        return PeerMessageFactory::create_keep_alive();
+    }
+
+    // Read the message type (1 byte)
+    uint8_t type = 0;
+    if (socket_->receive(&type, sizeof(type)) != sizeof(type)) {
+        return nullptr;
+    }
+
+    // Read the message payload
+    std::vector<uint8_t> payload(length - 1);  // -1 for the type byte
+    if (!payload.empty()) {
+        if (socket_->receive(payload.data(), payload.size()) != static_cast<int>(payload.size())) {
+            return nullptr;
+        }
+    }
+
+    // Create the message based on the type
+    std::vector<uint8_t> message_data;
+    message_data.push_back(type);
+    message_data.insert(message_data.end(), payload.begin(), payload.end());
+
+    return PeerMessageFactory::create_from_data(message_data);
 }
 
 std::future<std::shared_ptr<PeerMessage>> PeerConnection::receive_message_async() {
@@ -169,6 +201,18 @@ bool PeerConnection::am_interested() const {
     return am_interested_;
 }
 
+int PeerConnection::send_raw_data(const uint8_t* data, size_t size) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // Check if connected
+    if (state_ != State::CONNECTED) {
+        return -1;
+    }
+
+    // Send data
+    return socket_->send(data, size);
+}
+
 bool PeerConnection::handshake() {
     // Create handshake message
     // Convert InfoHash bytes to vector
@@ -189,13 +233,84 @@ bool PeerConnection::handshake() {
         return false;
     }
 
-    // TODO: Parse handshake response and validate
+    // Parse handshake response
+    // Check protocol string length
+    if (response[0] != 19) {
+        return false;
+    }
+
+    // Check protocol string
+    std::string protocol(response.begin() + 1, response.begin() + 20);
+    if (protocol != "BitTorrent protocol") {
+        return false;
+    }
+
+    // Extract reserved bytes (for extensions)
+    std::vector<uint8_t> reserved(response.begin() + 20, response.begin() + 28);
+
+    // Extract info hash
+    std::vector<uint8_t> received_info_hash(response.begin() + 28, response.begin() + 48);
+    std::vector<uint8_t> expected_info_hash(info_hash_.bytes().begin(), info_hash_.bytes().end());
+    if (received_info_hash != expected_info_hash) {
+        return false;
+    }
+
+    // Extract peer ID
+    remote_peer_id_.assign(response.begin() + 48, response.begin() + 68);
 
     return true;
 }
 
-void PeerConnection::process_message(const PeerMessage& /* message */) {
-    // TODO: Implement message processing
+void PeerConnection::process_message(const PeerMessage& message) {
+    switch (message.type()) {
+        case PeerMessageType::CHOKE:
+            am_choked_ = true;
+            break;
+
+        case PeerMessageType::UNCHOKE:
+            am_choked_ = false;
+            break;
+
+        case PeerMessageType::INTERESTED:
+            peer_interested_ = true;
+            break;
+
+        case PeerMessageType::NOT_INTERESTED:
+            peer_interested_ = false;
+            break;
+
+        case PeerMessageType::HAVE:
+            // Handle have message (update bitfield)
+            break;
+
+        case PeerMessageType::BITFIELD:
+            // Handle bitfield message (store peer's bitfield)
+            break;
+
+        case PeerMessageType::REQUEST:
+            // Handle request message (for piece data)
+            break;
+
+        case PeerMessageType::PIECE:
+            // Handle piece message (received piece data)
+            break;
+
+        case PeerMessageType::CANCEL:
+            // Handle cancel message (cancel pending request)
+            break;
+
+        case PeerMessageType::PORT:
+            // Handle port message (DHT port)
+            break;
+
+        case PeerMessageType::EXTENDED:
+            // Handle extended message (BEP 10)
+            break;
+
+        default:
+            // Unknown message type
+            break;
+    }
 }
 
 } // namespace bitscrape::bittorrent

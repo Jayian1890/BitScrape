@@ -247,15 +247,17 @@ private:
      * @brief Handle a peer discovered event
      *
      * @param event Peer discovered event
+     * @return True if the event was handled, false otherwise
      */
-    void handle_peer_discovered(const PeerDiscoveredEvent& event);
+    bool handle_peer_discovered(const PeerDiscoveredEvent& event);
 
     /**
      * @brief Handle a metadata received event
      *
      * @param event Metadata received event
+     * @return True if the event was handled, false otherwise
      */
-    void handle_metadata_received(const MetadataReceivedEvent& event);
+    bool handle_metadata_received(const MetadataReceivedEvent& event);
 
     std::unordered_map<std::string, std::shared_ptr<PeerManager>> peer_managers_; ///< Peer managers by info hash
     mutable std::mutex peer_managers_mutex_; ///< Mutex for peer managers map

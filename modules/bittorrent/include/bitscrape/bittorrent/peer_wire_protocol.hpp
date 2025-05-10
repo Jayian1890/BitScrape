@@ -84,6 +84,15 @@ public:
     std::future<bool> send_message_async(const network::Address& address, const PeerMessage& message);
 
     /**
+     * @brief Send raw data to a peer
+     *
+     * @param address Peer address
+     * @param data Raw data to send
+     * @return True if the data was sent successfully, false otherwise
+     */
+    bool send_raw_data(const network::Address& address, const std::vector<uint8_t>& data);
+
+    /**
      * @brief Register a message handler
      *
      * @param type Message type to handle

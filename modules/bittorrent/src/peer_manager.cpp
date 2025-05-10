@@ -196,7 +196,23 @@ void PeerManager::connect_to_peers() {
 }
 
 void PeerManager::manage_connections() {
-    // TODO: Implement connection management
+    // Get connected peers
+    auto connected = protocol_->connected_peers();
+
+    // Check if we have too many connections
+    if (connected.size() <= static_cast<size_t>(max_connections_)) {
+        return;
+    }
+
+    // Sort peers by quality (for now, just use a random order)
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::shuffle(connected.begin(), connected.end(), gen);
+
+    // Disconnect excess peers
+    for (auto i = static_cast<size_t>(max_connections_); i < connected.size(); ++i) {
+        protocol_->disconnect_from_peer(connected[i]);
+    }
 }
 
 } // namespace bitscrape::bittorrent

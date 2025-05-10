@@ -162,6 +162,15 @@ public:
      */
     bool am_interested() const;
 
+    /**
+     * @brief Send raw data to the peer
+     *
+     * @param data The data to send
+     * @param size The size of the data
+     * @return The number of bytes sent, or -1 on error
+     */
+    int send_raw_data(const uint8_t* data, size_t size);
+
 private:
     /**
      * @brief Perform the BitTorrent handshake

@@ -68,6 +68,15 @@ if(BUILD_TESTS)
         tests/unit/tracker_scrape_test.cpp
     )
 
+    # If test files don't exist yet, create empty files
+    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/http_tracker_test.cpp)
+    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/udp_tracker_test.cpp)
+    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_manager_test.cpp)
+    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_event_processor_test.cpp)
+    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_event_test.cpp)
+    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_announce_test.cpp)
+    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_scrape_test.cpp)
+
     # Link dependencies
     target_link_libraries(tracker_test
         PRIVATE

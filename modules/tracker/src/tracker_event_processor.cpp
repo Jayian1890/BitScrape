@@ -39,7 +39,7 @@ void TrackerEventProcessor::stop() {
     }
 
     // Unsubscribe from events
-    if (event_bus_) {
+    if (event_bus_ != nullptr) {
         event_bus_->unsubscribe(token_);
     }
 
@@ -73,7 +73,7 @@ bool TrackerEventProcessor::add_tracker(const types::InfoHash& info_hash, const 
 bool TrackerEventProcessor::remove_tracker(const types::InfoHash& info_hash, const std::string& tracker_url) {
     std::lock_guard<std::mutex> lock(tracker_managers_mutex_);
 
-    auto it = tracker_managers_.find(info_hash.to_string());
+    auto it = tracker_managers_.find(info_hash.to_hex());
     if (it == tracker_managers_.end()) {
         return false;
     }
@@ -84,7 +84,7 @@ bool TrackerEventProcessor::remove_tracker(const types::InfoHash& info_hash, con
 std::vector<std::string> TrackerEventProcessor::tracker_urls(const types::InfoHash& info_hash) const {
     std::lock_guard<std::mutex> lock(tracker_managers_mutex_);
 
-    auto it = tracker_managers_.find(info_hash.to_string());
+    auto it = tracker_managers_.find(info_hash.to_hex());
     if (it == tracker_managers_.end()) {
         return {};
     }
@@ -124,24 +124,30 @@ bool TrackerEventProcessor::process_event(const types::Event& event) {
         return false;
     }
 
-    // Process the event based on its subtype
-    uint32_t subtype = event.subtype();
+    // Process the event based on its custom type ID
+    uint32_t custom_type_id = event.custom_type_id();
 
-    if (subtype == static_cast<uint32_t>(TrackerEventType::ANNOUNCE_REQUEST)) {
-        const auto& announce_event = static_cast<const AnnounceRequestEvent&>(event);
-        process_announce_request(announce_event);
-        return true;
-    } else if (subtype == static_cast<uint32_t>(TrackerEventType::SCRAPE_REQUEST)) {
-        const auto& scrape_event = static_cast<const ScrapeRequestEvent&>(event);
-        process_scrape_request(scrape_event);
-        return true;
+    if (custom_type_id == static_cast<uint32_t>(TrackerEventType::ANNOUNCE_REQUEST)) {
+        const auto* announce_event = dynamic_cast<const AnnounceRequestEvent*>(&event);
+        if (announce_event != nullptr) {
+            process_announce_request(*announce_event);
+            return true;
+        }
+    }
+
+    if (custom_type_id == static_cast<uint32_t>(TrackerEventType::SCRAPE_REQUEST)) {
+        const auto* scrape_event = dynamic_cast<const ScrapeRequestEvent*>(&event);
+        if (scrape_event != nullptr) {
+            process_scrape_request(*scrape_event);
+            return true;
+        }
     }
 
     return false;
 }
 
 void TrackerEventProcessor::process_announce_request(const AnnounceRequestEvent& event) {
-    if (!event_bus_) {
+    if (event_bus_ == nullptr) {
         return;
     }
 
@@ -149,51 +155,20 @@ void TrackerEventProcessor::process_announce_request(const AnnounceRequestEvent&
     auto manager = get_or_create_tracker_manager(event.info_hash());
 
     // Send the announce request asynchronously
-    manager->announce_async(
+    auto future = manager->announce_async(
         event.peer_id(),
         event.port(),
         event.uploaded(),
         event.downloaded(),
         event.left(),
         event.event()
-    ).then([this, info_hash = event.info_hash()](std::map<std::string, AnnounceResponse> responses) {
-        // Process each response
-        for (const auto& [url, response] : responses) {
-            if (response.has_error()) {
-                // Send error event
-                event_bus_->publish(TrackerErrorEvent(
-                    "Tracker error from " + url + ": " + response.error_message()
-                ));
-            } else {
-                // Send announce response event
-                event_bus_->publish(AnnounceResponseEvent(
-                    info_hash,
-                    response.interval(),
-                    response.min_interval(),
-                    response.tracker_id(),
-                    response.complete(),
-                    response.incomplete(),
-                    response.peers()
-                ));
-            }
-        }
-    });
-}
+    );
 
-void TrackerEventProcessor::process_scrape_request(const ScrapeRequestEvent& event) {
-    if (!event_bus_) {
-        return;
-    }
-
-    // Process each info hash
-    for (const auto& info_hash : event.info_hashes()) {
-        // Get the tracker manager for this info hash
-        auto manager = get_or_create_tracker_manager(info_hash);
-
-        // Send the scrape request asynchronously
-        manager->scrape_async().then([this, info_hash](std::map<std::string, ScrapeResponse> responses) {
-            // Combine all responses
-            std::map<types::InfoHash, ScrapeResponseEvent::ScrapeData> files;
+    // Process the future in a separate thread
+    std::thread([this, future = std::move(future), info_hash = event.info_hash()]() mutable {
+        try {
+            // Wait for the future to complete
+            auto responses = future.get();
 
             // Process each response
             for (const auto& [url, response] : responses) {
@@ -203,32 +178,89 @@ void TrackerEventProcessor::process_scrape_request(const ScrapeRequestEvent& eve
                         "Tracker error from " + url + ": " + response.error_message()
                     ));
                 } else {
-                    // Add files to the combined map
-                    for (const auto& [hash, data] : response.files()) {
-                        // If the hash is already in the map, use the response with the most seeders
-                        auto it = files.find(hash);
-                        if (it == files.end() || data.complete > it->second.complete) {
-                            files[hash] = {
-                                data.complete,
-                                data.downloaded,
-                                data.incomplete,
-                                data.name
-                            };
+                    // Send announce response event
+                    event_bus_->publish(AnnounceResponseEvent(
+                        info_hash,
+                        response.interval(),
+                        response.min_interval(),
+                        response.tracker_id(),
+                        response.complete(),
+                        response.incomplete(),
+                        response.peers()
+                    ));
+                }
+            }
+        } catch (const std::exception& e) {
+            // Handle any exceptions
+            event_bus_->publish(TrackerErrorEvent(
+                "Exception processing announce response: " + std::string(e.what())
+            ));
+        }
+    }).detach();
+}
+
+void TrackerEventProcessor::process_scrape_request(const ScrapeRequestEvent& event) {
+    if (event_bus_ == nullptr) {
+        return;
+    }
+
+    // Process each info hash
+    for (const auto& info_hash : event.info_hashes()) {
+        // Get the tracker manager for this info hash
+        auto manager = get_or_create_tracker_manager(info_hash);
+
+        // Send the scrape request asynchronously
+        auto future = manager->scrape_async();
+
+        // Process the future in a separate thread
+        std::thread([this, future = std::move(future)]() mutable {
+            try {
+                // Wait for the future to complete
+                auto responses = future.get();
+
+                // Combine all responses
+                std::map<types::InfoHash, ScrapeResponseEvent::ScrapeData> files;
+
+                // Process each response
+                for (const auto& [url, response] : responses) {
+                    if (response.has_error()) {
+                        // Send error event
+                        event_bus_->publish(TrackerErrorEvent(
+                            "Tracker error from " + url + ": " + response.error_message()
+                        ));
+                    } else {
+                        // Add files to the combined map
+                        for (const auto& [hash, data] : response.files()) {
+                            // If the hash is already in the map, use the response with the most seeders
+                            auto it = files.find(hash);
+                            if (it == files.end() || data.complete > it->second.complete) {
+                                files[hash] = ScrapeResponseEvent::ScrapeData{
+                                    .complete = data.complete,
+                                    .downloaded = data.downloaded,
+                                    .incomplete = data.incomplete,
+                                    .name = data.name
+                                };
+                            }
                         }
                     }
                 }
-            }
 
-            // Send scrape response event
-            event_bus_->publish(ScrapeResponseEvent(files));
-        });
+                // Send scrape response event
+                event_bus_->publish(ScrapeResponseEvent(files));
+            } catch (const std::exception& e) {
+                // Handle any exceptions
+                event_bus_->publish(TrackerErrorEvent(
+                    "Exception processing scrape response: " + std::string(e.what())
+                ));
+            }
+        }).detach();
     }
 }
 
 std::shared_ptr<TrackerManager> TrackerEventProcessor::get_or_create_tracker_manager(const types::InfoHash& info_hash) {
     std::lock_guard<std::mutex> lock(tracker_managers_mutex_);
 
-    std::string hash_str = info_hash.to_string();
+    std::string hash_str = info_hash.to_hex();
 
     // Check if the manager already exists
     auto it = tracker_managers_.find(hash_str);

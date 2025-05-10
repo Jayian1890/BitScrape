@@ -45,6 +45,20 @@ endif()
 # Find required dependencies
 find_package(Threads REQUIRED)
 
+# Find SQLite3
+include(FetchContent)
+FetchContent_Declare(
+    sqlite3
+    GIT_REPOSITORY https://github.com/sqlite/sqlite.git
+    GIT_TAG version-3.42.0
+)
+FetchContent_MakeAvailable(sqlite3)
+
+# Create SQLite3 interface library
+add_library(SQLite3 INTERFACE)
+target_include_directories(SQLite3 INTERFACE ${sqlite3_SOURCE_DIR})
+add_library(SQLite::SQLite3 ALIAS SQLite3)
+
 # Testing setup
 if(BUILD_TESTS)
     # Find Google Test
@@ -83,6 +97,8 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/types/include
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/event/include
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/beacon/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/modules/core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/modules/storage/include
 )
 
 # Add modules
@@ -93,6 +109,8 @@ add_subdirectory(modules/bencode)
 add_subdirectory(modules/network)
 add_subdirectory(modules/bittorrent)
 add_subdirectory(modules/tracker)
+add_subdirectory(modules/core)
+add_subdirectory(modules/storage)
 
 # Add applications
 add_subdirectory(apps)

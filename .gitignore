@@ -8,11 +8,29 @@ build/
 .cache/
 
 # IDE files
+# VS Code
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# CLion
+.idea/*
+!.idea/codeStyles/
+!.idea/fileTemplates/
+!.idea/runConfigurations/
+!.idea/inspectionProfiles/
+!.idea/scopes/
+!.idea/dictionaries/
+!.idea/copyright/
+!.idea/encodings.xml
+!.idea/misc.xml
+!.idea/modules.xml
+!.idea/vcs.xml
+
+# CLion build directories
+cmake-build-*/
 
 # macOS files
 .DS_Store

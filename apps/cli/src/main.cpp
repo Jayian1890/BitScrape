@@ -1,45 +1,156 @@
-#include "bitscrape/types/beacon_types.hpp"
-#include "bitscrape/event/event_bus.hpp"
-#include "bitscrape/beacon/beacon.hpp"
-#include "bitscrape/beacon/console_sink.hpp"
-#include "bitscrape/beacon/file_sink.hpp"
-#include "bitscrape/beacon/event_sink.hpp"
-#include "bitscrape/beacon/beacon_adapter.hpp"
+#include <bitscrape/types/beacon_types.hpp>
+#include <bitscrape/core/controller.hpp>
+#include <bitscrape/core/configuration.hpp>
+#include <bitscrape/core/persistence.hpp>
 
+#include <iostream>
+#include <string>
+#include <thread>
+#include <chrono>
+#include <csignal>
+#include <atomic>
 
-int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[])
+// Global variables for signal handling
+std::atomic<bool> running = true;
+std::shared_ptr<bitscrape::core::Controller> controller;
+
+// Signal handler
+void signal_handler(int signal) {
+    if (signal == SIGINT || signal == SIGTERM) {
+        std::cout << "\nReceived signal " << signal << ", shutting down..." << std::endl;
+        running = false;
+
+        if (controller) {
+            controller->stop();
+        }
+    }
+}
+
+void print_usage(const char* program_name) {
+    std::cout << "Usage: " << program_name << " [options]" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << "  --help, -h              Show this help message" << std::endl;
+    std::cout << "  --config, -c <file>     Specify configuration file" << std::endl;
+    std::cout << "  --database, -d <file>   Specify database file" << std::endl;
+    std::cout << "  --crawl, -C             Start crawling immediately" << std::endl;
+    std::cout << "  --version, -v           Show version information" << std::endl;
+}
+
+void print_version() {
+    std::cout << "BitScrape CLI version 0.1.0" << std::endl;
+    std::cout << "Copyright (c) 2025" << std::endl;
+    std::cout << "Licensed under the MIT License" << std::endl;
+}
+
+int main(int argc, char *argv[])
 {
     // Use enum for cleaner code
     using enum bitscrape::types::BeaconCategory;
     using enum bitscrape::types::BeaconSeverity;
 
-    // Create an event bus
-    auto event_bus = bitscrape::event::create_event_bus();
+    // Parse command line arguments
+    std::string config_path;
+    std::string db_path;
+    bool start_crawling = false;
 
-    // Create a beacon
-    auto beacon = bitscrape::beacon::create_beacon();
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
 
-    // Add a console sink with colors
-    beacon->add_sink(bitscrape::beacon::create_console_sink(true));
+        if (arg == "--help" || arg == "-h") {
+            print_usage(argv[0]);
+            return 0;
+        } else if (arg == "--version" || arg == "-v") {
+            print_version();
+            return 0;
+        } else if (arg == "--crawl" || arg == "-C") {
+            start_crawling = true;
+        } else if ((arg == "--config" || arg == "-c") && i + 1 < argc) {
+            config_path = argv[++i];
+        } else if ((arg == "--database" || arg == "-d") && i + 1 < argc) {
+            db_path = argv[++i];
+        } else {
+            std::cerr << "Unknown option: " << arg << std::endl;
+            print_usage(argv[0]);
+            return 1;
+        }
+    }
 
-    // Add a file sink
-    beacon->add_sink(bitscrape::beacon::create_file_sink("bitscrape.log"));
+    // Set up signal handling
+    std::signal(SIGINT, signal_handler);
+    std::signal(SIGTERM, signal_handler);
 
-    // Add an event sink
-    beacon->add_sink(bitscrape::beacon::create_event_sink(*event_bus));
+    // Create controller
+    controller = std::make_shared<bitscrape::core::Controller>(config_path);
 
-    // Create a beacon adapter
-    auto beacon_adapter = bitscrape::beacon::create_beacon_adapter(*beacon);
+    // Get beacon for logging
+    auto beacon = controller->get_beacon();
 
-    // Connect the adapter to the event bus
-    beacon_adapter->connect(*event_bus);
+    // Initialize controller
+    beacon->info("Initializing BitScrape...", SYSTEM);
+    if (!controller->initialize()) {
+        beacon->critical("Failed to initialize BitScrape", SYSTEM);
+        return 1;
+    }
 
-    // Log some messages
+    // Set database path if specified
+    if (!db_path.empty()) {
+        controller->get_configuration()->set_string("database.path", db_path);
+        controller->get_configuration()->save();
+    }
+
+    // Start controller
+    beacon->info("Starting BitScrape...", SYSTEM);
+    if (!controller->start()) {
+        beacon->critical("Failed to start BitScrape", SYSTEM);
+        return 1;
+    }
+
+    // Start crawling if requested
+    if (start_crawling) {
+        beacon->info("Starting DHT crawling...", SYSTEM);
+        if (!controller->start_crawling()) {
+            beacon->error("Failed to start crawling", SYSTEM);
+        }
+    }
+
+    // Main loop
     beacon->info("BitScrape CLI started", SYSTEM);
     beacon->info("Version: 0.1.0", SYSTEM);
+    beacon->info("Press Ctrl+C to exit", SYSTEM);
 
-    // Log shutdown message
-    beacon->info("BitScrape CLI shutting down", SYSTEM);
+    while (running) {
+        // Print statistics periodically
+        auto stats = controller->get_statistics();
+
+        std::cout << "\nCurrent Statistics:" << std::endl;
+        std::cout << "-------------------" << std::endl;
+
+        // Controller statistics
+        std::cout << "Controller running: " << stats["controller.running"] << std::endl;
+        std::cout << "Crawling active: " << stats["controller.crawling"] << std::endl;
+
+        // Persistence statistics
+        if (stats.find("persistence.node_count") != stats.end()) {
+            std::cout << "Nodes discovered: " << stats["persistence.node_count"] << std::endl;
+        }
+
+        if (stats.find("persistence.infohash_count") != stats.end()) {
+            std::cout << "Infohashes discovered: " << stats["persistence.infohash_count"] << std::endl;
+        }
+
+        if (stats.find("persistence.metadata_count") != stats.end()) {
+            std::cout << "Metadata downloaded: " << stats["persistence.metadata_count"] << std::endl;
+        }
+
+        // Sleep for a while
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+    }
+
+    // Stop controller if not already stopped by signal handler
+    if (running) {
+        beacon->info("BitScrape CLI shutting down", SYSTEM);
+        controller->stop();
+    }
 
     return 0;
 }

@@ -40,7 +40,7 @@ TEST(TorrentInfoTest, ConstructionFromInfoHashAndMetadata) {
   EXPECT_EQ(info.info_hash(), hash);
   EXPECT_EQ(info.metadata().name(), "test");
   EXPECT_EQ(info.metadata().piece_length(), 16384);
-  EXPECT_EQ(info.metadata().pieces().size(), 1);
+  EXPECT_EQ(info.metadata().pieces().size(), 1UL);
   EXPECT_EQ(info.metadata().total_size(), 1000000);
 }
 
@@ -63,7 +63,7 @@ TEST(TorrentInfoTest, SetMetadata) {
 
   EXPECT_EQ(info.metadata().name(), "test");
   EXPECT_EQ(info.metadata().piece_length(), 16384);
-  EXPECT_EQ(info.metadata().pieces().size(), 1);
+  EXPECT_EQ(info.metadata().pieces().size(), 1UL);
   EXPECT_EQ(info.metadata().total_size(), 1000000);
 }
 

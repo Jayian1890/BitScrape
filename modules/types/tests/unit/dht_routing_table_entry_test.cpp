@@ -10,7 +10,7 @@ TEST(DHTRoutingTableEntryTest, Construction) {
   EXPECT_EQ(entry.prefix_length(), 0);
   EXPECT_TRUE(entry.is_empty());
   EXPECT_FALSE(entry.is_full());
-  EXPECT_EQ(entry.size(), 0);
+  EXPECT_EQ(entry.size(), 0UL);
 }
 
 TEST(DHTRoutingTableEntryTest, AddNode) {
@@ -26,7 +26,7 @@ TEST(DHTRoutingTableEntryTest, AddNode) {
 
   EXPECT_TRUE(entry.add_node(node1));
 
-  EXPECT_EQ(entry.size(), 1);
+  EXPECT_EQ(entry.size(), 1UL);
   EXPECT_FALSE(entry.is_empty());
   EXPECT_FALSE(entry.is_full());
 
@@ -53,12 +53,12 @@ TEST(DHTRoutingTableEntryTest, RemoveNode) {
   EXPECT_TRUE(entry.add_node(node1));
   EXPECT_TRUE(entry.add_node(node2));
 
-  EXPECT_EQ(entry.size(), 2);
+  EXPECT_EQ(entry.size(), 2UL);
 
   // Removing a node that exists should succeed
   EXPECT_TRUE(entry.remove_node(node1));
 
-  EXPECT_EQ(entry.size(), 1);
+  EXPECT_EQ(entry.size(), 1UL);
 
   // Removing a node that doesn't exist should fail
   EXPECT_FALSE(entry.remove_node(node1));

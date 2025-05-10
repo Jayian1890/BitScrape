@@ -3,7 +3,6 @@
 #include <vector>
 #include <mutex>
 #include <future>
-#include <source_location>
 
 #include "bitscrape/types/beacon_types.hpp"
 

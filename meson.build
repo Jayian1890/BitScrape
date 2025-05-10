@@ -17,7 +17,7 @@ add_project_arguments(
             '-Wno-unused-parameter',
             '-Wno-unused-variable',
             '-Wno-missing-field-initializers',
-            '-D_LIBCPP_HARDENING_MODE=1',
+            '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST',
         ],
     ),
     language: 'cpp',

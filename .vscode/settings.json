@@ -147,7 +147,7 @@
     "--completion-style=detailed",
     "--header-insertion=iwyu",
     "--suggest-missing-includes",
-    "--compile-commands-dir=${workspaceFolder}/builddir"
+    "--compile-commands-dir=./builddir"
   ],
 
   // SonarLint Settings

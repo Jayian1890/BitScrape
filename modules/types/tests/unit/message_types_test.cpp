@@ -67,7 +67,7 @@ TEST(MessageTest, Serialize) {
 
   std::vector<uint8_t> data = message.serialize();
 
-  EXPECT_EQ(data.size(), 4);
+  EXPECT_EQ(data.size(), 4UL);
   EXPECT_EQ(data[0], 't');
   EXPECT_EQ(data[1], 'e');
   EXPECT_EQ(data[2], 's');
@@ -80,7 +80,7 @@ TEST(MessageTest, SerializeAsync) {
   auto future = message.serialize_async();
   std::vector<uint8_t> data = future.get();
 
-  EXPECT_EQ(data.size(), 4);
+  EXPECT_EQ(data.size(), 4UL);
   EXPECT_EQ(data[0], 't');
   EXPECT_EQ(data[1], 'e');
   EXPECT_EQ(data[2], 's');

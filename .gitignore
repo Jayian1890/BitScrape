@@ -64,3 +64,4 @@ cmake/
 
 # Memory bank
 .memory-bank/
+bitscrape.log

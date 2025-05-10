@@ -1,4 +1,3 @@
-#include "bitscrape/types/node_id.hpp"
 #include "bitscrape/types/beacon_types.hpp"
 #include "bitscrape/event/event_bus.hpp"
 #include "bitscrape/beacon/beacon.hpp"

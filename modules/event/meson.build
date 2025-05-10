@@ -20,7 +20,7 @@ event_lib = library(
     'bitscrape-event',
     src_files,
     include_directories: inc_dir,
-    dependencies: [types_dep],
+    dependencies: [types_dep, thread_dep],
     install: true,
 )
 
@@ -28,8 +28,11 @@ event_lib = library(
 event_dep = declare_dependency(
     include_directories: inc_dir,
     link_with: event_lib,
-    dependencies: [types_dep],
+    dependencies: [types_dep, thread_dep],
 )
+
+# Make the library available to other modules
+meson.override_dependency('bitscrape-event', event_dep)
 
 # Tests
 if get_option('build_tests')

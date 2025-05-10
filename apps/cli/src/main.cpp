@@ -1,5 +1,6 @@
 #include "bitscrape/types/node_id.hpp"
 #include <iostream>
+#include <string>
 
 int main(int argc, char *argv[])
 {

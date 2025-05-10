@@ -27,7 +27,11 @@ add_project_arguments(
 thread_dep = dependency('threads')
 
 # Common include directories
-inc_dirs = include_directories('.')
+inc_dirs = include_directories(
+    '.',
+    'modules/types/include',
+    'modules/event/include'
+)
 
 # Enable AddressSanitizer if requested
 if get_option('enable_asan')
@@ -37,6 +41,7 @@ endif
 
 # Build modules
 subdir('modules/types')
+subdir('modules/event')
 
 # Build applications
 subdir('apps')

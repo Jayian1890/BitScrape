@@ -5,7 +5,7 @@
             "name": "CLI Debug",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/builddir/apps/cli/bitscrape_cli",
+            "program": "${workspaceFolder}/builddir/apps/bitscrape_cli",
             "args": [],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "meson: build cli",
@@ -24,10 +24,21 @@
             "terminal": "integrated"
         },
         {
-            "name": "Test Debug",
+            "name": "Module Test Debug",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/builddir/tests/${input:testName}",
+            "program": "${workspaceFolder}/builddir/modules/${input:moduleDir}/${input:moduleDir}_test",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "meson: build",
+            "internalConsoleOptions": "neverOpen",
+            "terminal": "integrated"
+        },
+        {
+            "name": "Run Specific Test",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/builddir/${input:testPath}",
             "args": [],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "meson: build",
@@ -37,10 +48,31 @@
     ],
     "inputs": [
         {
+            "id": "moduleDir",
+            "type": "pickString",
+            "description": "Select the module",
+            "options": [
+                "bencode",
+                "bittorrent",
+                "core",
+                "dht",
+                "event",
+                "network",
+                "storage",
+                "types"
+            ]
+        },
+        {
             "id": "testName",
             "type": "promptString",
-            "description": "Name of the test executable to debug",
+            "description": "Name of the test executable",
             "default": "test_executable"
+        },
+        {
+            "id": "testPath",
+            "type": "promptString",
+            "description": "Path to test executable (relative to builddir)",
+            "default": "modules/types/tests/types_test"
         }
     ]
 }

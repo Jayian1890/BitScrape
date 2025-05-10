@@ -61,6 +61,26 @@ public:
   Address &operator=(Address &&) noexcept = default;
 
   /**
+   * @brief Equality operator
+   *
+   * @param other The address to compare with
+   * @return true if the addresses are equal, false otherwise
+   */
+  bool operator==(const Address& other) const {
+    return address_ == other.address_ && port_ == other.port_ && family_ == other.family_;
+  }
+
+  /**
+   * @brief Inequality operator
+   *
+   * @param other The address to compare with
+   * @return true if the addresses are not equal, false otherwise
+   */
+  bool operator!=(const Address& other) const {
+    return !(*this == other);
+  }
+
+  /**
    * @brief Get the IP address as a string
    *
    * @return The IP address string

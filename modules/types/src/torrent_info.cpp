@@ -24,20 +24,19 @@ bool TorrentInfo::is_valid() const {
 bool TorrentInfo::parse(const std::vector<uint8_t>& data) {
     // Store the raw data
     raw_data_ = data;
-    
-    // In a real implementation, we would parse the bencode data here
+
+    // TODO: Implement proper bencode data parsing for torrent info
     // For now, we'll just set some dummy values for testing
-    
+
     // Parse the metadata
     metadata_.parse(data);
-    
+
     // Set the info hash
     info_hash_ = metadata_.info_hash();
-    
-    // This is a simplified implementation
-    // In a real implementation, we would parse the bencode data and extract
-    // the announce URL, announce list, creation date, comment, created by, etc.
-    
+
+    // TODO: Implement full torrent metadata parsing
+    // Need to extract announce URL, announce list, creation date, comment, created by, etc.
+
     // For now, return true to indicate successful parsing
     return true;
 }
@@ -50,22 +49,22 @@ std::future<bool> TorrentInfo::parse_async(const std::vector<uint8_t>& data) {
 
 std::string TorrentInfo::to_string() const {
     std::ostringstream oss;
-    
+
     oss << "TorrentInfo[info_hash=" << info_hash_.to_hex() << ", ";
     oss << "name=" << metadata_.name() << ", ";
     oss << "announce=" << announce_ << ", ";
     oss << "announce_list=" << announce_list_.size() << ", ";
-    
+
     if (creation_date_) {
         auto time = std::chrono::system_clock::to_time_t(*creation_date_);
         oss << "creation_date=" << std::ctime(&time) << ", ";
     } else {
         oss << "creation_date=none, ";
     }
-    
+
     oss << "comment=" << comment_ << ", ";
     oss << "created_by=" << created_by_ << "]";
-    
+
     return oss.str();
 }
 

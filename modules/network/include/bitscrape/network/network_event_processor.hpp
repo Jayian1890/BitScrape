@@ -8,11 +8,9 @@
 #include "bitscrape/network/udp_socket.hpp"
 #include "bitscrape/types/event_types.hpp"
 
-#include <cstdint>
 #include <future>
 #include <memory>
 #include <string>
-#include <vector>
 
 namespace bitscrape::network {
 

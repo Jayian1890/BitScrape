@@ -1,7 +1,6 @@
 #include "bitscrape/network/network_event_processor.hpp"
 
 #include "bitscrape/event/event_bus.hpp"
-#include "bitscrape/event/event_processor.hpp"
 #include "bitscrape/types/event_types.hpp"
 
 #include <atomic>
@@ -151,8 +150,7 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
     int bytes_sent =
         udp_socket_->send_to(send_event.buffer(), send_event.address());
 
-    // Publish result event
-    // In a real implementation, we would publish a UDPSendResultEvent
+    // TODO: Publish UDPSendResultEvent with the result of the send operation
 
     return true;
   }
@@ -165,8 +163,7 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
     int bytes_received = udp_socket_->receive_from(buffer, address);
 
     if (bytes_received > 0) {
-      // Publish receive event
-      event::EventBus::instance().publish(UDPReceiveEvent(buffer, address));
+      // TODO: Publish UDPReceiveEvent with the received data
     }
 
     return true;
@@ -177,8 +174,7 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
         static_cast<const TCPConnectEvent &>(network_event);
     bool success = tcp_socket_->connect(connect_event.address());
 
-    // Publish result event
-    // In a real implementation, we would publish a TCPConnectResultEvent
+    // TODO: Publish TCPConnectResultEvent with the result of the connect operation
 
     return true;
   }
@@ -188,8 +184,7 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
         static_cast<const TCPSendEvent &>(network_event);
     int bytes_sent = tcp_socket_->send(send_event.buffer());
 
-    // Publish result event
-    // In a real implementation, we would publish a TCPSendResultEvent
+    // TODO: Publish TCPSendResultEvent with the result of the send operation
 
     return true;
   }
@@ -201,8 +196,7 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
     int bytes_received = tcp_socket_->receive(buffer);
 
     if (bytes_received > 0) {
-      // Publish receive event
-      event::EventBus::instance().publish(TCPReceiveEvent(buffer));
+      // TODO: Publish TCPReceiveEvent with the received data
     }
 
     return true;
@@ -215,8 +209,7 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
         http_client_->request(request_event.method(), request_event.url(),
                               request_event.headers(), request_event.body());
 
-    // Publish response event
-    event::EventBus::instance().publish(HTTPResponseEvent(response));
+    // TODO: Publish HTTPResponseEvent with the response data
 
     return true;
   }

@@ -1,0 +1,41 @@
+---
+# Configure clangd for C++23
+CompileFlags:
+  Add: [-std=c++23, -Wall, -Wextra, -Wpedantic]
+
+# Configure diagnostics
+Diagnostics:
+  ClangTidy:
+    Add: [
+      modernize-*,
+      performance-*,
+      bugprone-*,
+      readability-*,
+      cppcoreguidelines-*,
+    ]
+    Remove: [
+      modernize-use-trailing-return-type,
+      readability-identifier-length,
+      readability-magic-numbers,
+      cppcoreguidelines-avoid-magic-numbers,
+      cppcoreguidelines-pro-bounds-pointer-arithmetic,
+      cppcoreguidelines-pro-type-reinterpret-cast,
+      cppcoreguidelines-pro-type-union-access,
+      cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+      cppcoreguidelines-pro-bounds-constant-array-index,
+      cppcoreguidelines-avoid-c-arrays,
+      cppcoreguidelines-non-private-member-variables-in-classes,
+    ]
+  UnusedIncludes: Strict
+
+# Configure code completion
+Completion:
+  AllScopes: true
+
+# Configure inlay hints
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+  Designators: true
+  BlockEnd: true

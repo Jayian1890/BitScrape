@@ -16,18 +16,7 @@ build/
 !.vscode/extensions.json
 
 # CLion
-.idea/*
-!.idea/codeStyles/
-!.idea/fileTemplates/
-!.idea/runConfigurations/
-!.idea/inspectionProfiles/
-!.idea/scopes/
-!.idea/dictionaries/
-!.idea/copyright/
-!.idea/encodings.xml
-!.idea/misc.xml
-!.idea/modules.xml
-!.idea/vcs.xml
+.idea/
 
 # CLion build directories
 cmake-build-*/

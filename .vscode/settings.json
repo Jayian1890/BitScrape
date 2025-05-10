@@ -118,6 +118,7 @@
       "cwd": "${workspaceFolder}"
     }
   ],
+  "cmake.testExplorerIntegrationEnabled": false,
   "testMate.cpp.debug.configTemplate": {
     "type": "lldb",
     "program": "${exec}",
@@ -131,6 +132,7 @@
   },
   "testMate.cpp.test.framework": "googletest",
   "testMate.cpp.discovery.runtimeLimit": 30000,
+  "testExplorer.useNativeTesting": false,
 
   // Terminal and Explorer Settings
   "terminal.integrated.cwd": "${workspaceFolder}",

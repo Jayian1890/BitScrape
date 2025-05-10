@@ -2,6 +2,28 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run Current Test File",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/${fileBasenameNoExtension}",
+            "args": ["--gtest_filter=*"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "GTEST_COLOR": "1",
+                "ASAN_OPTIONS": "detect_leaks=0:abort_on_error=1"
+            },
+            "preLaunchTask": "cmake: build",
+            "initCommands": [
+                "settings set target.x86-disassembly-flavor intel",
+                "settings set target.inline-breakpoint-strategy always"
+            ],
+            "presentation": {
+                "hidden": false,
+                "group": "Tests",
+                "order": 1
+            }
+        },
+        {
             "name": "CLI Debug",
             "type": "lldb",
             "request": "launch",

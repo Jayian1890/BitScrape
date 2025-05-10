@@ -85,8 +85,6 @@ if(BUILD_TESTS)
             GTest::gtest_main
     )
 
-    # Discover tests
-    gtest_discover_tests(bittorrent_test
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
+    # Add to protocol tests group
+    add_dependencies(protocol_tests bittorrent_test)
 endif()

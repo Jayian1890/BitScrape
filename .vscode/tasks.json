@@ -2,6 +2,129 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Refresh Test Explorer",
+            "type": "shell",
+            "command": "cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run All Tests",
+            "type": "shell",
+            "command": "cmake --build build --config Debug && cd build && ./bin/types_test && ./bin/event_test && ./bin/beacon_test && ./bin/bencode_test && ./bin/network_test && ./bin/bittorrent_test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Foundation Tests",
+            "type": "shell",
+            "command": "cmake --build build --config Debug && cd build && ./bin/types_test && ./bin/event_test && ./bin/beacon_test && ./bin/bencode_test && ./bin/network_test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Protocol Tests",
+            "type": "shell",
+            "command": "cmake --build build --config Debug && cd build && ./bin/bittorrent_test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Types Tests",
+            "type": "shell",
+            "command": "cmake --build build --config Debug --target types_test && cd build && ./bin/types_test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Event Tests",
+            "type": "shell",
+            "command": "cmake --build build --config Debug --target event_test && cd build && ./bin/event_test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Beacon Tests",
+            "type": "shell",
+            "command": "cmake --build build --config Debug --target beacon_test && cd build && ./bin/beacon_test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Bencode Tests",
+            "type": "shell",
+            "command": "cmake --build build --config Debug --target bencode_test && cd build && ./bin/bencode_test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Network Tests",
+            "type": "shell",
+            "command": "cmake --build build --config Debug --target network_test && cd build && ./bin/network_test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run BitTorrent Tests",
+            "type": "shell",
+            "command": "cmake --build build --config Debug --target bittorrent_test && cd build && ./bin/bittorrent_test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "cmake: configure (debug)",
             "type": "shell",
             "command": "cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug",

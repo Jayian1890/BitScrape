@@ -47,9 +47,6 @@ find_package(Threads REQUIRED)
 
 # Testing setup
 if(BUILD_TESTS)
-    enable_testing()
-    include(CTest)
-
     # Find Google Test
     include(FetchContent)
     FetchContent_Declare(
@@ -61,11 +58,12 @@ if(BUILD_TESTS)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
 
-    # Include GoogleTest module for test discovery
-    include(GoogleTest)
-
     # Set environment variables for tests
     set(ENV{GTEST_COLOR} "1")
+
+    # Create test groups
+    add_custom_target(foundation_tests)
+    add_custom_target(protocol_tests)
 endif()
 
 # Include directories

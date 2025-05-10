@@ -1,4 +1,5 @@
 .continue/
+.sonarlint/
 
 # Build directories
 build/

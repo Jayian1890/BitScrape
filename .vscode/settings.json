@@ -1,129 +1,122 @@
 {
+  //----------------------------------------------
   // Editor Settings
-  "editor.formatOnSave": false,
-  "editor.rulers": [100],
-  "editor.tabSize": 4,
-  "editor.insertSpaces": true,
-  "editor.detectIndentation": false,
+  //----------------------------------------------
   "editor.bracketPairColorization.enabled": true,
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": false,
   "editor.guides.bracketPairs": "active",
+  "editor.inlayHints.enabled": "on",
+  "editor.insertSpaces": true,
+  "editor.rulers": [100],
   "editor.semanticHighlighting.enabled": true,
+  "editor.tabSize": 4,
 
-  // File Associations
+  //----------------------------------------------
+  // Files & Workspace Settings
+  //----------------------------------------------
   "files.associations": {
     "*.build": "cmake",
-    "CMakeLists.txt": "cmake",
     "*.cmake": "cmake",
     "*.cmake.in": "cmake",
-    "future": "cpp",
-    "vector": "cpp",
-    "string": "cpp",
+    "*.tcc": "cpp",
+    "CMakeLists.txt": "cmake",
+    "algorithm": "cpp",
     "array": "cpp",
     "atomic": "cpp",
     "bit": "cpp",
-    "*.tcc": "cpp",
     "chrono": "cpp",
     "compare": "cpp",
     "concepts": "cpp",
     "condition_variable": "cpp",
     "cstddef": "cpp",
     "deque": "cpp",
-    "map": "cpp",
-    "set": "cpp",
-    "string_view": "cpp",
-    "unordered_map": "cpp",
-    "unordered_set": "cpp",
-    "algorithm": "cpp",
     "functional": "cpp",
+    "future": "cpp",
+    "initializer_list": "cpp",
+    "iosfwd": "cpp",
     "iterator": "cpp",
+    "map": "cpp",
     "memory": "cpp",
     "memory_resource": "cpp",
+    "mutex": "cpp",
     "numeric": "cpp",
     "optional": "cpp",
     "random": "cpp",
-    "ratio": "cpp",
-    "system_error": "cpp",
-    "tuple": "cpp",
-    "type_traits": "cpp",
-    "utility": "cpp",
-    "initializer_list": "cpp",
-    "iosfwd": "cpp",
-    "mutex": "cpp",
     "ranges": "cpp",
+    "ratio": "cpp",
+    "set": "cpp",
     "span": "cpp",
     "stdexcept": "cpp",
     "stop_token": "cpp",
+    "string": "cpp",
+    "string_view": "cpp",
+    "system_error": "cpp",
     "thread": "cpp",
-    "variant": "cpp"
+    "tuple": "cpp",
+    "type_traits": "cpp",
+    "unordered_map": "cpp",
+    "unordered_set": "cpp",
+    "utility": "cpp",
+    "variant": "cpp",
+    "vector": "cpp"
   },
-
-  // File Exclusions
   "files.exclude": {
-    "**/.git": true,
-    "**/.svn": true,
-    "**/.hg": true,
     "**/.DS_Store": true,
-    "**/Thumbs.db": true,
+    "**/.git": true,
+    "**/.hg": true,
+    "**/.svn": true,
     "**/CVS": true,
+    "**/Thumbs.db": true,
     ".cache": true,
     ".memory-bank": true,
-    "cmake": true,
     "build": true,
+    "cmake": true,
     "compile_commands.json": true
-},
-  "files.trimTrailingWhitespace": true,
-  "files.insertFinalNewline": true,
-  "files.watcherExclude": {
-    "build/**": true,
-    ".cache/**": true,
-    "**/.git/objects/**": true,
-    "**/.git/subtree-cache/**": true
   },
-  "search.exclude": {
-    "build/**": true,
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
     ".cache/**": true,
-    "**/.git/**": true
+    "build/**": true
+  },
+  "hide-files.files": [
+    "cmake",
+    "build",
+    "compile_commands.json"
+  ],
+  "search.exclude": {
+    "**/.git/**": true,
+    ".cache/**": true,
+    "build/**": true
   },
 
+  //----------------------------------------------
+  // Terminal and Explorer Settings
+  //----------------------------------------------
+  "explorer.autoReveal": false,
+  "explorer.compactFolders": false,
+  "terminal.integrated.cwd": "${workspaceFolder}",
+
+  //----------------------------------------------
   // CMake Configuration
-  "cmake.configureOnOpen": true,
+  //----------------------------------------------
   "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.configureArgs": [
+    "-DBUILD_TESTS=ON"
+  ],
+  "cmake.configureOnOpen": true,
   "cmake.configureSettings": {
     "CMAKE_BUILD_TYPE": "Debug"
   },
-  "cmake.parallelJobs": 8,
   "cmake.generator": "Ninja",
+  "cmake.parallelJobs": 8,
 
-  // Test Configuration
-  "testMate.cpp.test.executables": "build/bin/*{test,Test,TEST}*",
-  "testMate.cpp.log.logSentry": "disable",
-  "testMate.cpp.test.advancedExecutables": [
-    {
-      "pattern": "build/bin/*{test,Test,TEST}*",
-      "cwd": "${workspaceFolder}"
-    }
-  ],
-  "testMate.cpp.debug.configTemplate": {
-    "type": "lldb",
-    "program": "${exec}",
-    "cwd": "${workspaceFolder}",
-    "args": [
-      "--gtest_filter=${tests}"
-    ],
-    "env": {
-      "GTEST_COLOR": "1"
-    }
-  },
-  "testMate.cpp.test.framework": "googletest",
-  "testMate.cpp.discovery.runtimeLimit": 900,
-
-  // Terminal and Explorer Settings
-  "terminal.integrated.cwd": "${workspaceFolder}",
-  "explorer.autoReveal": false,
-  "explorer.compactFolders": false,
-
-  // Clangd Settings
-  "clangd.checkUpdates": true,
+  //----------------------------------------------
+  // C++ Development (Clangd)
+  //----------------------------------------------
   "clangd.arguments": [
     "--background-index",
     "--clang-tidy",
@@ -137,17 +130,28 @@
     "--fallback-style=Google",
     "--enable-config"
   ],
+  "clangd.checkUpdates": true,
   "clangd.onConfigChanged": "restart",
-  "clangd.serverCompletionRanking": true,
   "clangd.restartAfterCrash": true,
-  "editor.inlayHints.enabled": "on",
+  "clangd.serverCompletionRanking": true,
 
+  //----------------------------------------------
+  // Testing Configuration
+  //----------------------------------------------
+  "testMate.cpp.test.advancedExecutables": [
+    {
+      "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "testMate.cpp.test.executables": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+
+  //----------------------------------------------
   // SonarLint Settings
+  //----------------------------------------------
 "sonarlint.pathToCompileCommands": "${workspaceFolder}/build/compile_commands.json",
-"hide-files.files": [
-    "cmake",
-    "build",
-    "compile_commands.json"
-],
-
+"sonarlint.connectedMode.project": {
+    "connectionId": "interlacedpixel",
+    "projectKey": "Jayian1890_BitScrape"
+}
 }

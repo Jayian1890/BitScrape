@@ -65,8 +65,6 @@ if(BUILD_TESTS)
             GTest::gtest_main
     )
 
-    # Discover tests
-    gtest_discover_tests(network_test
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
+    # Add to foundation tests group
+    add_dependencies(foundation_tests network_test)
 endif()

@@ -7,7 +7,7 @@
 #include "bitscrape/beacon/beacon_adapter.hpp"
 
 
-int main(int argc, char *argv[])
+int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[])
 {
     // Use enum for cleaner code
     using enum bitscrape::types::BeaconCategory;

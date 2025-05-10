@@ -1,10 +1,9 @@
 {
+  // C/C++ IntelliSense Configuration
   "C_Cpp.default.compileCommands": "${workspaceFolder}/builddir/compile_commands.json",
   "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
   "C_Cpp.default.cppStandard": "c++23",
   "C_Cpp.default.intelliSenseMode": "clang-x64",
-  "C_Cpp.autocomplete": "default",
-  "C_Cpp.errorSquiggles": "enabled",
   "C_Cpp.intelliSenseEngine": "default",
   "C_Cpp.enhancedColorization": "enabled",
   "C_Cpp.suggestSnippets": true,
@@ -13,24 +12,69 @@
     "${workspaceFolder}/**",
     "${workspaceFolder}/modules/*/include"
   ],
-  "C_Cpp.default.browse.path": [
-    "${workspaceFolder}/**"
-  ],
   "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
   "C_Cpp.default.browse.databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
+  "C_Cpp.errorSquiggles": "enabled",
+  "C_Cpp.autocomplete": "default",
+
+  // Editor Settings
   "editor.formatOnSave": false,
-  "editor.rulers": [
-    100
-  ],
+  "editor.rulers": [100],
   "editor.tabSize": 4,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.semanticHighlighting.enabled": true,
+
+  // File Associations
   "files.associations": {
     "*.build": "meson",
     "meson.build": "meson",
     "meson_options.txt": "meson",
-    "future": "cpp"
+    "future": "cpp",
+    "vector": "cpp",
+    "string": "cpp",
+    "array": "cpp",
+    "atomic": "cpp",
+    "bit": "cpp",
+    "*.tcc": "cpp",
+    "chrono": "cpp",
+    "compare": "cpp",
+    "concepts": "cpp",
+    "condition_variable": "cpp",
+    "cstddef": "cpp",
+    "deque": "cpp",
+    "map": "cpp",
+    "set": "cpp",
+    "string_view": "cpp",
+    "unordered_map": "cpp",
+    "unordered_set": "cpp",
+    "algorithm": "cpp",
+    "functional": "cpp",
+    "iterator": "cpp",
+    "memory": "cpp",
+    "memory_resource": "cpp",
+    "numeric": "cpp",
+    "optional": "cpp",
+    "random": "cpp",
+    "ratio": "cpp",
+    "system_error": "cpp",
+    "tuple": "cpp",
+    "type_traits": "cpp",
+    "utility": "cpp",
+    "initializer_list": "cpp",
+    "iosfwd": "cpp",
+    "mutex": "cpp",
+    "ranges": "cpp",
+    "span": "cpp",
+    "stdexcept": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp",
+    "variant": "cpp"
   },
+
+  // File Exclusions
   "files.exclude": {
     "**/.git": true,
     "**/.svn": true,
@@ -38,18 +82,24 @@
     "**/CVS": true,
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
-    "builddir/**": false,
     ".cache": true,
-    "builddir": true
+    ".memory-bank": false
   },
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
   "files.watcherExclude": {
-    "builddir/**": true
+    "builddir/**": true,
+    ".cache/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true
   },
   "search.exclude": {
-    "builddir/**": true
+    "builddir/**": true,
+    ".cache/**": true,
+    "**/.git/**": true
   },
+
+  // Meson Build Configuration
   "mesonbuild.configureOnOpen": true,
   "mesonbuild.buildFolder": "builddir",
   "mesonbuild.downloadLanguageServer": true,
@@ -60,6 +110,8 @@
   "mesonbuild.buildOptions": [
     "-j8"
   ],
+
+  // Test Configuration
   "testMate.cpp.test.executables": "builddir/modules/**/*{test,Test,TEST}*",
   "testMate.cpp.log.logSentry": "disable",
   "testMate.cpp.test.advancedExecutables": [
@@ -80,66 +132,24 @@
     }
   },
   "testMate.cpp.test.framework": "googletest",
+  "testMate.cpp.discovery.runtimeLimit": 30000,
+
+  // Terminal and Explorer Settings
   "terminal.integrated.cwd": "${workspaceFolder}",
   "explorer.autoReveal": false,
   "explorer.compactFolders": false,
+
+  // Clangd Settings
   "clangd.checkUpdates": true,
-  "C_Cpp_Runner.msvcBatchPath": "",
-  "C_Cpp_Runner.cCompilerPath": "clang",
-  "C_Cpp_Runner.cppCompilerPath": "clang++",
-  "C_Cpp_Runner.debuggerPath": "lldb",
-  "C_Cpp_Runner.cStandard": "",
-  "C_Cpp_Runner.cppStandard": "",
-  "C_Cpp_Runner.useMsvc": false,
-  "C_Cpp_Runner.warnings": [
-    "-Wall",
-    "-Wextra",
-    "-Wpedantic",
-    "-Wshadow",
-    "-Wformat=2",
-    "-Wcast-align",
-    "-Wconversion",
-    "-Wsign-conversion",
-    "-Wnull-dereference"
+  "clangd.arguments": [
+    "--background-index",
+    "--clang-tidy",
+    "--completion-style=detailed",
+    "--header-insertion=iwyu",
+    "--suggest-missing-includes",
+    "--compile-commands-dir=${workspaceFolder}/builddir"
   ],
-  "C_Cpp_Runner.msvcWarnings": [
-    "/W4",
-    "/permissive-",
-    "/w14242",
-    "/w14287",
-    "/w14296",
-    "/w14311",
-    "/w14826",
-    "/w44062",
-    "/w44242",
-    "/w14905",
-    "/w14906",
-    "/w14263",
-    "/w44265",
-    "/w14928"
-  ],
-  "C_Cpp_Runner.enableWarnings": true,
-  "C_Cpp_Runner.warningsAsError": false,
-  "C_Cpp_Runner.compilerArgs": [],
-  "C_Cpp_Runner.linkerArgs": [],
-  "C_Cpp_Runner.includePaths": [],
-  "C_Cpp_Runner.includeSearch": [
-    "*",
-    "**/*"
-  ],
-  "C_Cpp_Runner.excludeSearch": [
-    "**/build",
-    "**/build/**",
-    "**/.*",
-    "**/.*/**",
-    "**/.vscode",
-    "**/.vscode/**"
-  ],
-  "C_Cpp_Runner.useAddressSanitizer": false,
-  "C_Cpp_Runner.useUndefinedSanitizer": false,
-  "C_Cpp_Runner.useLeakSanitizer": false,
-  "C_Cpp_Runner.showCompilationTime": false,
-  "C_Cpp_Runner.useLinkTimeOptimization": false,
-  "C_Cpp_Runner.msvcSecureNoWarnings": false,
+
+  // SonarLint Settings
   "sonarlint.pathToCompileCommands": "${workspaceFolder}/builddir/compile_commands.json"
 }

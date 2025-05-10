@@ -10,7 +10,10 @@
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "meson: build cli",
             "internalConsoleOptions": "neverOpen",
-            "terminal": "integrated"
+            "terminal": "integrated",
+            "env": {
+                "ASAN_OPTIONS": "detect_leaks=0"
+            }
         },
         {
             "name": "GUI Debug (.app)",
@@ -21,29 +24,40 @@
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "meson: build gui",
             "internalConsoleOptions": "neverOpen",
-            "terminal": "integrated"
+            "terminal": "integrated",
+            "env": {
+                "ASAN_OPTIONS": "detect_leaks=0"
+            }
         },
         {
             "name": "Module Test Debug",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/builddir/modules/${input:moduleDir}/${input:moduleDir}_test",
-            "args": [],
+            "args": ["--gtest_filter=${input:testFilter}"],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "meson: build",
             "internalConsoleOptions": "neverOpen",
-            "terminal": "integrated"
+            "terminal": "integrated",
+            "env": {
+                "GTEST_COLOR": "1",
+                "ASAN_OPTIONS": "detect_leaks=0"
+            }
         },
         {
             "name": "Run Specific Test",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/builddir/${input:testPath}",
-            "args": [],
+            "args": ["--gtest_filter=${input:testFilter}"],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "meson: build",
             "internalConsoleOptions": "neverOpen",
-            "terminal": "integrated"
+            "terminal": "integrated",
+            "env": {
+                "GTEST_COLOR": "1",
+                "ASAN_OPTIONS": "detect_leaks=0"
+            }
         }
     ],
     "inputs": [
@@ -53,6 +67,7 @@
             "description": "Select the module",
             "options": [
                 "bencode",
+                "beacon",
                 "bittorrent",
                 "core",
                 "dht",
@@ -63,16 +78,16 @@
             ]
         },
         {
-            "id": "testName",
-            "type": "promptString",
-            "description": "Name of the test executable",
-            "default": "test_executable"
-        },
-        {
             "id": "testPath",
             "type": "promptString",
             "description": "Path to test executable (relative to builddir)",
-            "default": "modules/types/tests/types_test"
+            "default": "modules/types/types_test"
+        },
+        {
+            "id": "testFilter",
+            "type": "promptString",
+            "description": "Test filter (e.g. TestCase.TestName)",
+            "default": "*"
         }
     ]
 }

@@ -1,7 +1,12 @@
 {
     "recommendations": [
         "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
         "mesonbuild.mesonbuild",
-        "matepek.vscode-catch2-test-adapter"
+        "matepek.vscode-catch2-test-adapter",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "vadimcn.vscode-lldb",
+        "sonarsource.sonarlint-vscode",
+        "ms-vscode.cmake-tools"
     ]
 }

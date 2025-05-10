@@ -7,8 +7,9 @@ BeaconAdapter::BeaconAdapter(Beacon& beacon)
 }
 
 void BeaconAdapter::register_handlers() {
-    // Subscribe to all events
+    // Subscribe to all events with immediate handling
     subscribe<types::Event>([this](const types::Event& event) {
+        // Handle the event immediately
         this->handle_event(event);
     });
 }
@@ -16,26 +17,26 @@ void BeaconAdapter::register_handlers() {
 void BeaconAdapter::handle_event(const types::Event& event) {
     // Get the event type
     std::type_index type_index = std::type_index(typeid(event));
-    
+
     // Check if we have a mapping for this event type
     auto mapping_it = event_mappings_.find(type_index);
     if (mapping_it == event_mappings_.end()) {
         // No mapping, use default (INFO, GENERAL)
         types::BeaconSeverity severity = types::BeaconSeverity::INFO;
         types::BeaconCategory category = types::BeaconCategory::GENERAL;
-        
+
         // Format the event
         std::string message = event.to_string();
-        
+
         // Log the event
         beacon_.log(severity, message, category);
         return;
     }
-    
+
     // Use the mapping
     types::BeaconSeverity severity = mapping_it->second.first;
     types::BeaconCategory category = mapping_it->second.second;
-    
+
     // Check if we have a formatter for this event type
     std::string message;
     auto formatter_it = event_formatters_.find(type_index);
@@ -46,7 +47,7 @@ void BeaconAdapter::handle_event(const types::Event& event) {
         // Use default formatting
         message = event.to_string();
     }
-    
+
     // Log the event
     beacon_.log(severity, message, category);
 }

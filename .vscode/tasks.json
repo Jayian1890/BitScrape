@@ -8,7 +8,8 @@
             "group": "build",
             "presentation": {
                 "reveal": "always",
-                "panel": "new"
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": []
         },
@@ -19,7 +20,8 @@
             "group": "build",
             "presentation": {
                 "reveal": "always",
-                "panel": "new"
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": []
         },
@@ -30,7 +32,8 @@
             "group": "build",
             "presentation": {
                 "reveal": "always",
-                "panel": "new"
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": []
         },
@@ -44,7 +47,8 @@
             },
             "presentation": {
                 "reveal": "always",
-                "panel": "shared"
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": {
                 "owner": "cpp",
@@ -53,7 +57,7 @@
                     "${workspaceFolder}/builddir"
                 ],
                 "pattern": {
-                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
@@ -69,21 +73,23 @@
             "group": "build",
             "presentation": {
                 "reveal": "always",
-                "panel": "shared"
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": []
         },
         {
             "label": "meson: test",
             "type": "shell",
-            "command": "meson test -C builddir",
+            "command": "meson test -C builddir -v",
             "group": {
                 "kind": "test",
                 "isDefault": true
             },
             "presentation": {
                 "reveal": "always",
-                "panel": "shared"
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": []
         },
@@ -94,7 +100,8 @@
             "group": "build",
             "presentation": {
                 "reveal": "always",
-                "panel": "shared"
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": {
                 "owner": "cpp",
@@ -103,7 +110,7 @@
                     "${workspaceFolder}/builddir"
                 ],
                 "pattern": {
-                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
@@ -119,7 +126,8 @@
             "group": "build",
             "presentation": {
                 "reveal": "always",
-                "panel": "shared"
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": {
                 "owner": "cpp",
@@ -128,7 +136,7 @@
                     "${workspaceFolder}/builddir"
                 ],
                 "pattern": {
-                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
@@ -144,7 +152,8 @@
             "group": "build",
             "presentation": {
                 "reveal": "always",
-                "panel": "shared"
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": {
                 "owner": "cpp",
@@ -153,7 +162,7 @@
                     "${workspaceFolder}/builddir"
                 ],
                 "pattern": {
-                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
@@ -161,6 +170,74 @@
                     "message": 5
                 }
             }
+        },
+        {
+            "label": "meson: build module",
+            "type": "shell",
+            "command": "meson compile -C builddir modules/${input:moduleDir}/${input:moduleDir}_test",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}/builddir"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|note|fatal error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "meson: test module",
+            "type": "shell",
+            "command": "meson test -C builddir modules/${input:moduleDir}:${input:moduleDir}_test -v",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "meson: generate compile_commands.json",
+            "type": "shell",
+            "command": "meson setup --reconfigure builddir",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "moduleDir",
+            "type": "pickString",
+            "description": "Select the module",
+            "options": [
+                "bencode",
+                "beacon",
+                "bittorrent",
+                "core",
+                "dht",
+                "event",
+                "network",
+                "storage",
+                "types"
+            ]
         }
     ]
 }

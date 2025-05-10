@@ -44,6 +44,8 @@ endif
 subdir('modules/types')
 subdir('modules/event')
 subdir('modules/beacon')
+subdir('modules/bencode')
+subdir('modules/network')
 
 # Build applications
 subdir('apps')

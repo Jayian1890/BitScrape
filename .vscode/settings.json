@@ -87,7 +87,8 @@
     ".cache": true,
     ".memory-bank": true,
     "cmake": true,
-    "build": true
+    "build": true,
+    "compile_commands.json": true
 },
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
@@ -166,6 +167,7 @@
 "sonarlint.pathToCompileCommands": "${workspaceFolder}/build/compile_commands.json",
 "hide-files.files": [
     "cmake",
-    "build"
+    "build",
+    "compile_commands.json"
 ]
 }

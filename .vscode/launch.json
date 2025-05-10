@@ -3,83 +3,92 @@
     "configurations": [
         {
             "name": "CLI Debug",
-            "type": "cppdbg",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/bitscrape_cli",
             "args": [],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [
-                {
-                    "name": "ASAN_OPTIONS",
-                    "value": "detect_leaks=0"
-                }
+            "env": {
+                "ASAN_OPTIONS": "detect_leaks=0:abort_on_error=1"
+            },
+            "preLaunchTask": "cmake: build cli",
+            "initCommands": [
+                "settings set target.x86-disassembly-flavor intel",
+                "settings set target.inline-breakpoint-strategy always"
             ],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "cmake: build cli"
+            "presentation": {
+                "hidden": false,
+                "group": "BitScrape",
+                "order": 1
+            }
         },
         {
             "name": "GUI Debug",
-            "type": "cppdbg",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/bitscrape_gui",
             "args": [],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [
-                {
-                    "name": "ASAN_OPTIONS",
-                    "value": "detect_leaks=0"
-                }
+            "env": {
+                "ASAN_OPTIONS": "detect_leaks=0:abort_on_error=1"
+            },
+            "preLaunchTask": "cmake: build gui",
+            "postDebugTask": "cmake: clean up debug",
+            "initCommands": [
+                "settings set target.x86-disassembly-flavor intel",
+                "settings set target.inline-breakpoint-strategy always"
             ],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "cmake: build gui"
+            "presentation": {
+                "hidden": false,
+                "group": "BitScrape",
+                "order": 2
+            }
         },
         {
             "name": "Module Test Debug",
-            "type": "cppdbg",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/${input:moduleDir}_test",
             "args": ["--gtest_filter=${input:testFilter}"],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [
-                {
-                    "name": "GTEST_COLOR",
-                    "value": "1"
-                },
-                {
-                    "name": "ASAN_OPTIONS",
-                    "value": "detect_leaks=0"
-                }
+            "env": {
+                "GTEST_COLOR": "1",
+                "ASAN_OPTIONS": "detect_leaks=0:abort_on_error=1"
+            },
+            "preLaunchTask": "cmake: build module test",
+            "postDebugTask": "cmake: clean up debug",
+            "initCommands": [
+                "settings set target.x86-disassembly-flavor intel",
+                "settings set target.inline-breakpoint-strategy always"
             ],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "cmake: build"
+            "presentation": {
+                "hidden": false,
+                "group": "Tests",
+                "order": 1
+            }
         },
         {
             "name": "Run Specific Test",
-            "type": "cppdbg",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/${input:testPath}",
             "args": ["--gtest_filter=${input:testFilter}"],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [
-                {
-                    "name": "GTEST_COLOR",
-                    "value": "1"
-                },
-                {
-                    "name": "ASAN_OPTIONS",
-                    "value": "detect_leaks=0"
-                }
+            "env": {
+                "GTEST_COLOR": "1",
+                "ASAN_OPTIONS": "detect_leaks=0:abort_on_error=1"
+            },
+            "preLaunchTask": "cmake: build",
+            "postDebugTask": "cmake: clean up debug",
+            "initCommands": [
+                "settings set target.x86-disassembly-flavor intel",
+                "settings set target.inline-breakpoint-strategy always"
             ],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "cmake: build"
+            "presentation": {
+                "hidden": false,
+                "group": "Tests",
+                "order": 2
+            }
         }
     ],
     "inputs": [

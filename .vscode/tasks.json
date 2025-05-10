@@ -220,6 +220,18 @@
                 "focus": true
             },
             "problemMatcher": []
+        },
+        {
+            "label": "cmake: clean up debug",
+            "type": "shell",
+            "command": "echo 'Debug session ended'",
+            "group": "none",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "focus": false
+            },
+            "problemMatcher": []
         }
     ],
     "inputs": [

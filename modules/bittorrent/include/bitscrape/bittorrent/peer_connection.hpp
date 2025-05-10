@@ -163,6 +163,27 @@ public:
     bool am_interested() const;
 
     /**
+     * @brief Check if the peer supports the extension protocol (BEP 10)
+     *
+     * @return True if the peer supports the extension protocol, false otherwise
+     */
+    bool supports_extensions() const;
+
+    /**
+     * @brief Check if the peer supports the DHT protocol (BEP 5)
+     *
+     * @return True if the peer supports the DHT protocol, false otherwise
+     */
+    bool supports_dht() const;
+
+    /**
+     * @brief Check if the peer supports the fast extension (BEP 6)
+     *
+     * @return True if the peer supports the fast extension, false otherwise
+     */
+    bool supports_fast() const;
+
+    /**
      * @brief Send raw data to the peer
      *
      * @param data The data to send
@@ -198,6 +219,11 @@ private:
     std::atomic<bool> peer_interested_;       ///< Whether the peer is interested
     std::atomic<bool> am_choked_;             ///< Whether we are choked by the peer
     std::atomic<bool> am_interested_;         ///< Whether we are interested in the peer
+
+    // Extension support flags
+    std::atomic<bool> supports_extensions_;   ///< Whether the peer supports the extension protocol (BEP 10)
+    std::atomic<bool> supports_dht_;          ///< Whether the peer supports the DHT protocol (BEP 5)
+    std::atomic<bool> supports_fast_;         ///< Whether the peer supports the fast extension (BEP 6)
 };
 
 } // namespace bitscrape::bittorrent

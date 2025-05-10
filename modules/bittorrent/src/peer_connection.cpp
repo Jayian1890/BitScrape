@@ -15,7 +15,10 @@ PeerConnection::PeerConnection(network::Address address,
       peer_choked_(true),
       peer_interested_(false),
       am_choked_(true),
-      am_interested_(false) {
+      am_interested_(false),
+      supports_extensions_(false),
+      supports_dht_(false),
+      supports_fast_(false) {
     // Ensure peer_id is 20 bytes
     if (peer_id_.size() != 20) {
         throw std::invalid_argument("Peer ID must be 20 bytes");
@@ -36,6 +39,12 @@ bool PeerConnection::connect() {
 
     // Update state
     state_ = State::CONNECTING;
+
+    // Set socket options for better performance
+    socket_->set_receive_timeout(10000);  // 10 seconds timeout
+    socket_->set_send_timeout(10000);     // 10 seconds timeout
+    socket_->set_receive_buffer_size(64 * 1024);  // 64KB receive buffer
+    socket_->set_send_buffer_size(64 * 1024);     // 64KB send buffer
 
     // Connect to peer
     if (!socket_->connect(address_)) {
@@ -105,13 +114,18 @@ bool PeerConnection::send_message(const PeerMessage& message) {
 
 std::future<bool> PeerConnection::send_message_async(const PeerMessage& message) {
     // Create a copy of the message data
-    auto data = message.serialize();
+    auto message_data = message.serialize();
 
-    return std::async(std::launch::async, [this, data = std::move(data)]() {
-        // Create a new message from the serialized data
-        // TODO: Implement message deserialization
-        // For now, just send the original message
-        return socket_->send(data.data(), data.size()) == static_cast<int>(data.size());
+    return std::async(std::launch::async, [this, message_data = std::move(message_data)]() {
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        // Check if connected
+        if (state_ != State::CONNECTED) {
+            return false;
+        }
+
+        // Send the message data
+        return socket_->send(message_data.data(), message_data.size()) == static_cast<int>(message_data.size());
     });
 }
 
@@ -125,7 +139,36 @@ std::shared_ptr<PeerMessage> PeerConnection::receive_message() {
 
     // First read the message length (4 bytes)
     uint32_t length = 0;
-    if (socket_->receive(reinterpret_cast<uint8_t*>(&length), sizeof(length)) != sizeof(length)) {
+    int bytes_received = 0;
+    size_t total_received = 0;
+    int attempts = 0;
+    const int max_attempts = 5;
+
+    // Read the length field in chunks if necessary
+    while (total_received < sizeof(length) && attempts < max_attempts) {
+        bytes_received = socket_->receive(
+            reinterpret_cast<uint8_t*>(&length) + total_received,
+            sizeof(length) - total_received
+        );
+
+        if (bytes_received <= 0) {
+            // Error or connection closed
+            if (bytes_received == 0) {
+                // Connection closed
+                return nullptr;
+            }
+
+            // Retry a few times
+            attempts++;
+            continue;
+        }
+
+        total_received += static_cast<size_t>(bytes_received);
+        attempts = 0;  // Reset attempts counter on successful read
+    }
+
+    if (total_received != sizeof(length)) {
+        // Failed to receive complete length field
         return nullptr;
     }
 
@@ -139,14 +182,42 @@ std::shared_ptr<PeerMessage> PeerConnection::receive_message() {
 
     // Read the message type (1 byte)
     uint8_t type = 0;
-    if (socket_->receive(&type, sizeof(type)) != sizeof(type)) {
+    bytes_received = socket_->receive(&type, sizeof(type));
+    if (bytes_received != sizeof(type)) {
         return nullptr;
     }
 
     // Read the message payload
     std::vector<uint8_t> payload(length - 1);  // -1 for the type byte
     if (!payload.empty()) {
-        if (socket_->receive(payload.data(), payload.size()) != static_cast<int>(payload.size())) {
+        total_received = 0;
+        attempts = 0;
+
+        // Read the payload in chunks if necessary
+        while (total_received < payload.size() && attempts < max_attempts) {
+            bytes_received = socket_->receive(
+                payload.data() + total_received,
+                payload.size() - total_received
+            );
+
+            if (bytes_received <= 0) {
+                // Error or connection closed
+                if (bytes_received == 0) {
+                    // Connection closed
+                    return nullptr;
+                }
+
+                // Retry a few times
+                attempts++;
+                continue;
+            }
+
+            total_received += static_cast<size_t>(bytes_received);
+            attempts = 0;  // Reset attempts counter on successful read
+        }
+
+        if (total_received != payload.size()) {
+            // Failed to receive complete payload
             return nullptr;
         }
     }
@@ -156,7 +227,13 @@ std::shared_ptr<PeerMessage> PeerConnection::receive_message() {
     message_data.push_back(type);
     message_data.insert(message_data.end(), payload.begin(), payload.end());
 
-    return PeerMessageFactory::create_from_data(message_data);
+    // Process the message to update internal state
+    auto message = PeerMessageFactory::create_from_data(message_data);
+    if (message) {
+        process_message(*message);
+    }
+
+    return message;
 }
 
 std::future<std::shared_ptr<PeerMessage>> PeerConnection::receive_message_async() {
@@ -201,6 +278,18 @@ bool PeerConnection::am_interested() const {
     return am_interested_;
 }
 
+bool PeerConnection::supports_extensions() const {
+    return supports_extensions_;
+}
+
+bool PeerConnection::supports_dht() const {
+    return supports_dht_;
+}
+
+bool PeerConnection::supports_fast() const {
+    return supports_fast_;
+}
+
 int PeerConnection::send_raw_data(const uint8_t* data, size_t size) {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -217,7 +306,15 @@ bool PeerConnection::handshake() {
     // Create handshake message
     // Convert InfoHash bytes to vector
     std::vector<uint8_t> info_hash_bytes(info_hash_.bytes().begin(), info_hash_.bytes().end());
-    HandshakeMessage handshake(info_hash_bytes, peer_id_);
+
+    // Create reserved bytes with extension support
+    std::vector<uint8_t> reserved(8, 0);
+    // Set bit for Extension Protocol (BEP 10)
+    reserved[5] |= 0x10;  // Set bit 20 (0-indexed) for extended messaging
+    // Set bit for DHT Protocol (BEP 5)
+    reserved[7] |= 0x01;  // Set bit 0 (0-indexed) for DHT
+
+    HandshakeMessage handshake(info_hash_bytes, peer_id_, reserved);
 
     // Serialize handshake
     auto data = handshake.serialize();
@@ -229,7 +326,32 @@ bool PeerConnection::handshake() {
 
     // Receive handshake response
     std::vector<uint8_t> response(68);
-    if (socket_->receive(response.data(), response.size()) != 68) {
+    int bytes_received = 0;
+    size_t total_received = 0;
+    int attempts = 0;
+    const int max_attempts = 10;
+
+    // Read the handshake response in chunks if necessary
+    while (total_received < 68 && attempts < max_attempts) {
+        bytes_received = socket_->receive(response.data() + total_received, 68 - total_received);
+        if (bytes_received <= 0) {
+            // Error or connection closed
+            if (bytes_received == 0) {
+                // Connection closed
+                return false;
+            }
+
+            // Retry a few times
+            attempts++;
+            continue;
+        }
+
+        total_received += static_cast<size_t>(bytes_received);
+        attempts = 0;  // Reset attempts counter on successful read
+    }
+
+    if (total_received != 68) {
+        // Failed to receive complete handshake
         return false;
     }
 
@@ -246,7 +368,12 @@ bool PeerConnection::handshake() {
     }
 
     // Extract reserved bytes (for extensions)
-    std::vector<uint8_t> reserved(response.begin() + 20, response.begin() + 28);
+    std::vector<uint8_t> peer_reserved(response.begin() + 20, response.begin() + 28);
+
+    // Check if peer supports extensions we care about and store the flags
+    supports_extensions_ = (peer_reserved[5] & 0x10) != 0;  // Check bit 20 for extended messaging (BEP 10)
+    supports_dht_ = (peer_reserved[7] & 0x01) != 0;         // Check bit 0 for DHT (BEP 5)
+    supports_fast_ = (peer_reserved[7] & 0x04) != 0;        // Check bit 2 for Fast Extension (BEP 6)
 
     // Extract info hash
     std::vector<uint8_t> received_info_hash(response.begin() + 28, response.begin() + 48);

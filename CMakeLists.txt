@@ -92,6 +92,7 @@ add_subdirectory(modules/beacon)
 add_subdirectory(modules/bencode)
 add_subdirectory(modules/network)
 add_subdirectory(modules/bittorrent)
+add_subdirectory(modules/tracker)
 
 # Add applications
 add_subdirectory(apps)

@@ -1,6 +1,5 @@
 # Build directories
 build/
-builddir/
 
 # Cache files
 .cache/
@@ -51,13 +50,16 @@ builddir/
 *.pdb
 
 # CMake files
-cmake/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 CTestTestfile.cmake
 compile_commands.json
 _deps/
+*.cmake
+Testing/
+DartConfiguration.tcl
+install_manifest.txt
 
 # Memory bank
 .memory-bank/

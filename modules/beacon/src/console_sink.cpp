@@ -25,7 +25,9 @@ void ConsoleSink::write(types::BeaconSeverity severity, types::BeaconCategory ca
         now.time_since_epoch() % std::chrono::seconds(1)).count();
 
     std::ostringstream timestamp;
-    timestamp << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S")
+    struct tm time_info{};
+    localtime_r(&time_t, &time_info);
+    timestamp << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S")
              << '.' << std::setfill('0') << std::setw(3) << ms;
 
     // Format source location
@@ -40,7 +42,8 @@ void ConsoleSink::write(types::BeaconSeverity severity, types::BeaconCategory ca
     source << file_name << ":" << location.line();
 
     // Apply color if enabled
-    std::string color_start, color_end;
+    std::string color_start;
+    std::string color_end;
     if (use_colors_) {
         color_start = types::get_severity_color(severity);
         color_end = types::get_reset_color();
@@ -52,7 +55,7 @@ void ConsoleSink::write(types::BeaconSeverity severity, types::BeaconCategory ca
                   << "[" << types::category_to_string(category) << "] "
                   << message << " "
                   << "(" << source.str() << ")"
-                  << std::endl;
+                  << '\n';
 }
 
 void ConsoleSink::set_use_colors(bool use_colors) {

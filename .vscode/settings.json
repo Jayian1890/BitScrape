@@ -85,5 +85,6 @@
     "terminal.integrated.cwd": "${workspaceFolder}",
     // Explorer settings
     "explorer.autoReveal": false,
-    "explorer.compactFolders": false
+    "explorer.compactFolders": false,
+    "clangd.checkUpdates": true
 }

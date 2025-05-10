@@ -5,123 +5,209 @@
 #include <random>
 #include <sstream>
 #include <stdexcept>
+#include <fstream>
 
-namespace bitscrape::types {
+#ifdef _WIN32
+#include <windows.h>
+#include <bcrypt.h>
+#pragma comment(lib, "bcrypt.lib")
+#endif
 
-NodeID::NodeID() {
-    // Generate a random NodeID
-    *this = random();
-}
+namespace bitscrape::types
+{
 
-NodeID::NodeID(const IDStorage& bytes) : id_(bytes) {
-}
-
-NodeID::NodeID(const std::vector<uint8_t>& bytes) {
-    if (bytes.size() != SIZE) {
-        throw std::invalid_argument("NodeID: Invalid byte vector size");
+    NodeID::NodeID()
+    {
+        // Generate a random NodeID
+        *this = random();
     }
-    
-    std::copy(bytes.begin(), bytes.end(), id_.begin());
-}
 
-NodeID::NodeID(const std::string& hex) {
-    if (hex.size() != SIZE * 2) {
-        throw std::invalid_argument("NodeID: Invalid hex string length");
+    NodeID::NodeID(const IDStorage &bytes) : id_(bytes)
+    {
     }
-    
-    for (size_t i = 0; i < SIZE; ++i) {
-        std::string byte_str = hex.substr(i * 2, 2);
-        try {
-            id_[i] = static_cast<uint8_t>(std::stoi(byte_str, nullptr, 16));
-        } catch (const std::exception& e) {
-            throw std::invalid_argument("NodeID: Invalid hex string");
+
+    NodeID::NodeID(const std::vector<uint8_t> &bytes)
+    {
+        if (bytes.size() != SIZE)
+        {
+            throw std::invalid_argument("NodeID: Invalid byte vector size");
+        }
+
+        std::copy(bytes.begin(), bytes.end(), id_.begin());
+    }
+
+    NodeID::NodeID(const std::string &hex)
+    {
+        if (hex.size() != SIZE * 2)
+        {
+            throw std::invalid_argument("NodeID: Invalid hex string length");
+        }
+
+        for (size_t i = 0; i < SIZE; ++i)
+        {
+            std::string byte_str = hex.substr(i * 2, 2);
+            try
+            {
+                id_[i] = static_cast<uint8_t>(std::stoi(byte_str, nullptr, 16));
+            }
+            catch (const std::exception &e)
+            {
+                throw std::invalid_argument("NodeID: Invalid hex string");
+            }
         }
     }
-}
 
-NodeID::NodeID(std::string_view hex) {
-    if (hex.size() != SIZE * 2) {
-        throw std::invalid_argument("NodeID: Invalid hex string length");
-    }
-    
-    for (size_t i = 0; i < SIZE; ++i) {
-        std::string byte_str(hex.substr(i * 2, 2));
-        try {
-            id_[i] = static_cast<uint8_t>(std::stoi(byte_str, nullptr, 16));
-        } catch (const std::exception& e) {
-            throw std::invalid_argument("NodeID: Invalid hex string");
+    NodeID::NodeID(std::string_view hex)
+    {
+        if (hex.size() != SIZE * 2)
+        {
+            throw std::invalid_argument("NodeID: Invalid hex string length");
+        }
+
+        for (size_t i = 0; i < SIZE; ++i)
+        {
+            std::string byte_str(hex.substr(i * 2, 2));
+            try
+            {
+                id_[i] = static_cast<uint8_t>(std::stoi(byte_str, nullptr, 16));
+            }
+            catch (const std::exception &e)
+            {
+                throw std::invalid_argument("NodeID: Invalid hex string");
+            }
         }
     }
-}
 
-std::string NodeID::to_hex() const {
-    std::ostringstream oss;
-    oss << std::hex << std::setfill('0');
-    
-    for (auto byte : id_) {
-        oss << std::setw(2) << static_cast<int>(byte);
+    std::string NodeID::to_hex() const
+    {
+        std::ostringstream oss;
+        oss << std::hex << std::setfill('0');
+
+        for (auto byte : id_)
+        {
+            oss << std::setw(2) << static_cast<int>(byte);
+        }
+
+        return oss.str();
     }
-    
-    return oss.str();
-}
 
-NodeID NodeID::distance(const NodeID& other) const {
-    IDStorage result;
-    
-    for (size_t i = 0; i < SIZE; ++i) {
-        result[i] = id_[i] ^ other.id_[i];
+    NodeID NodeID::distance(const NodeID &other) const
+    {
+        IDStorage result;
+
+        for (size_t i = 0; i < SIZE; ++i)
+        {
+            result[i] = id_[i] ^ other.id_[i];
+        }
+
+        return NodeID(result);
     }
-    
-    return NodeID(result);
-}
 
-std::future<NodeID> NodeID::distance_async(const NodeID& other) const {
-    return std::async(std::launch::async, [this, other]() {
-        return this->distance(other);
-    });
-}
-
-NodeID NodeID::random() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<uint8_t> dist(0, 255);
-    
-    IDStorage bytes;
-    for (auto& byte : bytes) {
-        byte = dist(gen);
+    std::future<NodeID> NodeID::distance_async(const NodeID &other) const
+    {
+        return std::async(std::launch::async, [this, other]()
+                          { return this->distance(other); });
     }
-    
-    return NodeID(bytes);
-}
 
-std::future<NodeID> NodeID::random_async() {
-    return std::async(std::launch::async, []() {
-        return random();
-    });
-}
+    NodeID NodeID::random()
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<uint8_t> dist(0, 255);
 
-bool NodeID::operator==(const NodeID& other) const {
-    return id_ == other.id_;
-}
+        IDStorage bytes;
+        for (auto &byte : bytes)
+        {
+            byte = dist(gen);
+        }
 
-bool NodeID::operator!=(const NodeID& other) const {
-    return !(*this == other);
-}
+        return NodeID(bytes);
+    }
 
-bool NodeID::operator<(const NodeID& other) const {
-    return id_ < other.id_;
-}
+    std::future<NodeID> NodeID::random_async()
+    {
+        return std::async(std::launch::async, []()
+                          { return random(); });
+    }
 
-bool NodeID::operator>(const NodeID& other) const {
-    return other < *this;
-}
+    NodeID NodeID::secure_random()
+    {
+        IDStorage bytes;
 
-bool NodeID::operator<=(const NodeID& other) const {
-    return !(other < *this);
-}
+#ifdef _WIN32
+        // Windows implementation using BCryptGenRandom
+        BCRYPT_ALG_HANDLE hAlgorithm;
+        NTSTATUS status = BCryptOpenAlgorithmProvider(&hAlgorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
+        if (BCRYPT_SUCCESS(status))
+        {
+            status = BCryptGenRandom(hAlgorithm, bytes.data(), bytes.size(), 0);
+            BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+            if (!BCRYPT_SUCCESS(status))
+            {
+                throw std::runtime_error("Failed to generate secure random bytes");
+            }
+        }
+        else
+        {
+            throw std::runtime_error("Failed to open cryptographic provider");
+        }
+#elif defined(__APPLE__)
+        // macOS implementation using arc4random
+        for (size_t i = 0; i < SIZE; ++i)
+        {
+            bytes[i] = static_cast<uint8_t>(arc4random() & 0xFF);
+        }
+#else
+        // Linux/Unix implementation using /dev/urandom
+        std::ifstream urandom("/dev/urandom", std::ios::in | std::ios::binary);
+        if (!urandom)
+        {
+            throw std::runtime_error("Failed to open /dev/urandom");
+        }
+        urandom.read(reinterpret_cast<char *>(bytes.data()), bytes.size());
+        if (urandom.gcount() != static_cast<std::streamsize>(bytes.size()))
+        {
+            throw std::runtime_error("Failed to read enough random bytes");
+        }
+#endif
 
-bool NodeID::operator>=(const NodeID& other) const {
-    return !(*this < other);
-}
+        return NodeID(bytes);
+    }
+
+    std::future<NodeID> NodeID::secure_random_async()
+    {
+        return std::async(std::launch::async, []()
+                          { return secure_random(); });
+    }
+
+    bool NodeID::operator==(const NodeID &other) const
+    {
+        return id_ == other.id_;
+    }
+
+    bool NodeID::operator!=(const NodeID &other) const
+    {
+        return !(*this == other);
+    }
+
+    bool NodeID::operator<(const NodeID &other) const
+    {
+        return id_ < other.id_;
+    }
+
+    bool NodeID::operator>(const NodeID &other) const
+    {
+        return other < *this;
+    }
+
+    bool NodeID::operator<=(const NodeID &other) const
+    {
+        return !(other < *this);
+    }
+
+    bool NodeID::operator>=(const NodeID &other) const
+    {
+        return !(*this < other);
+    }
 
 } // namespace bitscrape::types

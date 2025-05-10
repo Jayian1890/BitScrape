@@ -14,6 +14,7 @@ src_files = [
     'src/metadata_info.cpp',
     'src/metadata_piece.cpp',
     'src/torrent_info.cpp',
+    'src/beacon_types.cpp',
 ]
 
 # Library
@@ -42,6 +43,7 @@ if get_option('build_tests')
             'tests/unit/metadata_info_test.cpp',
             'tests/unit/metadata_piece_test.cpp',
             'tests/unit/torrent_info_test.cpp',
+            'tests/unit/beacon_types_test.cpp',
         ]
 
         test_exe = executable(
@@ -68,5 +70,6 @@ install_headers(
     'include/bitscrape/types/metadata_info.hpp',
     'include/bitscrape/types/metadata_piece.hpp',
     'include/bitscrape/types/torrent_info.hpp',
+    'include/bitscrape/types/beacon_types.hpp',
     subdir: 'bitscrape/types',
 )

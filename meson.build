@@ -30,7 +30,8 @@ thread_dep = dependency('threads')
 inc_dirs = include_directories(
     '.',
     'modules/types/include',
-    'modules/event/include'
+    'modules/event/include',
+    'modules/beacon/include'
 )
 
 # Enable AddressSanitizer if requested
@@ -42,6 +43,7 @@ endif
 # Build modules
 subdir('modules/types')
 subdir('modules/event')
+subdir('modules/beacon')
 
 # Build applications
 subdir('apps')

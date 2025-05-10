@@ -82,6 +82,7 @@ add_subdirectory(modules/event)
 add_subdirectory(modules/beacon)
 add_subdirectory(modules/bencode)
 add_subdirectory(modules/network)
+add_subdirectory(modules/bittorrent)
 
 # Add applications
 add_subdirectory(apps)

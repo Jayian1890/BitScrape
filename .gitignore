@@ -60,6 +60,7 @@ _deps/
 Testing/
 DartConfiguration.tcl
 install_manifest.txt
+cmake/
 
 # Memory bank
 .memory-bank/

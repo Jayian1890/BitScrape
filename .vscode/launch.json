@@ -3,61 +3,83 @@
     "configurations": [
         {
             "name": "CLI Debug",
-            "type": "lldb",
+            "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/bitscrape_cli",
             "args": [],
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "cmake: build",
-            "internalConsoleOptions": "neverOpen",
-            "terminal": "integrated",
-            "env": {
-                "ASAN_OPTIONS": "detect_leaks=0"
-            }
+            "environment": [
+                {
+                    "name": "ASAN_OPTIONS",
+                    "value": "detect_leaks=0"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "cmake: build cli"
         },
         {
             "name": "GUI Debug",
-            "type": "lldb",
+            "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/bitscrape_gui",
             "args": [],
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "cmake: build",
-            "internalConsoleOptions": "neverOpen",
-            "terminal": "integrated",
-            "env": {
-                "ASAN_OPTIONS": "detect_leaks=0"
-            }
+            "environment": [
+                {
+                    "name": "ASAN_OPTIONS",
+                    "value": "detect_leaks=0"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "cmake: build gui"
         },
         {
             "name": "Module Test Debug",
-            "type": "lldb",
+            "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/${input:moduleDir}_test",
             "args": ["--gtest_filter=${input:testFilter}"],
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "cmake: build",
-            "internalConsoleOptions": "neverOpen",
-            "terminal": "integrated",
-            "env": {
-                "GTEST_COLOR": "1",
-                "ASAN_OPTIONS": "detect_leaks=0"
-            }
+            "environment": [
+                {
+                    "name": "GTEST_COLOR",
+                    "value": "1"
+                },
+                {
+                    "name": "ASAN_OPTIONS",
+                    "value": "detect_leaks=0"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "cmake: build"
         },
         {
             "name": "Run Specific Test",
-            "type": "lldb",
+            "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/${input:testPath}",
             "args": ["--gtest_filter=${input:testFilter}"],
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "cmake: build",
-            "internalConsoleOptions": "neverOpen",
-            "terminal": "integrated",
-            "env": {
-                "GTEST_COLOR": "1",
-                "ASAN_OPTIONS": "detect_leaks=0"
-            }
+            "environment": [
+                {
+                    "name": "GTEST_COLOR",
+                    "value": "1"
+                },
+                {
+                    "name": "ASAN_OPTIONS",
+                    "value": "detect_leaks=0"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "cmake: build"
         }
     ],
     "inputs": [

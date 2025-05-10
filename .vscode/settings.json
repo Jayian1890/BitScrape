@@ -80,12 +80,14 @@
     "**/.git": true,
     "**/.svn": true,
     "**/.hg": true,
-    "**/CVS": true,
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
+    "**/CVS": true,
     ".cache": true,
-    ".memory-bank": false
-  },
+    ".memory-bank": true,
+    "cmake": true,
+    "build": true
+},
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
   "files.watcherExclude": {
@@ -151,5 +153,9 @@
   ],
 
   // SonarLint Settings
-  "sonarlint.pathToCompileCommands": "${workspaceFolder}/build/compile_commands.json"
+"sonarlint.pathToCompileCommands": "${workspaceFolder}/build/compile_commands.json",
+"hide-files.files": [
+    "cmake",
+    "build"
+]
 }

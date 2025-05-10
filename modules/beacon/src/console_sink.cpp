@@ -1,8 +1,10 @@
 #include "bitscrape/beacon/console_sink.hpp"
 
 #include <sstream>
-#include <iomanip>
 #include <chrono>
+#include <mutex>
+#include <string>
+#include <format>
 
 namespace bitscrape::beacon {
 
@@ -16,25 +18,21 @@ void ConsoleSink::write(types::BeaconSeverity severity, types::BeaconCategory ca
         return;
     }
 
-    std::lock_guard<std::mutex> lock(console_mutex_);
+    std::scoped_lock lock(console_mutex_);
 
-    // Format timestamp
+    // Format timestamp using modern C++20 chrono
     auto now = std::chrono::system_clock::now();
-    auto time_t = std::chrono::system_clock::to_time_t(now);
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
         now.time_since_epoch() % std::chrono::seconds(1)).count();
 
-    std::ostringstream timestamp;
-    struct tm time_info{};
-    localtime_r(&time_t, &time_info);
-    timestamp << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S")
-             << '.' << std::setfill('0') << std::setw(3) << ms;
+    // Format the timestamp using std::format
+    std::string timestamp = std::format("{:%Y-%m-%d %H:%M:%S}.{:03d}",
+                                       std::chrono::floor<std::chrono::seconds>(now), ms);
 
     // Format source location
     std::string file_name = location.file_name();
     // Extract just the filename without the path
-    auto pos = file_name.find_last_of("/\\");
-    if (pos != std::string::npos) {
+    if (auto pos = file_name.find_last_of("/\\"); pos != std::string::npos) {
         file_name = file_name.substr(pos + 1);
     }
 
@@ -50,7 +48,7 @@ void ConsoleSink::write(types::BeaconSeverity severity, types::BeaconCategory ca
     }
 
     // Format and output the beacon message
-    output_stream_ << timestamp.str() << " "
+    output_stream_ << timestamp << " "
                   << color_start << "[" << types::severity_to_string(severity) << "]" << color_end << " "
                   << "[" << types::category_to_string(category) << "] "
                   << message << " "
@@ -59,7 +57,7 @@ void ConsoleSink::write(types::BeaconSeverity severity, types::BeaconCategory ca
 }
 
 void ConsoleSink::set_use_colors(bool use_colors) {
-    std::lock_guard<std::mutex> lock(console_mutex_);
+    std::scoped_lock lock(console_mutex_);
     use_colors_ = use_colors;
 }
 

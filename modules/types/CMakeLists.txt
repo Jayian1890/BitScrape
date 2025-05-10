@@ -67,8 +67,7 @@ if(BUILD_TESTS)
     target_link_libraries(types_test
         PRIVATE
             bitscrape-types
-            GTest::gtest
-            GTest::gtest_main
+            bitscrape-gtest
     )
 
     # Add to foundation tests group

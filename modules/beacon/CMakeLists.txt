@@ -20,6 +20,7 @@ target_link_libraries(bitscrape-beacon
     PUBLIC
         bitscrape::types
         bitscrape::event
+    PRIVATE
         Threads::Threads
 )
 
@@ -63,8 +64,7 @@ if(BUILD_TESTS)
     target_link_libraries(beacon_test
         PRIVATE
             bitscrape-beacon
-            GTest::gtest
-            GTest::gtest_main
+            bitscrape-gtest
     )
 
     # Add to foundation tests group

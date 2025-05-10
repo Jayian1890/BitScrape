@@ -58,8 +58,7 @@ if(BUILD_TESTS)
     target_link_libraries(event_test
         PRIVATE
             bitscrape-event
-            GTest::gtest
-            GTest::gtest_main
+            bitscrape-gtest
     )
 
     # Add to foundation tests group

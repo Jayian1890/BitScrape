@@ -21,6 +21,7 @@ target_include_directories(bitscrape-network
 target_link_libraries(bitscrape-network
     PUBLIC
         bitscrape::types
+    PRIVATE
         Threads::Threads
 )
 
@@ -61,8 +62,7 @@ if(BUILD_TESTS)
     target_link_libraries(network_test
         PRIVATE
             bitscrape-network
-            GTest::gtest
-            GTest::gtest_main
+            bitscrape-gtest
     )
 
     # Add to foundation tests group

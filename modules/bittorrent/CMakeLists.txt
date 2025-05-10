@@ -27,9 +27,10 @@ target_include_directories(bitscrape-bittorrent
 target_link_libraries(bitscrape-bittorrent
     PUBLIC
         bitscrape::types
-        bitscrape::event
-        bitscrape::bencode
         bitscrape::network
+        bitscrape::bencode
+    PRIVATE
+        bitscrape::event
         Threads::Threads
 )
 
@@ -81,8 +82,7 @@ if(BUILD_TESTS)
     target_link_libraries(bittorrent_test
         PRIVATE
             bitscrape-bittorrent
-            GTest::gtest
-            GTest::gtest_main
+            bitscrape-gtest
     )
 
     # Add to protocol tests group

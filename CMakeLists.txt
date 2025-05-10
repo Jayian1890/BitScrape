@@ -54,12 +54,23 @@ if(BUILD_TESTS)
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG v1.14.0
     )
-    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    # Configure Google Test options
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
 
     # Set environment variables for tests
     set(ENV{GTEST_COLOR} "1")
+
+    # Create a custom target for Google Test
+    add_library(bitscrape-gtest INTERFACE)
+    target_link_libraries(bitscrape-gtest INTERFACE gtest_main)
+
+    # Note: There might be a warning about duplicate libraries (libgtest.a) during linking.
+    # This is a harmless warning that occurs when multiple test executables link to the same
+    # Google Test library. It does not affect the functionality of the tests.
 
     # Create test groups
     add_custom_target(foundation_tests)

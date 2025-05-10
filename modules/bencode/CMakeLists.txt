@@ -18,6 +18,7 @@ target_include_directories(bitscrape-bencode
 target_link_libraries(bitscrape-bencode
     PUBLIC
         bitscrape::types
+    PRIVATE
         bitscrape::event
 )
 
@@ -60,8 +61,8 @@ if(BUILD_TESTS)
     target_link_libraries(bencode_test
         PRIVATE
             bitscrape-bencode
-            GTest::gtest
-            GTest::gtest_main
+            bitscrape-event
+            bitscrape-gtest
     )
 
     # Add to foundation tests group

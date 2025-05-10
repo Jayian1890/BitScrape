@@ -76,7 +76,7 @@ TEST(BencodeValueTest, ListConstructor) {
   EXPECT_TRUE(value.is_list());
   EXPECT_FALSE(value.is_dict());
   EXPECT_EQ(value.type(), BencodeValue::Type::LIST);
-  EXPECT_EQ(value.as_list().size(), 3);
+  EXPECT_EQ(value.as_list().size(), 3UL);
   EXPECT_EQ(value.as_list()[0].as_string(), "test");
   EXPECT_EQ(value.as_list()[1].as_integer(), 42);
   EXPECT_TRUE(value.as_list()[2].is_list());
@@ -95,7 +95,7 @@ TEST(BencodeValueTest, DictConstructor) {
   EXPECT_FALSE(value.is_list());
   EXPECT_TRUE(value.is_dict());
   EXPECT_EQ(value.type(), BencodeValue::Type::DICT);
-  EXPECT_EQ(value.as_dict().size(), 3);
+  EXPECT_EQ(value.as_dict().size(), 3UL);
   EXPECT_EQ(value.as_dict().at("string").as_string(), "test");
   EXPECT_EQ(value.as_dict().at("integer").as_integer(), 42);
   EXPECT_TRUE(value.as_dict().at("list").is_list());
@@ -181,7 +181,7 @@ TEST(BencodeValueTest, SetDictValue) {
   value.set("string", BencodeValue(std::string("new value")));
   value.set("integer", BencodeValue(42));
 
-  EXPECT_EQ(value.as_dict().size(), 2);
+  EXPECT_EQ(value.as_dict().size(), 2UL);
   EXPECT_EQ(value.as_dict().at("string").as_string(), "new value");
   EXPECT_EQ(value.as_dict().at("integer").as_integer(), 42);
 }
@@ -194,7 +194,7 @@ TEST(BencodeValueTest, SetListValue) {
   value.set(0, BencodeValue(std::string("new value")));
   value.set(1, BencodeValue(43));
 
-  EXPECT_EQ(value.as_list().size(), 2);
+  EXPECT_EQ(value.as_list().size(), 2UL);
   EXPECT_EQ(value.as_list()[0].as_string(), "new value");
   EXPECT_EQ(value.as_list()[1].as_integer(), 43);
 
@@ -208,7 +208,7 @@ TEST(BencodeValueTest, AddListValue) {
 
   value.add(BencodeValue(42));
 
-  EXPECT_EQ(value.as_list().size(), 2);
+  EXPECT_EQ(value.as_list().size(), 2UL);
   EXPECT_EQ(value.as_list()[0].as_string(), "test");
   EXPECT_EQ(value.as_list()[1].as_integer(), 42);
 }
@@ -222,8 +222,8 @@ TEST(BencodeValueTest, RemoveDictValue) {
   EXPECT_TRUE(value.remove("string"));
   EXPECT_FALSE(value.remove("missing"));
 
-  EXPECT_EQ(value.as_dict().size(), 1);
-  EXPECT_EQ(value.as_dict().count("string"), 0);
+  EXPECT_EQ(value.as_dict().size(), 1UL);
+  EXPECT_EQ(value.as_dict().count("string"), 0UL);
   EXPECT_EQ(value.as_dict().at("integer").as_integer(), 42);
 }
 
@@ -235,7 +235,7 @@ TEST(BencodeValueTest, RemoveListValue) {
   EXPECT_TRUE(value.remove(0));
   EXPECT_FALSE(value.remove(1));
 
-  EXPECT_EQ(value.as_list().size(), 1);
+  EXPECT_EQ(value.as_list().size(), 1UL);
   EXPECT_EQ(value.as_list()[0].as_integer(), 42);
 }
 

@@ -54,7 +54,7 @@ TEST(BencodeDecoderTest, DecodeList) {
   auto decoded = decoder->decode(data);
 
   EXPECT_TRUE(decoded.is_list());
-  EXPECT_EQ(decoded.as_list().size(), 2);
+  EXPECT_EQ(decoded.as_list().size(), 2UL);
   EXPECT_TRUE(decoded.as_list()[0].is_string());
   EXPECT_EQ(decoded.as_list()[0].as_string(), "test");
   EXPECT_TRUE(decoded.as_list()[1].is_integer());
@@ -69,7 +69,7 @@ TEST(BencodeDecoderTest, DecodeListAsync) {
   auto decoded = future.get();
 
   EXPECT_TRUE(decoded.is_list());
-  EXPECT_EQ(decoded.as_list().size(), 2);
+  EXPECT_EQ(decoded.as_list().size(), 2UL);
   EXPECT_TRUE(decoded.as_list()[0].is_string());
   EXPECT_EQ(decoded.as_list()[0].as_string(), "test");
   EXPECT_TRUE(decoded.as_list()[1].is_integer());
@@ -83,7 +83,7 @@ TEST(BencodeDecoderTest, DecodeDict) {
   auto decoded = decoder->decode(data);
 
   EXPECT_TRUE(decoded.is_dict());
-  EXPECT_EQ(decoded.as_dict().size(), 2);
+  EXPECT_EQ(decoded.as_dict().size(), 2UL);
   EXPECT_TRUE(decoded.as_dict().at("string").is_string());
   EXPECT_EQ(decoded.as_dict().at("string").as_string(), "test");
   EXPECT_TRUE(decoded.as_dict().at("integer").is_integer());
@@ -98,7 +98,7 @@ TEST(BencodeDecoderTest, DecodeDictAsync) {
   auto decoded = future.get();
 
   EXPECT_TRUE(decoded.is_dict());
-  EXPECT_EQ(decoded.as_dict().size(), 2);
+  EXPECT_EQ(decoded.as_dict().size(), 2UL);
   EXPECT_TRUE(decoded.as_dict().at("string").is_string());
   EXPECT_EQ(decoded.as_dict().at("string").as_string(), "test");
   EXPECT_TRUE(decoded.as_dict().at("integer").is_integer());
@@ -112,11 +112,11 @@ TEST(BencodeDecoderTest, DecodeNestedStructures) {
   auto decoded = decoder->decode(data);
 
   EXPECT_TRUE(decoded.is_dict());
-  EXPECT_EQ(decoded.as_dict().size(), 2);
+  EXPECT_EQ(decoded.as_dict().size(), 2UL);
 
   // Check the list
   EXPECT_TRUE(decoded.as_dict().at("list").is_list());
-  EXPECT_EQ(decoded.as_dict().at("list").as_list().size(), 2);
+  EXPECT_EQ(decoded.as_dict().at("list").as_list().size(), 2UL);
   EXPECT_TRUE(decoded.as_dict().at("list").as_list()[0].is_string());
   EXPECT_EQ(decoded.as_dict().at("list").as_list()[0].as_string(), "test");
   EXPECT_TRUE(decoded.as_dict().at("list").as_list()[1].is_integer());
@@ -124,7 +124,7 @@ TEST(BencodeDecoderTest, DecodeNestedStructures) {
 
   // Check the dict
   EXPECT_TRUE(decoded.as_dict().at("dict").is_dict());
-  EXPECT_EQ(decoded.as_dict().at("dict").as_dict().size(), 2);
+  EXPECT_EQ(decoded.as_dict().at("dict").as_dict().size(), 2UL);
   EXPECT_TRUE(decoded.as_dict().at("dict").as_dict().at("string").is_string());
   EXPECT_EQ(decoded.as_dict().at("dict").as_dict().at("string").as_string(),
             "test");

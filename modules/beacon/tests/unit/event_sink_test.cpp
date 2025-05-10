@@ -47,7 +47,7 @@ TEST_F(EventSinkTest, WriteEvent) {
     sink.write(BeaconSeverity::INFO, BeaconCategory::SYSTEM, "Test message", std::source_location::current());
 
     // Check that the event was received
-    EXPECT_EQ(received_events_.size(), 1);
+    EXPECT_EQ(received_events_.size(), 1UL);
     EXPECT_EQ(received_events_[0].severity, BeaconSeverity::INFO);
     EXPECT_EQ(received_events_[0].category, BeaconCategory::SYSTEM);
     EXPECT_EQ(received_events_[0].message, "Test message");
@@ -64,7 +64,7 @@ TEST_F(EventSinkTest, WriteAsyncEvent) {
     future.wait();
 
     // Check that the event was received
-    EXPECT_EQ(received_events_.size(), 1);
+    EXPECT_EQ(received_events_.size(), 1UL);
     EXPECT_EQ(received_events_[0].severity, BeaconSeverity::INFO);
     EXPECT_EQ(received_events_[0].category, BeaconCategory::SYSTEM);
     EXPECT_EQ(received_events_[0].message, "Async message");
@@ -84,7 +84,7 @@ TEST_F(EventSinkTest, FilterBySeverity) {
     sink.write(BeaconSeverity::ERROR, BeaconCategory::SYSTEM, "Error message", std::source_location::current());
 
     // Check that only WARNING and above were received
-    EXPECT_EQ(received_events_.size(), 2);
+    EXPECT_EQ(received_events_.size(), 2UL);
     EXPECT_EQ(received_events_[0].severity, BeaconSeverity::WARNING);
     EXPECT_EQ(received_events_[1].severity, BeaconSeverity::ERROR);
 }
@@ -103,7 +103,7 @@ TEST_F(EventSinkTest, FilterByCategory) {
     sink.write(BeaconSeverity::INFO, BeaconCategory::DHT, "DHT message", std::source_location::current());
 
     // Check that only SYSTEM and NETWORK were received
-    EXPECT_EQ(received_events_.size(), 2);
+    EXPECT_EQ(received_events_.size(), 2UL);
     EXPECT_EQ(received_events_[0].category, BeaconCategory::SYSTEM);
     EXPECT_EQ(received_events_[1].category, BeaconCategory::NETWORK);
 }

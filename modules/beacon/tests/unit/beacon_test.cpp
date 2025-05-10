@@ -2,7 +2,6 @@
 
 #include "bitscrape/beacon/beacon.hpp"
 #include <memory>
-#include <algorithm>
 
 using namespace bitscrape::beacon;
 using namespace bitscrape::types;
@@ -41,7 +40,7 @@ TEST(BeaconTest, AddSink) {
     beacon.info("Test message", BeaconCategory::SYSTEM);
 
     // Sink should have received the message
-    EXPECT_EQ(sink_ptr->entries.size(), 1);
+    EXPECT_EQ(sink_ptr->entries.size(), 1UL);
     EXPECT_EQ(sink_ptr->entries[0].severity, BeaconSeverity::INFO);
     EXPECT_EQ(sink_ptr->entries[0].category, BeaconCategory::SYSTEM);
     EXPECT_EQ(sink_ptr->entries[0].message, "Test message");
@@ -98,28 +97,28 @@ TEST(BeaconTest, AsyncLogging) {
     future5.wait();
 
     // Sink should have received all messages
-    EXPECT_EQ(sink_ptr->entries.size(), 5);
+    EXPECT_EQ(sink_ptr->entries.size(), 5UL);
 
-    // Since async operations may complete in any order, we need to check that all severity levels are present
-    // without assuming a specific order
-    std::vector<BeaconSeverity> expected_severities = {
-        BeaconSeverity::DEBUG,
-        BeaconSeverity::INFO,
-        BeaconSeverity::WARNING,
-        BeaconSeverity::ERROR,
-        BeaconSeverity::CRITICAL
-    };
+    // Find the entry with each severity level
+    bool found_debug = false;
+    bool found_info = false;
+    bool found_warning = false;
+    bool found_error = false;
+    bool found_critical = false;
 
-    std::vector<BeaconSeverity> actual_severities;
     for (const auto& entry : sink_ptr->entries) {
-        actual_severities.push_back(entry.severity);
+        if (entry.severity == BeaconSeverity::DEBUG) found_debug = true;
+        if (entry.severity == BeaconSeverity::INFO) found_info = true;
+        if (entry.severity == BeaconSeverity::WARNING) found_warning = true;
+        if (entry.severity == BeaconSeverity::ERROR) found_error = true;
+        if (entry.severity == BeaconSeverity::CRITICAL) found_critical = true;
     }
 
-    // Sort both vectors to compare them regardless of order
-    std::sort(expected_severities.begin(), expected_severities.end());
-    std::sort(actual_severities.begin(), actual_severities.end());
-
-    EXPECT_EQ(actual_severities, expected_severities);
+    EXPECT_TRUE(found_debug);
+    EXPECT_TRUE(found_info);
+    EXPECT_TRUE(found_warning);
+    EXPECT_TRUE(found_error);
+    EXPECT_TRUE(found_critical);
 }
 
 TEST(BeaconTest, MultipleSinks) {
@@ -139,8 +138,8 @@ TEST(BeaconTest, MultipleSinks) {
     beacon.info("Test message", BeaconCategory::SYSTEM);
 
     // Both sinks should have received the message
-    EXPECT_EQ(sink1_ptr->entries.size(), 1);
-    EXPECT_EQ(sink2_ptr->entries.size(), 1);
+    EXPECT_EQ(sink1_ptr->entries.size(), 1UL);
+    EXPECT_EQ(sink2_ptr->entries.size(), 1UL);
     EXPECT_EQ(sink1_ptr->entries[0].message, "Test message");
     EXPECT_EQ(sink2_ptr->entries[0].message, "Test message");
 }

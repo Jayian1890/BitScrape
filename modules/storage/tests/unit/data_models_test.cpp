@@ -20,14 +20,14 @@ protected:
     void SetUp() override {
         // Create a temporary database file
         test_db_path_ = "test_data_models.db";
-        
+
         // Remove the file if it exists
         std::filesystem::remove(test_db_path_);
-        
+
         // Create and initialize the database
         db_ = std::make_shared<Database>(test_db_path_);
         ASSERT_TRUE(db_->initialize());
-        
+
         // Create test tables
         ASSERT_TRUE(db_->execute_update(
             "CREATE TABLE nodes ("
@@ -42,7 +42,7 @@ protected:
             "is_responsive INTEGER NOT NULL DEFAULT 0"
             ")"
         ));
-        
+
         ASSERT_TRUE(db_->execute_update(
             "CREATE TABLE infohashes ("
             "info_hash BLOB PRIMARY KEY, "
@@ -53,7 +53,7 @@ protected:
             "has_metadata INTEGER NOT NULL DEFAULT 0"
             ")"
         ));
-        
+
         ASSERT_TRUE(db_->execute_update(
             "CREATE TABLE metadata ("
             "info_hash BLOB PRIMARY KEY, "
@@ -68,7 +68,7 @@ protected:
             "creation_date INTEGER"
             ")"
         ));
-        
+
         ASSERT_TRUE(db_->execute_update(
             "CREATE TABLE files ("
             "info_hash BLOB NOT NULL, "
@@ -77,7 +77,7 @@ protected:
             "PRIMARY KEY (info_hash, path)"
             ")"
         ));
-        
+
         ASSERT_TRUE(db_->execute_update(
             "CREATE TABLE trackers ("
             "info_hash BLOB NOT NULL, "
@@ -89,7 +89,7 @@ protected:
             "PRIMARY KEY (info_hash, url)"
             ")"
         ));
-        
+
         ASSERT_TRUE(db_->execute_update(
             "CREATE TABLE peers ("
             "info_hash BLOB NOT NULL, "
@@ -105,15 +105,15 @@ protected:
             ")"
         ));
     }
-    
+
     void TearDown() override {
         // Close the database
         db_->close();
-        
+
         // Remove the test database file
         std::filesystem::remove(test_db_path_);
     }
-    
+
     std::string test_db_path_;
     std::shared_ptr<Database> db_;
 };
@@ -129,13 +129,13 @@ TEST_F(DataModelsTest, NodeModelSerialization) {
     node.query_count = 10;
     node.response_count = 8;
     node.is_responsive = true;
-    
+
     // Convert to SQL parameters
     auto params = node.to_sql_params();
-    
+
     // Check parameter count
     EXPECT_EQ(params.size(), 8);
-    
+
     // Insert into database
     ASSERT_TRUE(db_->execute_update(
         "INSERT INTO nodes (node_id, ip, port, first_seen, last_seen, ping_count, query_count, response_count, is_responsive) "
@@ -152,16 +152,16 @@ TEST_F(DataModelsTest, NodeModelSerialization) {
             node.is_responsive ? "1" : "0"
         }
     ));
-    
+
     // Query the database
     auto result = db_->execute("SELECT * FROM nodes WHERE node_id = ?", {node.node_id.to_hex()});
-    
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
-    
+
     // Create a node model from the result
     auto retrieved_node = NodeModel::from_db_result(result);
-    
+
     // Check if the retrieved node matches the original
     EXPECT_EQ(retrieved_node.node_id, node.node_id);
     EXPECT_EQ(retrieved_node.endpoint.address(), node.endpoint.address());
@@ -181,13 +181,13 @@ TEST_F(DataModelsTest, InfoHashModelSerialization) {
     infohash.announce_count = 3;
     infohash.peer_count = 7;
     infohash.has_metadata = true;
-    
+
     // Convert to SQL parameters
     auto params = infohash.to_sql_params();
-    
+
     // Check parameter count
     EXPECT_EQ(params.size(), 6);
-    
+
     // Insert into database
     ASSERT_TRUE(db_->execute_update(
         "INSERT INTO infohashes (info_hash, first_seen, last_seen, announce_count, peer_count, has_metadata) "
@@ -201,16 +201,16 @@ TEST_F(DataModelsTest, InfoHashModelSerialization) {
             infohash.has_metadata ? "1" : "0"
         }
     ));
-    
+
     // Query the database
     auto result = db_->execute("SELECT * FROM infohashes WHERE info_hash = ?", {infohash.info_hash.to_hex()});
-    
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
-    
+
     // Create an infohash model from the result
     auto retrieved_infohash = InfoHashModel::from_db_result(result);
-    
+
     // Check if the retrieved infohash matches the original
     EXPECT_EQ(retrieved_infohash.info_hash, infohash.info_hash);
     EXPECT_EQ(retrieved_infohash.announce_count, infohash.announce_count);
@@ -231,13 +231,13 @@ TEST_F(DataModelsTest, MetadataModelSerialization) {
     metadata.comment = "Test comment";
     metadata.created_by = "BitScrape Test";
     metadata.creation_date = std::chrono::system_clock::now();
-    
+
     // Convert to SQL parameters
     auto params = metadata.to_sql_params();
-    
+
     // Check parameter count
     EXPECT_EQ(params.size(), 10);
-    
+
     // Insert into database
     ASSERT_TRUE(db_->execute_update(
         "INSERT INTO metadata (info_hash, metadata, download_time, name, total_size, piece_count, file_count, comment, created_by, creation_date) "
@@ -255,16 +255,16 @@ TEST_F(DataModelsTest, MetadataModelSerialization) {
             metadata.creation_date ? std::to_string(std::chrono::duration_cast<std::chrono::seconds>(metadata.creation_date->time_since_epoch()).count()) : ""
         }
     ));
-    
+
     // Query the database
     auto result = db_->execute("SELECT * FROM metadata WHERE info_hash = ?", {metadata.info_hash.to_hex()});
-    
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
-    
+
     // Create a metadata model from the result
     auto retrieved_metadata = MetadataModel::from_db_result(result);
-    
+
     // Check if the retrieved metadata matches the original
     EXPECT_EQ(retrieved_metadata.info_hash, metadata.info_hash);
     EXPECT_EQ(retrieved_metadata.metadata.to_hex(), metadata.metadata.to_hex());
@@ -283,13 +283,13 @@ TEST_F(DataModelsTest, FileModelSerialization) {
     file.info_hash = InfoHash::random();
     file.path = "test/file.txt";
     file.size = 1024 * 1024; // 1 MB
-    
+
     // Convert to SQL parameters
     auto params = file.to_sql_params();
-    
+
     // Check parameter count
     EXPECT_EQ(params.size(), 3);
-    
+
     // Insert into database
     ASSERT_TRUE(db_->execute_update(
         "INSERT INTO files (info_hash, path, size) VALUES (?, ?, ?)",
@@ -299,17 +299,17 @@ TEST_F(DataModelsTest, FileModelSerialization) {
             std::to_string(file.size)
         }
     ));
-    
+
     // Query the database
-    auto result = db_->execute("SELECT * FROM files WHERE info_hash = ? AND path = ?", 
+    auto result = db_->execute("SELECT * FROM files WHERE info_hash = ? AND path = ?",
                               {file.info_hash.to_hex(), file.path});
-    
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
-    
+
     // Create a file model from the result
     auto retrieved_file = FileModel::from_db_result(result);
-    
+
     // Check if the retrieved file matches the original
     EXPECT_EQ(retrieved_file.info_hash, file.info_hash);
     EXPECT_EQ(retrieved_file.path, file.path);
@@ -325,13 +325,13 @@ TEST_F(DataModelsTest, TrackerModelSerialization) {
     tracker.last_seen = std::chrono::system_clock::now();
     tracker.announce_count = 5;
     tracker.scrape_count = 2;
-    
+
     // Convert to SQL parameters
     auto params = tracker.to_sql_params();
-    
+
     // Check parameter count
     EXPECT_EQ(params.size(), 6);
-    
+
     // Insert into database
     ASSERT_TRUE(db_->execute_update(
         "INSERT INTO trackers (info_hash, url, first_seen, last_seen, announce_count, scrape_count) "
@@ -345,17 +345,17 @@ TEST_F(DataModelsTest, TrackerModelSerialization) {
             std::to_string(tracker.scrape_count)
         }
     ));
-    
+
     // Query the database
-    auto result = db_->execute("SELECT * FROM trackers WHERE info_hash = ? AND url = ?", 
+    auto result = db_->execute("SELECT * FROM trackers WHERE info_hash = ? AND url = ?",
                               {tracker.info_hash.to_hex(), tracker.url});
-    
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
-    
+
     // Create a tracker model from the result
     auto retrieved_tracker = TrackerModel::from_db_result(result);
-    
+
     // Check if the retrieved tracker matches the original
     EXPECT_EQ(retrieved_tracker.info_hash, tracker.info_hash);
     EXPECT_EQ(retrieved_tracker.url, tracker.url);
@@ -374,13 +374,13 @@ TEST_F(DataModelsTest, PeerModelSerialization) {
     peer.supports_dht = true;
     peer.supports_extension_protocol = true;
     peer.supports_fast_protocol = false;
-    
+
     // Convert to SQL parameters
     auto params = peer.to_sql_params();
-    
+
     // Check parameter count
     EXPECT_EQ(params.size(), 9);
-    
+
     // Insert into database
     ASSERT_TRUE(db_->execute_update(
         "INSERT INTO peers (info_hash, ip, port, peer_id, first_seen, last_seen, supports_dht, supports_extension_protocol, supports_fast_protocol) "
@@ -397,17 +397,17 @@ TEST_F(DataModelsTest, PeerModelSerialization) {
             peer.supports_fast_protocol ? "1" : "0"
         }
     ));
-    
+
     // Query the database
-    auto result = db_->execute("SELECT * FROM peers WHERE info_hash = ? AND ip = ? AND port = ?", 
+    auto result = db_->execute("SELECT * FROM peers WHERE info_hash = ? AND ip = ? AND port = ?",
                               {peer.info_hash.to_hex(), peer.endpoint.address(), std::to_string(peer.endpoint.port())});
-    
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
-    
+
     // Create a peer model from the result
     auto retrieved_peer = PeerModel::from_db_result(result);
-    
+
     // Check if the retrieved peer matches the original
     EXPECT_EQ(retrieved_peer.info_hash, peer.info_hash);
     EXPECT_EQ(retrieved_peer.endpoint.address(), peer.endpoint.address());
@@ -430,13 +430,13 @@ TEST_F(DataModelsTest, PeerModelWithoutPeerIdSerialization) {
     peer.supports_dht = false;
     peer.supports_extension_protocol = true;
     peer.supports_fast_protocol = true;
-    
+
     // Convert to SQL parameters
     auto params = peer.to_sql_params();
-    
+
     // Check parameter count
     EXPECT_EQ(params.size(), 9);
-    
+
     // Insert into database
     ASSERT_TRUE(db_->execute_update(
         "INSERT INTO peers (info_hash, ip, port, peer_id, first_seen, last_seen, supports_dht, supports_extension_protocol, supports_fast_protocol) "
@@ -453,17 +453,17 @@ TEST_F(DataModelsTest, PeerModelWithoutPeerIdSerialization) {
             peer.supports_fast_protocol ? "1" : "0"
         }
     ));
-    
+
     // Query the database
-    auto result = db_->execute("SELECT * FROM peers WHERE info_hash = ? AND ip = ? AND port = ?", 
+    auto result = db_->execute("SELECT * FROM peers WHERE info_hash = ? AND ip = ? AND port = ?",
                               {peer.info_hash.to_hex(), peer.endpoint.address(), std::to_string(peer.endpoint.port())});
-    
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
-    
+
     // Create a peer model from the result
     auto retrieved_peer = PeerModel::from_db_result(result);
-    
+
     // Check if the retrieved peer matches the original
     EXPECT_EQ(retrieved_peer.info_hash, peer.info_hash);
     EXPECT_EQ(retrieved_peer.endpoint.address(), peer.endpoint.address());
@@ -487,13 +487,13 @@ TEST_F(DataModelsTest, MetadataModelWithoutCreationDateSerialization) {
     metadata.comment = "Another test comment";
     metadata.created_by = "BitScrape Test 2";
     metadata.creation_date = std::nullopt; // No creation date
-    
+
     // Convert to SQL parameters
     auto params = metadata.to_sql_params();
-    
+
     // Check parameter count
     EXPECT_EQ(params.size(), 10);
-    
+
     // Insert into database
     ASSERT_TRUE(db_->execute_update(
         "INSERT INTO metadata (info_hash, metadata, download_time, name, total_size, piece_count, file_count, comment, created_by, creation_date) "
@@ -511,16 +511,16 @@ TEST_F(DataModelsTest, MetadataModelWithoutCreationDateSerialization) {
             metadata.creation_date ? std::to_string(std::chrono::duration_cast<std::chrono::seconds>(metadata.creation_date->time_since_epoch()).count()) : ""
         }
     ));
-    
+
     // Query the database
     auto result = db_->execute("SELECT * FROM metadata WHERE info_hash = ?", {metadata.info_hash.to_hex()});
-    
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
-    
+
     // Create a metadata model from the result
     auto retrieved_metadata = MetadataModel::from_db_result(result);
-    
+
     // Check if the retrieved metadata matches the original
     EXPECT_EQ(retrieved_metadata.info_hash, metadata.info_hash);
     EXPECT_EQ(retrieved_metadata.metadata.to_hex(), metadata.metadata.to_hex());
@@ -531,4 +531,232 @@ TEST_F(DataModelsTest, MetadataModelWithoutCreationDateSerialization) {
     EXPECT_EQ(retrieved_metadata.comment, metadata.comment);
     EXPECT_EQ(retrieved_metadata.created_by, metadata.created_by);
     EXPECT_FALSE(retrieved_metadata.creation_date.has_value());
+}
+
+TEST_F(DataModelsTest, MetadataModelWithEmptyOptionalFields) {
+    // Create a metadata model with empty optional fields
+    MetadataModel metadata;
+    metadata.info_hash = InfoHash::random();
+    metadata.metadata = MetadataInfo(std::vector<uint8_t>{1, 2, 3});
+    metadata.download_time = std::chrono::system_clock::now();
+    metadata.name = "Test Torrent Empty Fields";
+    metadata.total_size = 1024 * 1024; // 1 MB
+    metadata.piece_count = 10;
+    metadata.file_count = 1;
+    metadata.comment = ""; // Empty comment
+    metadata.created_by = ""; // Empty created_by
+    metadata.creation_date = std::nullopt; // No creation date
+
+    // Convert to SQL parameters
+    auto params = metadata.to_sql_params();
+
+    // Insert into database
+    ASSERT_TRUE(db_->execute_update(
+        "INSERT INTO metadata (info_hash, metadata, download_time, name, total_size, piece_count, file_count, comment, created_by, creation_date) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        {
+            metadata.info_hash.to_hex(),
+            metadata.metadata.to_hex(),
+            std::to_string(std::chrono::duration_cast<std::chrono::seconds>(metadata.download_time.time_since_epoch()).count()),
+            metadata.name,
+            std::to_string(metadata.total_size),
+            std::to_string(metadata.piece_count),
+            std::to_string(metadata.file_count),
+            metadata.comment,
+            metadata.created_by,
+            metadata.creation_date ? std::to_string(std::chrono::duration_cast<std::chrono::seconds>(metadata.creation_date->time_since_epoch()).count()) : ""
+        }
+    ));
+
+    // Query the database
+    auto result = db_->execute("SELECT * FROM metadata WHERE info_hash = ?", {metadata.info_hash.to_hex()});
+
+    // Check if we have a result
+    ASSERT_TRUE(result.next());
+
+    // Create a metadata model from the result
+    auto retrieved_metadata = MetadataModel::from_db_result(result);
+
+    // Check if the retrieved metadata matches the original
+    EXPECT_EQ(retrieved_metadata.info_hash, metadata.info_hash);
+    EXPECT_EQ(retrieved_metadata.metadata.to_hex(), metadata.metadata.to_hex());
+    EXPECT_EQ(retrieved_metadata.name, metadata.name);
+    EXPECT_EQ(retrieved_metadata.total_size, metadata.total_size);
+    EXPECT_EQ(retrieved_metadata.piece_count, metadata.piece_count);
+    EXPECT_EQ(retrieved_metadata.file_count, metadata.file_count);
+    EXPECT_EQ(retrieved_metadata.comment, metadata.comment);
+    EXPECT_EQ(retrieved_metadata.created_by, metadata.created_by);
+    EXPECT_FALSE(retrieved_metadata.creation_date.has_value());
+}
+
+TEST_F(DataModelsTest, NodeModelWithMaxValues) {
+    // Create a node model with maximum values
+    NodeModel node;
+    node.node_id = NodeID::random();
+    node.endpoint = Endpoint("255.255.255.255", 65535); // Max IP and port
+    node.first_seen = std::chrono::system_clock::now();
+    node.last_seen = std::chrono::system_clock::now();
+    node.ping_count = std::numeric_limits<uint32_t>::max();
+    node.query_count = std::numeric_limits<uint32_t>::max();
+    node.response_count = std::numeric_limits<uint32_t>::max();
+    node.is_responsive = true;
+
+    // Convert to SQL parameters
+    auto params = node.to_sql_params();
+
+    // Insert into database
+    ASSERT_TRUE(db_->execute_update(
+        "INSERT INTO nodes (node_id, ip, port, first_seen, last_seen, ping_count, query_count, response_count, is_responsive) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        {
+            node.node_id.to_hex(),
+            node.endpoint.address(),
+            std::to_string(node.endpoint.port()),
+            std::to_string(std::chrono::duration_cast<std::chrono::seconds>(node.first_seen.time_since_epoch()).count()),
+            std::to_string(std::chrono::duration_cast<std::chrono::seconds>(node.last_seen.time_since_epoch()).count()),
+            std::to_string(node.ping_count),
+            std::to_string(node.query_count),
+            std::to_string(node.response_count),
+            node.is_responsive ? "1" : "0"
+        }
+    ));
+
+    // Query the database
+    auto result = db_->execute("SELECT * FROM nodes WHERE node_id = ?", {node.node_id.to_hex()});
+
+    // Check if we have a result
+    ASSERT_TRUE(result.next());
+
+    // Create a node model from the result
+    auto retrieved_node = NodeModel::from_db_result(result);
+
+    // Check if the retrieved node matches the original
+    EXPECT_EQ(retrieved_node.node_id, node.node_id);
+    EXPECT_EQ(retrieved_node.endpoint.address(), node.endpoint.address());
+    EXPECT_EQ(retrieved_node.endpoint.port(), node.endpoint.port());
+    EXPECT_EQ(retrieved_node.ping_count, node.ping_count);
+    EXPECT_EQ(retrieved_node.query_count, node.query_count);
+    EXPECT_EQ(retrieved_node.response_count, node.response_count);
+    EXPECT_EQ(retrieved_node.is_responsive, node.is_responsive);
+}
+
+TEST_F(DataModelsTest, InfoHashModelWithMaxValues) {
+    // Create an infohash model with maximum values
+    InfoHashModel infohash;
+    infohash.info_hash = InfoHash::random();
+    infohash.first_seen = std::chrono::system_clock::now();
+    infohash.last_seen = std::chrono::system_clock::now();
+    infohash.announce_count = std::numeric_limits<uint32_t>::max();
+    infohash.peer_count = std::numeric_limits<uint32_t>::max();
+    infohash.has_metadata = true;
+
+    // Convert to SQL parameters
+    auto params = infohash.to_sql_params();
+
+    // Insert into database
+    ASSERT_TRUE(db_->execute_update(
+        "INSERT INTO infohashes (info_hash, first_seen, last_seen, announce_count, peer_count, has_metadata) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        {
+            infohash.info_hash.to_hex(),
+            std::to_string(std::chrono::duration_cast<std::chrono::seconds>(infohash.first_seen.time_since_epoch()).count()),
+            std::to_string(std::chrono::duration_cast<std::chrono::seconds>(infohash.last_seen.time_since_epoch()).count()),
+            std::to_string(infohash.announce_count),
+            std::to_string(infohash.peer_count),
+            infohash.has_metadata ? "1" : "0"
+        }
+    ));
+
+    // Query the database
+    auto result = db_->execute("SELECT * FROM infohashes WHERE info_hash = ?", {infohash.info_hash.to_hex()});
+
+    // Check if we have a result
+    ASSERT_TRUE(result.next());
+
+    // Create an infohash model from the result
+    auto retrieved_infohash = InfoHashModel::from_db_result(result);
+
+    // Check if the retrieved infohash matches the original
+    EXPECT_EQ(retrieved_infohash.info_hash, infohash.info_hash);
+    EXPECT_EQ(retrieved_infohash.announce_count, infohash.announce_count);
+    EXPECT_EQ(retrieved_infohash.peer_count, infohash.peer_count);
+    EXPECT_EQ(retrieved_infohash.has_metadata, infohash.has_metadata);
+}
+
+TEST_F(DataModelsTest, FileModelWithLongPath) {
+    // Create a file model with a very long path
+    FileModel file;
+    file.info_hash = InfoHash::random();
+    file.path = std::string(1000, 'a') + "/" + std::string(1000, 'b') + ".txt"; // Very long path
+    file.size = 1024 * 1024 * 1024; // 1 GB
+
+    // Convert to SQL parameters
+    auto params = file.to_sql_params();
+
+    // Insert into database
+    ASSERT_TRUE(db_->execute_update(
+        "INSERT INTO files (info_hash, path, size) VALUES (?, ?, ?)",
+        {
+            file.info_hash.to_hex(),
+            file.path,
+            std::to_string(file.size)
+        }
+    ));
+
+    // Query the database
+    auto result = db_->execute("SELECT * FROM files WHERE info_hash = ?", {file.info_hash.to_hex()});
+
+    // Check if we have a result
+    ASSERT_TRUE(result.next());
+
+    // Create a file model from the result
+    auto retrieved_file = FileModel::from_db_result(result);
+
+    // Check if the retrieved file matches the original
+    EXPECT_EQ(retrieved_file.info_hash, file.info_hash);
+    EXPECT_EQ(retrieved_file.path, file.path);
+    EXPECT_EQ(retrieved_file.size, file.size);
+}
+
+TEST_F(DataModelsTest, TrackerModelWithLongURL) {
+    // Create a tracker model with a very long URL
+    TrackerModel tracker;
+    tracker.info_hash = InfoHash::random();
+    tracker.url = "http://" + std::string(1000, 'a') + ".example.com:6969/" + std::string(1000, 'b') + "/announce"; // Very long URL
+    tracker.first_seen = std::chrono::system_clock::now();
+    tracker.last_seen = std::chrono::system_clock::now();
+    tracker.announce_count = 100;
+    tracker.scrape_count = 50;
+
+    // Convert to SQL parameters
+    auto params = tracker.to_sql_params();
+
+    // Insert into database
+    ASSERT_TRUE(db_->execute_update(
+        "INSERT INTO trackers (info_hash, url, first_seen, last_seen, announce_count, scrape_count) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        {
+            tracker.info_hash.to_hex(),
+            tracker.url,
+            std::to_string(std::chrono::duration_cast<std::chrono::seconds>(tracker.first_seen.time_since_epoch()).count()),
+            std::to_string(std::chrono::duration_cast<std::chrono::seconds>(tracker.last_seen.time_since_epoch()).count()),
+            std::to_string(tracker.announce_count),
+            std::to_string(tracker.scrape_count)
+        }
+    ));
+
+    // Query the database
+    auto result = db_->execute("SELECT * FROM trackers WHERE info_hash = ?", {tracker.info_hash.to_hex()});
+
+    // Check if we have a result
+    ASSERT_TRUE(result.next());
+
+    // Create a tracker model from the result
+    auto retrieved_tracker = TrackerModel::from_db_result(result);
+
+    // Check if the retrieved tracker matches the original
+    EXPECT_EQ(retrieved_tracker.info_hash, tracker.info_hash);
+    EXPECT_EQ(retrieved_tracker.url, tracker.url);
+    EXPECT_EQ(retrieved_tracker.announce_count, tracker.announce_count);
+    EXPECT_EQ(retrieved_tracker.scrape_count, tracker.scrape_count);
 }

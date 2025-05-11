@@ -78,3 +78,5 @@ bitscrape.log
 !/apps/cli/src/main.cpp
 !/apps/gui/src/main.cpp
 /.ninja_log
+/bitscrape.conf
+/bin/bitscrape_cli

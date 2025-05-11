@@ -10,7 +10,7 @@
 #include <atomic>
 
 // Global variables for signal handling
-std::atomic<bool> running = true;
+std::atomic running = true;
 std::shared_ptr<bitscrape::core::Controller> controller;
 
 // Signal handler
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 
     // Parse command line arguments
     std::string config_path = "bitscrape.conf";
-    std::string db_path = "bitscrape.db";
+    std::string db_path;
     bool start_crawling = false;
 
     for (int i = 1; i < argc; ++i) {
@@ -128,17 +128,17 @@ int main(int argc, char *argv[])
         std::cout << "Controller running: " << stats["controller.running"] << std::endl;
         std::cout << "Crawling active: " << stats["controller.crawling"] << std::endl;
 
-        // Persistence statistics
-        if (stats.find("persistence.node_count") != stats.end()) {
-            std::cout << "Nodes discovered: " << stats["persistence.node_count"] << std::endl;
+        // Storage statistics
+        if (stats.contains("storage.node_count")) {
+            std::cout << "Nodes discovered: " << stats["storage.node_count"] << std::endl;
         }
 
-        if (stats.find("persistence.infohash_count") != stats.end()) {
-            std::cout << "Infohashes discovered: " << stats["persistence.infohash_count"] << std::endl;
+        if (stats.contains("storage.infohash_count")) {
+            std::cout << "Infohashes discovered: " << stats["storage.infohash_count"] << std::endl;
         }
 
-        if (stats.find("persistence.metadata_count") != stats.end()) {
-            std::cout << "Metadata downloaded: " << stats["persistence.metadata_count"] << std::endl;
+        if (stats.contains("storage.metadata_count")) {
+            std::cout << "Metadata downloaded: " << stats["storage.metadata_count"] << std::endl;
         }
 
         // Sleep for a while

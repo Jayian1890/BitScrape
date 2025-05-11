@@ -14,7 +14,8 @@ KeyValueStore::KeyValueStore(const std::string& path, bool persistent)
     : path_(path.empty() ? "data/default.db" : path),
       initialized_(false),
       in_transaction_(false),
-      is_persistent_(true) { // Always use disk-based storage
+      is_persistent_(true) {
+    // Always use disk-based storage
 
     // If original path was empty, we're using the default path
     if (path.empty()) {
@@ -816,7 +817,8 @@ bool KeyValueStore::load_from_disk() {
         file.read(reinterpret_cast<char*>(&count), sizeof(count));
 
         // Sanity check on count to prevent excessive memory allocation
-        if (count > 10000000) { // 10 million entries limit
+        if (count > 10000000) {
+            // 10 million entries limit
             std::cerr << "Too many entries in file: " << count << std::endl;
             return false;
         }
@@ -828,7 +830,8 @@ bool KeyValueStore::load_from_disk() {
             file.read(reinterpret_cast<char*>(&key_size), sizeof(key_size));
 
             // Sanity check on key size
-            if (key_size > 1024) { // 1KB key size limit
+            if (key_size > 1024) {
+                // 1KB key size limit
                 std::cerr << "Key size too large: " << key_size << std::endl;
                 return false;
             }
@@ -841,7 +844,8 @@ bool KeyValueStore::load_from_disk() {
             file.read(reinterpret_cast<char*>(&value_size), sizeof(value_size));
 
             // Sanity check on value size
-            if (value_size > 1024 * 1024 * 10) { // 10MB value size limit
+            if (value_size > 1024 * 1024 * 10) {
+                // 10MB value size limit
                 std::cerr << "Value size too large: " << value_size << std::endl;
                 return false;
             }

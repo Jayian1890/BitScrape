@@ -81,3 +81,4 @@ bitscrape.log
 /bitscrape.conf
 /bin/bitscrape_cli
 /.ninja_deps
+/data/bitscrape.db

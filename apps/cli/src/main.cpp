@@ -152,7 +152,7 @@ void display_node_details(const bitscrape::storage::NodeModel& node) {
 }
 
 void display_infohash_details(const bitscrape::storage::InfoHashModel& infohash,
-                             const std::shared_ptr<bitscrape::storage::QueryInterface>& query) {
+                              const std::shared_ptr<bitscrape::storage::QueryInterface>& query) {
     print_horizontal_line();
     print_centered("InfoHash Details", 80);
     print_horizontal_line();
@@ -183,7 +183,8 @@ void display_infohash_details(const bitscrape::storage::InfoHashModel& infohash,
             }
 
             if (metadata->creation_date) {
-                std::cout << "Creation Date:   " << format_time_point(*metadata->creation_date) << std::endl;
+                std::cout << "Creation Date:   " << format_time_point(*metadata->creation_date) <<
+                    std::endl;
             }
 
             // Display files if available
@@ -226,9 +227,9 @@ void display_infohash_details(const bitscrape::storage::InfoHashModel& infohash,
                 for (const auto& peer : peers) {
                     std::string peer_id_str = peer.peer_id ? peer.peer_id->to_hex() : "N/A";
                     print_table_row({peer.endpoint.address(),
-                                   std::to_string(peer.endpoint.port()),
-                                   format_time_point(peer.last_seen),
-                                   peer_id_str}, widths);
+                                     std::to_string(peer.endpoint.port()),
+                                     format_time_point(peer.last_seen),
+                                     peer_id_str}, widths);
                 }
             }
         }
@@ -238,7 +239,7 @@ void display_infohash_details(const bitscrape::storage::InfoHashModel& infohash,
 }
 
 void display_metadata_details(const bitscrape::storage::MetadataModel& metadata,
-                             const std::shared_ptr<bitscrape::storage::QueryInterface>& query) {
+                              const std::shared_ptr<bitscrape::storage::QueryInterface>& query) {
     print_horizontal_line();
     print_centered("Metadata Details", 80);
     print_horizontal_line();
@@ -308,7 +309,8 @@ void display_statistics(const std::unordered_map<std::string, std::string>& stat
     std::cout << "\nDHT Statistics:" << std::endl;
     for (const auto& [key, value] : stats) {
         if (key.find("dht.") == 0) {
-            std::cout << "  " << std::left << std::setw(15) << key.substr(4) << ": " << value << std::endl;
+            std::cout << "  " << std::left << std::setw(15) << key.substr(4) << ": " << value <<
+                std::endl;
         }
     }
 
@@ -316,7 +318,8 @@ void display_statistics(const std::unordered_map<std::string, std::string>& stat
     std::cout << "\nBitTorrent Statistics:" << std::endl;
     for (const auto& [key, value] : stats) {
         if (key.find("bt.") == 0) {
-            std::cout << "  " << std::left << std::setw(15) << key.substr(3) << ": " << value << std::endl;
+            std::cout << "  " << std::left << std::setw(15) << key.substr(3) << ": " << value <<
+                std::endl;
         }
     }
 
@@ -324,14 +327,16 @@ void display_statistics(const std::unordered_map<std::string, std::string>& stat
     std::cout << "\nTracker Statistics:" << std::endl;
     for (const auto& [key, value] : stats) {
         if (key.find("tracker.") == 0) {
-            std::cout << "  " << std::left << std::setw(15) << key.substr(8) << ": " << value << std::endl;
+            std::cout << "  " << std::left << std::setw(15) << key.substr(8) << ": " << value <<
+                std::endl;
         }
     }
 
     print_horizontal_line();
 }
 
-void display_nodes_list(const std::vector<bitscrape::storage::NodeModel>& nodes, size_t limit = 10) {
+void display_nodes_list(const std::vector<bitscrape::storage::NodeModel>& nodes,
+                        size_t limit = 10) {
     print_horizontal_line();
     print_centered("DHT Nodes", 80);
     print_horizontal_line();
@@ -347,7 +352,8 @@ void display_nodes_list(const std::vector<bitscrape::storage::NodeModel>& nodes,
 
     size_t count = 0;
     for (const auto& node : nodes) {
-        if (count >= limit) break;
+        if (count >= limit)
+            break;
 
         std::string node_id = node.node_id.to_hex().substr(0, 16) + "...";
         std::string endpoint = node.endpoint.address() + ":" + std::to_string(node.endpoint.port());
@@ -369,7 +375,8 @@ void display_nodes_list(const std::vector<bitscrape::storage::NodeModel>& nodes,
     print_horizontal_line();
 }
 
-void display_infohashes_list(const std::vector<bitscrape::storage::InfoHashModel>& infohashes, size_t limit = 10) {
+void display_infohashes_list(const std::vector<bitscrape::storage::InfoHashModel>& infohashes,
+                             size_t limit = 10) {
     print_horizontal_line();
     print_centered("InfoHashes", 80);
     print_horizontal_line();
@@ -385,7 +392,8 @@ void display_infohashes_list(const std::vector<bitscrape::storage::InfoHashModel
 
     size_t count = 0;
     for (const auto& infohash : infohashes) {
-        if (count >= limit) break;
+        if (count >= limit)
+            break;
 
         std::string hash = infohash.info_hash.to_hex().substr(0, 16) + "...";
         std::string peers = std::to_string(infohash.peer_count);
@@ -401,13 +409,15 @@ void display_infohashes_list(const std::vector<bitscrape::storage::InfoHashModel
     }
 
     if (infohashes.size() > limit) {
-        std::cout << "\nShowing " << limit << " of " << infohashes.size() << " infohashes." << std::endl;
+        std::cout << "\nShowing " << limit << " of " << infohashes.size() << " infohashes." <<
+            std::endl;
     }
 
     print_horizontal_line();
 }
 
-void display_metadata_list(const std::vector<bitscrape::storage::MetadataModel>& metadata_list, size_t limit = 10) {
+void display_metadata_list(const std::vector<bitscrape::storage::MetadataModel>& metadata_list,
+                           size_t limit = 10) {
     print_horizontal_line();
     print_centered("Metadata", 80);
     print_horizontal_line();
@@ -423,7 +433,8 @@ void display_metadata_list(const std::vector<bitscrape::storage::MetadataModel>&
 
     size_t count = 0;
     for (const auto& metadata : metadata_list) {
-        if (count >= limit) break;
+        if (count >= limit)
+            break;
 
         std::string name = metadata.name;
         if (name.length() > 37) {
@@ -435,7 +446,8 @@ void display_metadata_list(const std::vector<bitscrape::storage::MetadataModel>&
 
         // Calculate time since download
         auto now = std::chrono::system_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - metadata.download_time);
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(
+            now - metadata.download_time);
         std::string download_time = format_duration(duration) + " ago";
 
         print_table_row({name, size, files, download_time}, widths);
@@ -443,7 +455,8 @@ void display_metadata_list(const std::vector<bitscrape::storage::MetadataModel>&
     }
 
     if (metadata_list.size() > limit) {
-        std::cout << "\nShowing " << limit << " of " << metadata_list.size() << " metadata entries." << std::endl;
+        std::cout << "\nShowing " << limit << " of " << metadata_list.size() << " metadata entries."
+            << std::endl;
     }
 
     print_horizontal_line();
@@ -577,12 +590,10 @@ int main(int argc, char *argv[])
             // Process command
             if (cmd == "help") {
                 display_interactive_help();
-            }
-            else if (cmd == "stats") {
+            } else if (cmd == "stats") {
                 auto stats = controller->get_statistics();
                 display_statistics(stats);
-            }
-            else if (cmd == "nodes") {
+            } else if (cmd == "nodes") {
                 // Parse limit argument
                 size_t limit = 10;
                 if (iss >> limit) {
@@ -597,8 +608,7 @@ int main(int argc, char *argv[])
 
                 auto nodes = query->get_nodes(options);
                 display_nodes_list(nodes, limit);
-            }
-            else if (cmd == "node") {
+            } else if (cmd == "node") {
                 // Parse node_id argument
                 std::string node_id_str;
                 if (iss >> node_id_str) {
@@ -617,8 +627,7 @@ int main(int argc, char *argv[])
                 } else {
                     std::cout << "Usage: node <node_id>" << std::endl;
                 }
-            }
-            else if (cmd == "infohashes") {
+            } else if (cmd == "infohashes") {
                 // Parse limit argument
                 size_t limit = 10;
                 if (iss >> limit) {
@@ -633,8 +642,7 @@ int main(int argc, char *argv[])
 
                 auto infohashes = query->get_infohashes(options);
                 display_infohashes_list(infohashes, limit);
-            }
-            else if (cmd == "infohash") {
+            } else if (cmd == "infohash") {
                 // Parse infohash argument
                 std::string infohash_str;
                 if (iss >> infohash_str) {
@@ -653,8 +661,7 @@ int main(int argc, char *argv[])
                 } else {
                     std::cout << "Usage: infohash <infohash>" << std::endl;
                 }
-            }
-            else if (cmd == "metadata") {
+            } else if (cmd == "metadata") {
                 // Parse limit argument
                 size_t limit = 10;
                 if (iss >> limit) {
@@ -669,8 +676,7 @@ int main(int argc, char *argv[])
 
                 auto metadata_list = query->get_metadata_list(options);
                 display_metadata_list(metadata_list, limit);
-            }
-            else if (cmd == "search") {
+            } else if (cmd == "search") {
                 // Parse search query
                 std::string search_query;
                 std::getline(iss >> std::ws, search_query);
@@ -690,35 +696,30 @@ int main(int argc, char *argv[])
                 } else {
                     std::cout << "Usage: search <query>" << std::endl;
                 }
-            }
-            else if (cmd == "start") {
+            } else if (cmd == "start") {
                 if (controller->start_crawling()) {
                     std::cout << "Crawling started." << std::endl;
                 } else {
                     std::cout << "Failed to start crawling." << std::endl;
                 }
-            }
-            else if (cmd == "stop") {
+            } else if (cmd == "stop") {
                 if (controller->stop_crawling()) {
                     std::cout << "Crawling stopped." << std::endl;
                 } else {
                     std::cout << "Failed to stop crawling." << std::endl;
                 }
-            }
-            else if (cmd == "clear") {
+            } else if (cmd == "clear") {
                 // Clear the screen (platform-dependent)
-                #ifdef _WIN32
+#ifdef _WIN32
                 system("cls");
-                #else
+#else
                 system("clear");
-                #endif
-            }
-            else if (cmd == "exit" || cmd == "quit") {
+#endif
+            } else if (cmd == "exit" || cmd == "quit") {
                 std::cout << "Exiting..." << std::endl;
                 running = false;
                 break;
-            }
-            else {
+            } else {
                 std::cout << "Unknown command: " << cmd << std::endl;
                 std::cout << "Type 'help' for a list of commands." << std::endl;
             }

@@ -80,3 +80,4 @@ bitscrape.log
 /.ninja_log
 /bitscrape.conf
 /bin/bitscrape_cli
+/.ninja_deps

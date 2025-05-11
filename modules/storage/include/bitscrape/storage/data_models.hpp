@@ -5,6 +5,7 @@
 #include <bitscrape/types/endpoint.hpp>
 #include <bitscrape/types/metadata_info.hpp>
 #include <bitscrape/types/torrent_info.hpp>
+#include <bitscrape/storage/detail/database_result.hpp>
 
 #include <string>
 #include <vector>
@@ -14,9 +15,17 @@
 
 namespace bitscrape::storage {
 
+// Forward declaration
+class Database;
+
+// Forward declaration for Database::Result
+namespace detail {
+    class DatabaseResult;
+}
+
 /**
  * @brief Node data model
- * 
+ *
  * Represents a DHT node in the database.
  */
 struct NodeModel {
@@ -28,18 +37,21 @@ struct NodeModel {
     uint32_t query_count = 0;                               ///< Number of queries sent to this node
     uint32_t response_count = 0;                            ///< Number of responses received from this node
     bool is_responsive = false;                             ///< Whether the node is responsive
-    
+
     /**
      * @brief Create a node model from a database result
-     * 
+     *
      * @param result Database result
      * @return Node model
      */
-    static NodeModel from_db_result(const class Database::Result& result);
-    
+    static NodeModel from_db_result(const detail::DatabaseResult& result);
+
+    // Friend declarations
+    friend class Database;
+
     /**
      * @brief Convert to SQL parameters for insertion
-     * 
+     *
      * @return Vector of SQL parameters
      */
     std::vector<std::string> to_sql_params() const;
@@ -47,7 +59,7 @@ struct NodeModel {
 
 /**
  * @brief InfoHash data model
- * 
+ *
  * Represents a BitTorrent infohash in the database.
  */
 struct InfoHashModel {
@@ -57,18 +69,21 @@ struct InfoHashModel {
     uint32_t announce_count = 0;                            ///< Number of announces for this infohash
     uint32_t peer_count = 0;                                ///< Number of peers for this infohash
     bool has_metadata = false;                              ///< Whether metadata is available
-    
+
     /**
      * @brief Create an infohash model from a database result
-     * 
+     *
      * @param result Database result
      * @return InfoHash model
      */
-    static InfoHashModel from_db_result(const class Database::Result& result);
-    
+    static InfoHashModel from_db_result(const detail::DatabaseResult& result);
+
+    // Friend declarations
+    friend class Database;
+
     /**
      * @brief Convert to SQL parameters for insertion
-     * 
+     *
      * @return Vector of SQL parameters
      */
     std::vector<std::string> to_sql_params() const;
@@ -76,7 +91,7 @@ struct InfoHashModel {
 
 /**
  * @brief Metadata data model
- * 
+ *
  * Represents BitTorrent metadata in the database.
  */
 struct MetadataModel {
@@ -90,18 +105,21 @@ struct MetadataModel {
     std::string comment;                                    ///< Torrent comment
     std::string created_by;                                 ///< Creator information
     std::optional<std::chrono::system_clock::time_point> creation_date; ///< Creation date
-    
+
     /**
      * @brief Create a metadata model from a database result
-     * 
+     *
      * @param result Database result
      * @return Metadata model
      */
-    static MetadataModel from_db_result(const class Database::Result& result);
-    
+    static MetadataModel from_db_result(const detail::DatabaseResult& result);
+
+    // Friend declarations
+    friend class Database;
+
     /**
      * @brief Convert to SQL parameters for insertion
-     * 
+     *
      * @return Vector of SQL parameters
      */
     std::vector<std::string> to_sql_params() const;
@@ -109,25 +127,28 @@ struct MetadataModel {
 
 /**
  * @brief File data model
- * 
+ *
  * Represents a file in a torrent in the database.
  */
 struct FileModel {
     types::InfoHash info_hash;                              ///< InfoHash
     std::string path;                                       ///< File path
     uint64_t size = 0;                                      ///< File size in bytes
-    
+
     /**
      * @brief Create a file model from a database result
-     * 
+     *
      * @param result Database result
      * @return File model
      */
-    static FileModel from_db_result(const class Database::Result& result);
-    
+    static FileModel from_db_result(const detail::DatabaseResult& result);
+
+    // Friend declarations
+    friend class Database;
+
     /**
      * @brief Convert to SQL parameters for insertion
-     * 
+     *
      * @return Vector of SQL parameters
      */
     std::vector<std::string> to_sql_params() const;
@@ -135,7 +156,7 @@ struct FileModel {
 
 /**
  * @brief Tracker data model
- * 
+ *
  * Represents a tracker in the database.
  */
 struct TrackerModel {
@@ -145,18 +166,21 @@ struct TrackerModel {
     std::chrono::system_clock::time_point last_seen;        ///< When the tracker was last seen
     uint32_t announce_count = 0;                            ///< Number of announces to this tracker
     uint32_t scrape_count = 0;                              ///< Number of scrapes to this tracker
-    
+
     /**
      * @brief Create a tracker model from a database result
-     * 
+     *
      * @param result Database result
      * @return Tracker model
      */
-    static TrackerModel from_db_result(const class Database::Result& result);
-    
+    static TrackerModel from_db_result(const detail::DatabaseResult& result);
+
+    // Friend declarations
+    friend class Database;
+
     /**
      * @brief Convert to SQL parameters for insertion
-     * 
+     *
      * @return Vector of SQL parameters
      */
     std::vector<std::string> to_sql_params() const;
@@ -164,7 +188,7 @@ struct TrackerModel {
 
 /**
  * @brief Peer data model
- * 
+ *
  * Represents a peer in the database.
  */
 struct PeerModel {
@@ -176,18 +200,21 @@ struct PeerModel {
     bool supports_dht = false;                              ///< Whether the peer supports DHT
     bool supports_extension_protocol = false;               ///< Whether the peer supports the extension protocol
     bool supports_fast_protocol = false;                    ///< Whether the peer supports the fast protocol
-    
+
     /**
      * @brief Create a peer model from a database result
-     * 
+     *
      * @param result Database result
      * @return Peer model
      */
-    static PeerModel from_db_result(const class Database::Result& result);
-    
+    static PeerModel from_db_result(const detail::DatabaseResult& result);
+
+    // Friend declarations
+    friend class Database;
+
     /**
      * @brief Convert to SQL parameters for insertion
-     * 
+     *
      * @return Vector of SQL parameters
      */
     std::vector<std::string> to_sql_params() const;

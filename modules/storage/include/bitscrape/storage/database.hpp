@@ -10,16 +10,17 @@
 #include <unordered_map>
 #include <functional>
 
-// Forward declaration for SQLite3
-struct sqlite3;
-struct sqlite3_stmt;
-
 namespace bitscrape::storage {
+
+// Forward declaration for KeyValueStore
+namespace detail {
+    class KeyValueStore;
+}
 
 /**
  * @brief Database connection and query execution
  *
- * The Database class provides a thread-safe interface to the SQLite database.
+ * The Database class provides a thread-safe interface to the storage backend.
  * It handles connection management, query execution, and transaction support.
  */
 class Database {
@@ -35,12 +36,11 @@ public:
         Result();
 
         /**
-         * @brief Create a result from a statement
+         * @brief Create a result from raw data
          *
-         * @param stmt SQLite statement
-         * @param db Database instance
+         * @param data Result data
          */
-        Result(sqlite3_stmt* stmt, sqlite3* db);
+        explicit Result(std::vector<std::unordered_map<std::string, std::vector<uint8_t>>> data);
 
         /**
          * @brief Destructor
@@ -191,8 +191,8 @@ public:
         bool is_null(const std::string& name) const;
 
     private:
-        sqlite3_stmt* stmt_;
-        sqlite3* db_;
+        std::vector<std::unordered_map<std::string, std::vector<uint8_t>>> data_;
+        size_t current_row_;
         bool has_rows_;
 
         // Disable copy

@@ -1,7 +1,6 @@
 #include <bitscrape/types/beacon_types.hpp>
 #include <bitscrape/core/controller.hpp>
 #include <bitscrape/core/configuration.hpp>
-#include <bitscrape/core/persistence.hpp>
 
 #include <iostream>
 #include <string>

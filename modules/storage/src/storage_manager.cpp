@@ -1,7 +1,6 @@
 #include <bitscrape/storage/storage_manager.hpp>
 #include <bitscrape/storage/database.hpp>
 #include <bitscrape/storage/query_interface.hpp>
-#include <bitscrape/storage/migration_manager.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -16,7 +15,6 @@ public:
         : db_path_(db_path),
           database_(std::make_shared<Database>(db_path)),
           query_interface_(std::make_shared<QueryInterface>(database_)),
-          migration_manager_(std::make_shared<MigrationManager>(database_)),
           initialized_(false) {
     }
 
@@ -34,17 +32,7 @@ public:
                 return false;
             }
 
-            // Initialize migration manager
-            if (!migration_manager_->initialize()) {
-                std::cerr << "Failed to initialize migration manager" << std::endl;
-                return false;
-            }
 
-            // Apply migrations
-            if (!migration_manager_->migrate_up()) {
-                std::cerr << "Failed to apply migrations" << std::endl;
-                return false;
-            }
 
             initialized_ = true;
             return true;
@@ -765,9 +753,7 @@ public:
         return database_;
     }
 
-    std::shared_ptr<MigrationManager> migration_manager() const {
-        return migration_manager_;
-    }
+
 
     std::unordered_map<std::string, std::string> get_statistics() const {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -834,9 +820,6 @@ public:
             // Get database path
             stats["storage.database_path"] = database_->path();
 
-            // Get migration version
-            stats["storage.migration_version"] = std::to_string(migration_manager_->current_version());
-
             return stats;
         } catch (const std::exception& e) {
             std::cerr << "Failed to get statistics: " << e.what() << std::endl;
@@ -854,7 +837,6 @@ private:
     std::string db_path_;
     std::shared_ptr<Database> database_;
     std::shared_ptr<QueryInterface> query_interface_;
-    std::shared_ptr<MigrationManager> migration_manager_;
     bool initialized_;
     mutable std::mutex mutex_;
 };
@@ -897,10 +879,6 @@ std::shared_ptr<QueryInterface> StorageManager::query_interface() const {
 
 std::shared_ptr<Database> StorageManager::database() const {
     return impl_->database();
-}
-
-std::shared_ptr<MigrationManager> StorageManager::migration_manager() const {
-    return impl_->migration_manager();
 }
 
 std::unordered_map<std::string, std::string> StorageManager::get_statistics() const {

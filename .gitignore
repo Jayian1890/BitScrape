@@ -75,3 +75,6 @@ cmake/
 # Memory bank
 .memory-bank/
 bitscrape.log
+!/apps/cli/src/main.cpp
+!/apps/gui/src/main.cpp
+/.ninja_log

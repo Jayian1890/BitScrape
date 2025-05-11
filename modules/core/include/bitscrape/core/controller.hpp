@@ -13,12 +13,12 @@
 #include <bitscrape/event/event_bus.hpp>
 #include <bitscrape/event/event_processor.hpp>
 #include <bitscrape/beacon/beacon.hpp>
+#include <bitscrape/storage/storage_manager.hpp>
 
 namespace bitscrape::core {
 
 // Forward declarations
 class Configuration;
-class Persistence;
 
 /**
  * @brief The Controller class is the central component of the application.
@@ -93,11 +93,11 @@ public:
     std::shared_ptr<Configuration> get_configuration() const;
 
     /**
-     * @brief Get the persistence object
+     * @brief Get the storage manager object
      *
-     * @return std::shared_ptr<Persistence> The persistence object
+     * @return std::shared_ptr<storage::StorageManager> The storage manager object
      */
-    std::shared_ptr<Persistence> get_persistence() const;
+    std::shared_ptr<storage::StorageManager> get_storage_manager() const;
 
     /**
      * @brief Get the event bus

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <bitscrape/storage/data_models.hpp>
 #include <bitscrape/storage/database.hpp>
+#include <bitscrape/storage/detail/key_value_store.hpp>
 #include <bitscrape/types/node_id.hpp>
 #include <bitscrape/types/info_hash.hpp>
 #include <bitscrape/types/endpoint.hpp>
@@ -11,6 +12,7 @@
 #include <string>
 #include <chrono>
 #include <vector>
+#include <memory>
 
 using namespace bitscrape::storage;
 using namespace bitscrape::types;
@@ -156,6 +158,9 @@ TEST_F(DataModelsTest, NodeModelSerialization) {
     // Query the database
     auto result = db_->execute("SELECT * FROM nodes WHERE node_id = ?", {node.node_id.to_hex()});
 
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
 
@@ -204,6 +209,9 @@ TEST_F(DataModelsTest, InfoHashModelSerialization) {
 
     // Query the database
     auto result = db_->execute("SELECT * FROM infohashes WHERE info_hash = ?", {infohash.info_hash.to_hex()});
+
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
 
     // Check if we have a result
     ASSERT_TRUE(result.next());
@@ -259,6 +267,9 @@ TEST_F(DataModelsTest, MetadataModelSerialization) {
     // Query the database
     auto result = db_->execute("SELECT * FROM metadata WHERE info_hash = ?", {metadata.info_hash.to_hex()});
 
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
 
@@ -303,6 +314,9 @@ TEST_F(DataModelsTest, FileModelSerialization) {
     // Query the database
     auto result = db_->execute("SELECT * FROM files WHERE info_hash = ? AND path = ?",
                               {file.info_hash.to_hex(), file.path});
+
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
 
     // Check if we have a result
     ASSERT_TRUE(result.next());
@@ -349,6 +363,9 @@ TEST_F(DataModelsTest, TrackerModelSerialization) {
     // Query the database
     auto result = db_->execute("SELECT * FROM trackers WHERE info_hash = ? AND url = ?",
                               {tracker.info_hash.to_hex(), tracker.url});
+
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
 
     // Check if we have a result
     ASSERT_TRUE(result.next());
@@ -401,6 +418,9 @@ TEST_F(DataModelsTest, PeerModelSerialization) {
     // Query the database
     auto result = db_->execute("SELECT * FROM peers WHERE info_hash = ? AND ip = ? AND port = ?",
                               {peer.info_hash.to_hex(), peer.endpoint.address(), std::to_string(peer.endpoint.port())});
+
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
 
     // Check if we have a result
     ASSERT_TRUE(result.next());
@@ -457,6 +477,9 @@ TEST_F(DataModelsTest, PeerModelWithoutPeerIdSerialization) {
     // Query the database
     auto result = db_->execute("SELECT * FROM peers WHERE info_hash = ? AND ip = ? AND port = ?",
                               {peer.info_hash.to_hex(), peer.endpoint.address(), std::to_string(peer.endpoint.port())});
+
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
 
     // Check if we have a result
     ASSERT_TRUE(result.next());
@@ -515,6 +538,9 @@ TEST_F(DataModelsTest, MetadataModelWithoutCreationDateSerialization) {
     // Query the database
     auto result = db_->execute("SELECT * FROM metadata WHERE info_hash = ?", {metadata.info_hash.to_hex()});
 
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
 
@@ -571,6 +597,9 @@ TEST_F(DataModelsTest, MetadataModelWithEmptyOptionalFields) {
     // Query the database
     auto result = db_->execute("SELECT * FROM metadata WHERE info_hash = ?", {metadata.info_hash.to_hex()});
 
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
 
@@ -624,6 +653,9 @@ TEST_F(DataModelsTest, NodeModelWithMaxValues) {
     // Query the database
     auto result = db_->execute("SELECT * FROM nodes WHERE node_id = ?", {node.node_id.to_hex()});
 
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
 
@@ -670,6 +702,9 @@ TEST_F(DataModelsTest, InfoHashModelWithMaxValues) {
     // Query the database
     auto result = db_->execute("SELECT * FROM infohashes WHERE info_hash = ?", {infohash.info_hash.to_hex()});
 
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
+
     // Check if we have a result
     ASSERT_TRUE(result.next());
 
@@ -705,6 +740,9 @@ TEST_F(DataModelsTest, FileModelWithLongPath) {
 
     // Query the database
     auto result = db_->execute("SELECT * FROM files WHERE info_hash = ?", {file.info_hash.to_hex()});
+
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
 
     // Check if we have a result
     ASSERT_TRUE(result.next());
@@ -747,6 +785,9 @@ TEST_F(DataModelsTest, TrackerModelWithLongURL) {
 
     // Query the database
     auto result = db_->execute("SELECT * FROM trackers WHERE info_hash = ?", {tracker.info_hash.to_hex()});
+
+    // With the key-value store, we need to check if we have any results
+    ASSERT_TRUE(result.has_rows());
 
     // Check if we have a result
     ASSERT_TRUE(result.next());

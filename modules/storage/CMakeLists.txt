@@ -4,7 +4,7 @@ add_library(bitscrape-storage
     src/database.cpp
     src/data_models.cpp
     src/query_interface.cpp
-    src/migration_manager.cpp
+    src/key_value_store.cpp
 )
 
 # Set include directories
@@ -21,7 +21,6 @@ target_link_libraries(bitscrape-storage
         bitscrape::event
     PRIVATE
         bitscrape::beacon
-        SQLite::SQLite3
         Threads::Threads
 )
 
@@ -57,7 +56,6 @@ if(BUILD_TESTS)
         tests/unit/database_test.cpp
         tests/unit/data_models_test.cpp
         tests/unit/query_interface_test.cpp
-        tests/unit/migration_manager_test.cpp
     )
 
     # Link dependencies

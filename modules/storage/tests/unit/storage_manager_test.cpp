@@ -2,7 +2,7 @@
 #include <bitscrape/storage/storage_manager.hpp>
 #include <bitscrape/storage/query_interface.hpp>
 #include <bitscrape/storage/database.hpp>
-#include <bitscrape/storage/migration_manager.hpp>
+#include <bitscrape/storage/detail/key_value_store.hpp>
 #include <bitscrape/types/node_id.hpp>
 #include <bitscrape/types/info_hash.hpp>
 #include <bitscrape/types/endpoint.hpp>

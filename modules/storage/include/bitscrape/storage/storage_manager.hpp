@@ -18,7 +18,6 @@ namespace bitscrape::storage {
 // Forward declarations
 class Database;
 class QueryInterface;
-class MigrationManager;
 
 // Forward declarations for data models
 struct NodeModel;
@@ -347,12 +346,7 @@ public:
      */
     std::shared_ptr<Database> database() const;
 
-    /**
-     * @brief Get the migration manager
-     *
-     * @return Migration manager
-     */
-    std::shared_ptr<MigrationManager> migration_manager() const;
+
 
     /**
      * @brief Get statistics about the stored data

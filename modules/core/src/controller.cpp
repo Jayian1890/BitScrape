@@ -1,6 +1,5 @@
 #include <bitscrape/core/controller.hpp>
 #include <bitscrape/core/configuration.hpp>
-#include <bitscrape/core/persistence.hpp>
 
 #include <bitscrape/event/event_bus.hpp>
 #include <bitscrape/event/event_processor.hpp>
@@ -32,13 +31,13 @@ public:
           beacon_(std::make_shared<beacon::Beacon>()),
           is_running_(false),
           is_crawling_(false) {
-        
+
         // Add beacon sinks
         beacon_->add_sink(std::make_shared<beacon::ConsoleSink>());
-        
-        // Create persistence with default path from config
+
+        // Create storage manager with default path from config
         std::string db_path = config_->get_string("database.path", "bitscrape.db");
-        persistence_ = std::make_shared<Persistence>(db_path);
+        storage_manager_ = std::make_shared<storage::StorageManager>(db_path);
     }
 
     ~Impl() {
@@ -55,9 +54,9 @@ public:
                 return false;
             }
 
-            // Initialize persistence
-            if (!persistence_->initialize()) {
-                beacon_->error("Failed to initialize persistence");
+            // Initialize storage manager
+            if (!storage_manager_->initialize()) {
+                beacon_->error("Failed to initialize storage manager");
                 return false;
             }
 
@@ -204,32 +203,41 @@ public:
 
     std::unordered_map<std::string, std::string> get_statistics() const {
         std::unordered_map<std::string, std::string> stats;
-        
-        // Get persistence statistics
-        auto persistence_stats = persistence_->get_statistics();
-        stats.insert(persistence_stats.begin(), persistence_stats.end());
-        
+
+        // Get storage manager statistics
+        auto storage_stats = storage_manager_->get_statistics();
+        stats.insert(storage_stats.begin(), storage_stats.end());
+
         // Add controller statistics
         stats["controller.running"] = is_running_ ? "true" : "false";
         stats["controller.crawling"] = is_crawling_ ? "true" : "false";
-        
+
         // TODO: Add DHT, BitTorrent, and Tracker statistics
-        
+
         return stats;
     }
 
     std::vector<types::InfoHash> get_infohashes(size_t limit, size_t offset) const {
-        return persistence_->get_infohashes(limit, offset);
+        auto query = storage_manager_->query_interface();
+        auto infohashes = query->get_infohashes({.limit = limit, .offset = offset});
+
+        std::vector<types::InfoHash> result;
+        for (const auto& model : infohashes) {
+            result.push_back(model.info_hash);
+        }
+
+        return result;
     }
 
     std::vector<types::NodeID> get_nodes(size_t limit, size_t offset) const {
+        auto query = storage_manager_->query_interface();
+        auto nodes = query->get_nodes({.limit = limit, .offset = offset});
+
         std::vector<types::NodeID> result;
-        auto nodes = persistence_->get_nodes(limit, offset);
-        
-        for (const auto& [node_id, _] : nodes) {
-            result.push_back(node_id);
+        for (const auto& model : nodes) {
+            result.push_back(model.node_id);
         }
-        
+
         return result;
     }
 
@@ -251,7 +259,7 @@ public:
 
     // Member variables
     std::shared_ptr<Configuration> config_;
-    std::shared_ptr<Persistence> persistence_;
+    std::shared_ptr<storage::StorageManager> storage_manager_;
     std::shared_ptr<event::EventBus> event_bus_;
     std::shared_ptr<event::EventProcessor> event_processor_;
     std::shared_ptr<beacon::Beacon> beacon_;
@@ -295,8 +303,8 @@ std::shared_ptr<Configuration> Controller::get_configuration() const {
     return impl_->config_;
 }
 
-std::shared_ptr<Persistence> Controller::get_persistence() const {
-    return impl_->persistence_;
+std::shared_ptr<storage::StorageManager> Controller::get_storage_manager() const {
+    return impl_->storage_manager_;
 }
 
 std::shared_ptr<event::EventBus> Controller::get_event_bus() const {

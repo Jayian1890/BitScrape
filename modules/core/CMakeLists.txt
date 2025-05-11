@@ -2,7 +2,6 @@
 add_library(bitscrape-core
     src/controller.cpp
     src/configuration.cpp
-    src/persistence.cpp
 )
 
 # Set include directories
@@ -23,6 +22,7 @@ target_link_libraries(bitscrape-core
         bitscrape::bencode
         bitscrape::bittorrent
         bitscrape::tracker
+        bitscrape::storage
 )
 
 # Set target properties
@@ -55,7 +55,6 @@ if(BUILD_TESTS)
     add_executable(core_test
         tests/unit/controller_test.cpp
         tests/unit/configuration_test.cpp
-        tests/unit/persistence_test.cpp
     )
 
     # Link dependencies
@@ -68,6 +67,7 @@ if(BUILD_TESTS)
             bitscrape-bencode
             bitscrape-bittorrent
             bitscrape-tracker
+            bitscrape-storage
             bitscrape-gtest
     )
 

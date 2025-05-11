@@ -56,6 +56,11 @@ int Database::Result::column_count() const {
 }
 
 std::string Database::Result::column_name(int index) const {
+    // This function is renamed to get_column_name to avoid confusion
+    return get_column_name(index);
+}
+
+std::string Database::Result::get_column_name(int index) const {
     if (data_.empty() || current_row_ >= data_.size()) {
         return "";
     }
@@ -77,6 +82,7 @@ std::string Database::Result::column_name(int index) const {
 }
 
 int Database::Result::column_index(const std::string& name) const {
+    // Renamed from column_name to avoid confusion
     if (data_.empty() || current_row_ >= data_.size()) {
         return -1;
     }
@@ -121,12 +127,12 @@ int Database::Result::get_int(int index) const {
         return 0;
     }
 
-    std::string column_name = column_name(index);
-    if (column_name.empty()) {
+    std::string col_name = get_column_name(index);
+    if (col_name.empty()) {
         return 0;
     }
 
-    return get_int(column_name);
+    return get_int(col_name);
 }
 
 int Database::Result::get_int(const std::string& name) const {
@@ -163,12 +169,12 @@ int64_t Database::Result::get_int64(int index) const {
         return 0;
     }
 
-    std::string column_name = column_name(index);
-    if (column_name.empty()) {
+    std::string col_name = get_column_name(index);
+    if (col_name.empty()) {
         return 0;
     }
 
-    return get_int64(column_name);
+    return get_int64(col_name);
 }
 
 int64_t Database::Result::get_int64(const std::string& name) const {
@@ -205,12 +211,12 @@ double Database::Result::get_double(int index) const {
         return 0.0;
     }
 
-    std::string column_name = column_name(index);
-    if (column_name.empty()) {
+    std::string col_name = get_column_name(index);
+    if (col_name.empty()) {
         return 0.0;
     }
 
-    return get_double(column_name);
+    return get_double(col_name);
 }
 
 double Database::Result::get_double(const std::string& name) const {
@@ -247,12 +253,12 @@ std::string Database::Result::get_string(int index) const {
         return "";
     }
 
-    std::string column_name = column_name(index);
-    if (column_name.empty()) {
+    std::string col_name = get_column_name(index);
+    if (col_name.empty()) {
         return "";
     }
 
-    return get_string(column_name);
+    return get_string(col_name);
 }
 
 std::string Database::Result::get_string(const std::string& name) const {
@@ -279,12 +285,12 @@ std::vector<uint8_t> Database::Result::get_blob(int index) const {
         return {};
     }
 
-    std::string column_name = column_name(index);
-    if (column_name.empty()) {
+    std::string col_name = get_column_name(index);
+    if (col_name.empty()) {
         return {};
     }
 
-    return get_blob(column_name);
+    return get_blob(col_name);
 }
 
 std::vector<uint8_t> Database::Result::get_blob(const std::string& name) const {
@@ -306,12 +312,12 @@ bool Database::Result::is_null(int index) const {
         return true;
     }
 
-    std::string column_name = column_name(index);
-    if (column_name.empty()) {
+    std::string col_name = get_column_name(index);
+    if (col_name.empty()) {
         return true;
     }
 
-    return is_null(column_name);
+    return is_null(col_name);
 }
 
 bool Database::Result::is_null(const std::string& name) const {
@@ -440,7 +446,7 @@ public:
                 execute_insert(query);
                 return Database::Result();
             } else if (query.find("UPDATE") == 0 || query.find("update") == 0) {
-                execute_update(query);
+                execute_update(query, {});
                 return Database::Result();
             } else if (query.find("DELETE") == 0 || query.find("delete") == 0) {
                 execute_delete(query);
@@ -910,7 +916,7 @@ public:
             if (query.find("INSERT") == 0 || query.find("insert") == 0) {
                 return execute_insert(query);
             } else if (query.find("UPDATE") == 0 || query.find("update") == 0) {
-                return execute_update(query);
+                return execute_update(query, {});
             } else if (query.find("DELETE") == 0 || query.find("delete") == 0) {
                 return execute_delete(query);
             } else if (query.find("BEGIN") == 0 || query.find("begin") == 0) {

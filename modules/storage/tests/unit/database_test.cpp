@@ -13,8 +13,10 @@ using namespace bitscrape::storage;
 class DatabaseTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Create a temporary database file
-        test_db_path_ = "test_database.db";
+        // Create a temporary database directory and file
+        auto current_path = std::filesystem::current_path() / "test_db";
+        std::filesystem::create_directories(current_path);
+        test_db_path_ = (current_path / "test_database.db").string();
 
         // Remove the file if it exists
         std::filesystem::remove(test_db_path_);
@@ -23,6 +25,9 @@ protected:
     void TearDown() override {
         // Remove the test database file
         std::filesystem::remove(test_db_path_);
+
+        // Remove the test directory
+        std::filesystem::remove("test_db");
     }
 
     std::string test_db_path_;
@@ -239,7 +244,4 @@ TEST_F(DatabaseTest, AsyncExecute) {
     EXPECT_TRUE(found_test1);
 }
 
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+// Main function moved to storage_manager_test.cpp

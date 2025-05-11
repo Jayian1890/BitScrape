@@ -1001,4 +1001,8 @@ std::future<bool> StorageManager::increment_tracker_scrape_count_async(const typ
     return impl_->increment_tracker_scrape_count_async(info_hash, url);
 }
 
+std::shared_ptr<StorageManager> create_storage_manager(const std::string& db_path) {
+    return std::make_shared<StorageManager>(db_path);
+}
+
 } // namespace bitscrape::storage

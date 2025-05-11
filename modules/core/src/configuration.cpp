@@ -18,8 +18,8 @@ public:
     }
 
     bool load() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        
+        std::lock_guard lock(mutex_);
+
         try {
             // Check if file exists
             if (!std::filesystem::exists(config_path_)) {
@@ -27,51 +27,51 @@ public:
                 create_default_configuration();
                 return true;
             }
-            
+
             // Open file
             std::ifstream file(config_path_, std::ios::binary);
             if (!file.is_open()) {
                 std::cerr << "Failed to open configuration file: " << config_path_ << std::endl;
                 return false;
             }
-            
+
             // Read file content
             std::stringstream buffer;
             buffer << file.rdbuf();
             std::string content = buffer.str();
-            
+
             // Decode bencode
-            bencode::BencodeDecoder decoder;
-            auto value = decoder.decode(std::vector<uint8_t>(content.begin(), content.end()));
-            
-            if (!value.is_dictionary()) {
+            auto decoder = bencode::create_bencode_decoder();
+            auto value = decoder->decode(std::vector<uint8_t>(content.begin(), content.end()));
+
+            if (!value.is_dict()) {
                 std::cerr << "Invalid configuration format" << std::endl;
                 return false;
             }
-            
+
             // Clear current configuration
             config_.clear();
-            
+
             // Parse configuration
-            auto dict = value.dictionary();
+            auto dict = value.as_dict();
             for (const auto& [key, value] : dict) {
                 if (value.is_string()) {
-                    config_[key] = value.string();
+                    config_[key] = value.as_string();
                 } else if (value.is_integer()) {
-                    config_[key] = std::to_string(value.integer());
+                    config_[key] = std::to_string(value.as_integer());
                 } else if (value.is_list()) {
                     // Handle lists
-                    auto list = value.list();
+                    auto list = value.as_list();
                     std::vector<std::string> values;
-                    
+
                     for (const auto& item : list) {
                         if (item.is_string()) {
-                            values.push_back(item.string());
+                            values.push_back(item.as_string());
                         } else if (item.is_integer()) {
-                            values.push_back(std::to_string(item.integer()));
+                            values.push_back(std::to_string(item.as_integer()));
                         }
                     }
-                    
+
                     // Store list as comma-separated string
                     std::string list_str;
                     for (size_t i = 0; i < values.size(); ++i) {
@@ -80,11 +80,11 @@ public:
                         }
                         list_str += values[i];
                     }
-                    
+
                     config_[key] = list_str;
                 }
             }
-            
+
             return true;
         } catch (const std::exception& e) {
             std::cerr << "Failed to load configuration: " << e.what() << std::endl;
@@ -99,12 +99,13 @@ public:
     }
 
     bool save() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        
+        //std::lock_guard<std::mutex> lock(mutex_);
+
         try {
             // Create bencode dictionary
-            bencode::BencodeValue dict = bencode::BencodeValue::create_dictionary();
-            
+            std::map<std::string, bencode::BencodeValue> dict_map;
+            bencode::BencodeValue dict(dict_map);
+
             // Add configuration values
             for (const auto& [key, value] : config_) {
                 // Check if value is a list (comma-separated string)
@@ -113,51 +114,52 @@ public:
                     std::vector<std::string> items;
                     std::stringstream ss(value);
                     std::string item;
-                    
+
                     while (std::getline(ss, item, ',')) {
                         items.push_back(item);
                     }
-                    
+
                     // Create bencode list
-                    bencode::BencodeValue list = bencode::BencodeValue::create_list();
-                    
+                    std::vector<bencode::BencodeValue> list_vec;
+                    bencode::BencodeValue list(list_vec);
+
                     for (const auto& item : items) {
                         // Try to parse as integer
                         try {
                             int int_value = std::stoi(item);
-                            list.add_to_list(bencode::BencodeValue(int_value));
+                            list.add(bencode::BencodeValue(int_value));
                         } catch (const std::exception&) {
                             // Not an integer, add as string
-                            list.add_to_list(bencode::BencodeValue(item));
+                            list.add(bencode::BencodeValue(item));
                         }
                     }
-                    
-                    dict.add_to_dictionary(key, list);
+
+                    dict.set(key, list);
                 } else {
                     // Try to parse as integer
                     try {
                         int int_value = std::stoi(value);
-                        dict.add_to_dictionary(key, bencode::BencodeValue(int_value));
+                        dict.set(key, bencode::BencodeValue(int_value));
                     } catch (const std::exception&) {
                         // Not an integer, add as string
-                        dict.add_to_dictionary(key, bencode::BencodeValue(value));
+                        dict.set(key, bencode::BencodeValue(value));
                     }
                 }
             }
-            
+
             // Encode bencode
-            bencode::BencodeEncoder encoder;
-            auto encoded = encoder.encode(dict);
-            
+            auto encoder = bencode::create_bencode_encoder();
+            auto encoded = encoder->encode(dict);
+
             // Write to file
             std::ofstream file(config_path_, std::ios::binary);
             if (!file.is_open()) {
                 std::cerr << "Failed to open configuration file for writing: " << config_path_ << std::endl;
                 return false;
             }
-            
+
             file.write(reinterpret_cast<const char*>(encoded.data()), encoded.size());
-            
+
             return true;
         } catch (const std::exception& e) {
             std::cerr << "Failed to save configuration: " << e.what() << std::endl;
@@ -265,7 +267,13 @@ public:
         auto strings = get_string_list(key);
         for (const auto& str : strings) {
             try {
-                result.push_back(types::Endpoint::from_string(str));
+                // Parse endpoint from string (format: "address:port")
+                size_t pos = str.find(':');
+                if (pos != std::string::npos) {
+                    std::string address = str.substr(0, pos);
+                    uint16_t port = std::stoi(str.substr(pos + 1));
+                    result.push_back(types::Endpoint(address, port));
+                }
             } catch (const std::exception&) {
                 // Skip invalid endpoints
             }
@@ -325,7 +333,7 @@ private:
         config_["log.file"] = "bitscrape.log";
         config_["log.max_size"] = "10485760"; // 10 MB
         config_["log.max_files"] = "5";
-        
+
         // Save default configuration
         save();
     }

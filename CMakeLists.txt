@@ -47,17 +47,7 @@ find_package(Threads REQUIRED)
 
 # Find SQLite3
 include(FetchContent)
-FetchContent_Declare(
-    sqlite3
-    GIT_REPOSITORY https://github.com/sqlite/sqlite.git
-    GIT_TAG version-3.42.0
-)
-FetchContent_MakeAvailable(sqlite3)
-
-# Create SQLite3 interface library
-add_library(SQLite3 INTERFACE)
-target_include_directories(SQLite3 INTERFACE ${sqlite3_SOURCE_DIR})
-add_library(SQLite::SQLite3 ALIAS SQLite3)
+# SQLite3 dependency has been removed in favor of a custom key-value store
 
 # Testing setup
 if(BUILD_TESTS)

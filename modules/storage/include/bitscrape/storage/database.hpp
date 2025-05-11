@@ -80,6 +80,14 @@ public:
         std::string column_name(int index) const;
 
         /**
+         * @brief Get the name of a column (renamed from column_name to avoid confusion)
+         *
+         * @param index Column index
+         * @return Column name
+         */
+        std::string get_column_name(int index) const;
+
+        /**
          * @brief Get the index of a column by name
          *
          * @param name Column name

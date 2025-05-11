@@ -371,4 +371,12 @@ private:
     StorageManager& operator=(const StorageManager&) = delete;
 };
 
+/**
+ * @brief Create a new storage manager
+ *
+ * @param db_path Path to the database file
+ * @return Shared pointer to a new storage manager
+ */
+std::shared_ptr<StorageManager> create_storage_manager(const std::string& db_path);
+
 } // namespace bitscrape::storage

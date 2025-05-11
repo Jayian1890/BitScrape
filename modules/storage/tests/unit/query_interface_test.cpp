@@ -14,6 +14,7 @@
 #include <vector>
 #include <memory>
 #include <thread>
+#include <algorithm>
 
 using namespace bitscrape::storage;
 using namespace bitscrape::types;
@@ -21,8 +22,10 @@ using namespace bitscrape::types;
 class QueryInterfaceTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Create a temporary database file
-        test_db_path_ = "test_query_interface.db";
+        // Create a temporary database directory and file
+        auto current_path = std::filesystem::current_path() / "test_db";
+        std::filesystem::create_directories(current_path);
+        test_db_path_ = (current_path / "test_query_interface.db").string();
 
         // Remove the file if it exists
         std::filesystem::remove(test_db_path_);
@@ -121,13 +124,16 @@ protected:
 
         // Remove the test database file
         std::filesystem::remove(test_db_path_);
+
+        // Remove the test directory
+        std::filesystem::remove("test_db");
     }
 
     void insert_test_data() {
         // Insert test nodes
         for (int i = 0; i < 10; ++i) {
             auto node_id = NodeID::random();
-            auto endpoint = Endpoint("192.168.1." + std::to_string(i + 1), 6881 + i);
+            auto endpoint = Endpoint(std::string("192.168.1." + std::to_string(i + 1)), 6881 + i);
             auto now = std::chrono::system_clock::now();
             auto first_seen = now - std::chrono::hours(24 * (10 - i));
             auto last_seen = now - std::chrono::hours(i);
@@ -183,7 +189,7 @@ protected:
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     {
                         info_hash.to_hex(),
-                        metadata_info.to_hex(),
+                        // Compare metadata directly
                         std::to_string(std::chrono::duration_cast<std::chrono::seconds>(download_time.time_since_epoch()).count()),
                         "Test Torrent " + std::to_string(i),
                         std::to_string(1024 * 1024 * (i + 1)), // Size in bytes
@@ -720,7 +726,4 @@ TEST_F(QueryInterfaceTest, GetNodesByQueryOptionsWithMultipleFilters) {
     }
 }
 
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+// Main function moved to storage_manager_test.cpp

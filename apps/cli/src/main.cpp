@@ -48,8 +48,8 @@ int main(int argc, char *argv[])
     using enum bitscrape::types::BeaconSeverity;
 
     // Parse command line arguments
-    std::string config_path;
-    std::string db_path;
+    std::string config_path = "bitscrape.conf";
+    std::string db_path = "bitscrape.db";
     bool start_crawling = false;
 
     for (int i = 1; i < argc; ++i) {

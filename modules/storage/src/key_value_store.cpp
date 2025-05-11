@@ -26,10 +26,12 @@ bool KeyValueStore::initialize() {
     }
     
     try {
-        // Create directory if it doesn't exist
-        std::filesystem::path path(path_);
-        std::filesystem::create_directories(path.parent_path());
-        
+        // Create a parent directory if it doesn't exist
+        const auto path = std::filesystem::absolute(path_);
+        if (!std::filesystem::exists(path.parent_path())) {
+            std::filesystem::create_directories(path.parent_path());
+        }
+
         // Load data from disk
         if (std::filesystem::exists(path_)) {
             if (!load_from_disk()) {

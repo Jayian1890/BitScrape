@@ -11,11 +11,16 @@ namespace bitscrape::storage {
 
 class StorageManager::Impl {
 public:
-    Impl(const std::string& db_path)
-        : db_path_(db_path),
-          database_(std::make_shared<Database>(db_path)),
+    friend class StorageManager;
+    Impl(const std::string& db_path, bool persistent)
+        : db_path_(db_path.empty() ? "data/default.db" : db_path),
+          database_(std::make_shared<Database>(db_path.empty() ? "data/default.db" : db_path, true)),
           query_interface_(std::make_shared<QueryInterface>(database_)),
           initialized_(false) {
+        // If original path was empty, we're using the default path
+        if (db_path.empty()) {
+            std::cerr << "Using default database path: " << db_path_ << std::endl;
+        }
     }
 
     bool initialize() {
@@ -56,16 +61,27 @@ public:
         }
 
         try {
+            bool success = true;
+
             // Close database
             if (!database_->close()) {
                 std::cerr << "Failed to close database" << std::endl;
-                return false;
+                success = false;
+                // Continue with cleanup even if close fails
             }
 
             initialized_ = false;
-            return true;
+            return success;
         } catch (const std::exception& e) {
             std::cerr << "Failed to close storage manager: " << e.what() << std::endl;
+
+            // Try to clean up anyway
+            try {
+                initialized_ = false;
+            } catch (...) {
+                // Ignore any exceptions during cleanup
+            }
+
             return false;
         }
     }
@@ -843,8 +859,8 @@ private:
 
 // StorageManager public methods
 
-StorageManager::StorageManager(const std::string& db_path)
-    : impl_(std::make_unique<Impl>(db_path)) {
+StorageManager::StorageManager(const std::string& db_path, bool persistent)
+    : impl_(std::make_unique<Impl>(db_path, persistent)) {
 }
 
 StorageManager::~StorageManager() = default;
@@ -874,11 +890,11 @@ std::future<bool> StorageManager::store_node_async(const types::NodeID& node_id,
 }
 
 std::shared_ptr<QueryInterface> StorageManager::query_interface() const {
-    return impl_->query_interface();
+    return impl_->query_interface_;
 }
 
 std::shared_ptr<Database> StorageManager::database() const {
-    return impl_->database();
+    return impl_->database_;
 }
 
 std::unordered_map<std::string, std::string> StorageManager::get_statistics() const {
@@ -1001,8 +1017,10 @@ std::future<bool> StorageManager::increment_tracker_scrape_count_async(const typ
     return impl_->increment_tracker_scrape_count_async(info_hash, url);
 }
 
-std::shared_ptr<StorageManager> create_storage_manager(const std::string& db_path) {
-    return std::make_shared<StorageManager>(db_path);
+
+
+std::shared_ptr<StorageManager> create_storage_manager(const std::string& db_path, bool persistent) {
+    return std::make_shared<StorageManager>(db_path, true); // Always use disk-based storage
 }
 
 } // namespace bitscrape::storage

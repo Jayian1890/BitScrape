@@ -10,6 +10,7 @@ if(BUILD_CLI)
             bitscrape::event
             bitscrape::beacon
             bitscrape::core
+            bitscrape::storage
     )
 
     install(TARGETS bitscrape_cli

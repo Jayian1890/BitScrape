@@ -20,6 +20,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <filesystem>
 
 namespace bitscrape::core {
 
@@ -37,8 +38,28 @@ public:
         beacon_->add_sink(std::make_unique<beacon::ConsoleSink>());
 
         // Create a storage manager with a default path from config
-        std::string db_path = config_->get_string("database.path", "bitscrape.db");
-        storage_manager_ = storage::create_storage_manager(db_path);
+        std::string db_path = config_->get_string("database.path", "data/bitscrape.db");
+
+        // Always use disk-based storage
+        if (db_path.empty()) {
+            // Use a default path if none is provided
+            db_path = "data/bitscrape.db";
+            beacon_->info(std::string("Using default database path: ") + db_path, types::BeaconCategory::GENERAL);
+        }
+
+        // Create parent directories if they don't exist
+        try {
+            std::filesystem::path path(db_path);
+            if (!path.parent_path().empty() && !std::filesystem::exists(path.parent_path())) {
+                std::filesystem::create_directories(path.parent_path());
+            }
+            storage_manager_ = storage::create_storage_manager(db_path, true); // Always persistent
+        } catch (const std::exception& e) {
+            beacon_->error("Failed to create database directory: ", types::BeaconCategory::GENERAL, e.what());
+            db_path = "bitscrape.db"; // Use current directory as fallback
+            beacon_->warning("Falling back to current directory: " + db_path, types::BeaconCategory::GENERAL);
+            storage_manager_ = storage::create_storage_manager(db_path, true); // Still persistent
+        }
     }
 
     ~Impl() {

@@ -211,9 +211,10 @@ public:
     /**
      * @brief Create a database connection
      *
-     * @param path Path to the database file
+     * @param path Path to the database file. If empty, a default path will be used.
+     * @param persistent Whether to persist the database to disk. Always true for disk-based storage.
      */
-    explicit Database(const std::string& path);
+    explicit Database(const std::string& path, bool persistent = true);
 
     /**
      * @brief Destructor
@@ -353,6 +354,13 @@ public:
      * @return true if initialized, false otherwise
      */
     bool is_initialized() const;
+
+    /**
+     * @brief Check if the database is persistent
+     *
+     * @return true if persistent, false otherwise
+     */
+    bool is_persistent() const;
 
 private:
     class Impl;

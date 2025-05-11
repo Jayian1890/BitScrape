@@ -338,8 +338,14 @@ bool Database::Result::is_null(const std::string& name) const {
 
 class Database::Impl {
 public:
-    Impl(const std::string& path)
-        : path_(path), store_(std::make_unique<detail::KeyValueStore>(path)), initialized_(false) {
+    Impl(const std::string& path, bool persistent)
+        : path_(path.empty() ? "data/default.db" : path),
+          store_(std::make_unique<detail::KeyValueStore>(path.empty() ? "data/default.db" : path, true)),
+          initialized_(false) {
+        // If original path was empty, we're using the default path
+        if (path.empty()) {
+            std::cerr << "Using default database path: " << path_ << std::endl;
+        }
     }
 
     ~Impl() {
@@ -385,16 +391,27 @@ public:
         }
 
         try {
+            bool success = true;
+
             // Close the key-value store
             if (!store_->close()) {
                 std::cerr << "Failed to close key-value store" << std::endl;
-                return false;
+                success = false;
+                // Continue with cleanup even if close fails
             }
 
             initialized_ = false;
-            return true;
+            return success;
         } catch (const std::exception& e) {
             std::cerr << "Failed to close database: " << e.what() << std::endl;
+
+            // Try to clean up anyway
+            try {
+                initialized_ = false;
+            } catch (...) {
+                // Ignore any exceptions during cleanup
+            }
+
             return false;
         }
     }
@@ -1026,6 +1043,10 @@ public:
         return initialized_;
     }
 
+    bool is_persistent() const {
+        return store_->is_persistent();
+    }
+
 private:
     std::string path_;
     std::unique_ptr<detail::KeyValueStore> store_;
@@ -1035,8 +1056,8 @@ private:
 
 // Database public methods
 
-Database::Database(const std::string& path)
-    : impl_(std::make_unique<Impl>(path)) {
+Database::Database(const std::string& path, bool persistent)
+    : impl_(std::make_unique<Impl>(path, persistent)) {
 }
 
 Database::~Database() = default;
@@ -1111,6 +1132,10 @@ std::string Database::path() const {
 
 bool Database::is_initialized() const {
     return impl_->is_initialized();
+}
+
+bool Database::is_persistent() const {
+    return impl_->is_persistent();
 }
 
 } // namespace bitscrape::storage

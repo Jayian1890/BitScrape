@@ -29,9 +29,10 @@ public:
     /**
      * @brief Create a key-value store
      *
-     * @param path Path to the store file
+     * @param path Path to the store file. If empty, a default path will be used.
+     * @param persistent Whether to persist the store to disk. Always true for disk-based storage.
      */
-    explicit KeyValueStore(const std::string& path);
+    explicit KeyValueStore(const std::string& path, bool persistent = true);
 
     /**
      * @brief Destructor
@@ -219,6 +220,13 @@ public:
     bool is_initialized() const;
 
     /**
+     * @brief Check if the store is persistent
+     *
+     * @return true if persistent, false otherwise
+     */
+    bool is_persistent() const;
+
+    /**
      * @brief Get the number of entries in the store
      *
      * @return Number of entries
@@ -369,6 +377,9 @@ private:
 
     // Transaction flag
     bool in_transaction_;
+
+    // Persistence flag
+    bool is_persistent_;
 
     // Helper methods
     bool load_from_disk();

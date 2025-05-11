@@ -37,9 +37,10 @@ public:
     /**
      * @brief Create a storage manager
      *
-     * @param db_path Path to the database file
+     * @param db_path Path to the database file. If empty, a default path will be used.
+     * @param persistent Whether to persist the database to disk. Always true for disk-based storage.
      */
-    explicit StorageManager(const std::string& db_path);
+    explicit StorageManager(const std::string& db_path, bool persistent = true);
 
     /**
      * @brief Destructor
@@ -374,9 +375,10 @@ private:
 /**
  * @brief Create a new storage manager
  *
- * @param db_path Path to the database file
+ * @param db_path Path to the database file. If empty, a default path will be used.
+ * @param persistent Whether to persist the database to disk. Always true for disk-based storage.
  * @return Shared pointer to a new storage manager
  */
-std::shared_ptr<StorageManager> create_storage_manager(const std::string& db_path);
+std::shared_ptr<StorageManager> create_storage_manager(const std::string& db_path, bool persistent = true);
 
 } // namespace bitscrape::storage

@@ -173,3 +173,19 @@ private:
 };
 
 } // namespace bitscrape::types
+
+// Hash function specialization for InfoHash
+namespace std {
+    template<>
+    struct hash<bitscrape::types::InfoHash> {
+        size_t operator()(const bitscrape::types::InfoHash& hash) const {
+            // Use the first 8 bytes of the hash as a 64-bit integer for hashing
+            const auto& bytes = hash.bytes();
+            size_t result = 0;
+            for (size_t i = 0; i < sizeof(size_t) && i < bytes.size(); ++i) {
+                result = (result << 8) | bytes[i];
+            }
+            return result;
+        }
+    };
+}

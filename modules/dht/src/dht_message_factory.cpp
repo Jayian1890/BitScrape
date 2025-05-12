@@ -11,16 +11,16 @@ namespace bitscrape::dht {
 
 std::shared_ptr<DHTMessage> DHTMessageFactory::create_from_data(const std::vector<uint8_t>& data) {
     // Decode the bencode data
-    bencode::BencodeDecoder decoder;
     bencode::BencodeValue value;
-    
+
     try {
-        value = decoder.decode(data);
+        auto decoder = bencode::create_bencode_decoder();
+        value = decoder->decode(data);
     } catch (const std::exception& e) {
         // Failed to decode the data
         return nullptr;
     }
-    
+
     // Create a message from the bencode value
     return create_from_bencode(value);
 }
@@ -33,29 +33,32 @@ std::future<std::shared_ptr<DHTMessage>> DHTMessageFactory::create_from_data_asy
 
 std::shared_ptr<DHTMessage> DHTMessageFactory::create_from_bencode(const bencode::BencodeValue& value) {
     // Check if the value is a dictionary
-    if (!value.is_dictionary()) {
+    if (!value.is_dict()) {
         return nullptr;
     }
-    
+
     // Get the transaction ID
-    if (!value.dictionary_contains("t") || !value.dictionary_get("t").is_string()) {
+    const bencode::BencodeValue* t_value = value.get("t");
+    if (!t_value || !t_value->is_string()) {
         return nullptr;
     }
-    std::string transaction_id = value.dictionary_get("t").string_value();
-    
+    std::string transaction_id = t_value->as_string();
+
     // Get the message type
-    if (!value.dictionary_contains("y") || !value.dictionary_get("y").is_string()) {
+    const bencode::BencodeValue* y_value = value.get("y");
+    if (!y_value || !y_value->is_string()) {
         return nullptr;
     }
-    std::string y = value.dictionary_get("y").string_value();
-    
+    std::string y = y_value->as_string();
+
     if (y == "q") {
         // Query message
-        if (!value.dictionary_contains("q") || !value.dictionary_get("q").is_string()) {
+        const bencode::BencodeValue* q_value = value.get("q");
+        if (!q_value || !q_value->is_string()) {
             return nullptr;
         }
-        std::string q = value.dictionary_get("q").string_value();
-        
+        std::string q = q_value->as_string();
+
         if (q == "ping") {
             return parse_ping(value, transaction_id, false);
         } else if (q == "find_node") {
@@ -74,15 +77,19 @@ std::shared_ptr<DHTMessage> DHTMessageFactory::create_from_bencode(const bencode
     } else if (y == "r") {
         // Response message
         // Determine the response type based on the contents
-        if (value.dictionary_contains("r") && value.dictionary_get("r").is_dictionary()) {
-            auto r = value.dictionary_get("r");
-            
-            if (r.dictionary_contains("id") && r.dictionary_get("id").is_string()) {
+        const bencode::BencodeValue* r_value = value.get("r");
+        if (r_value && r_value->is_dict()) {
+
+            const bencode::BencodeValue* id_value = r_value->get("id");
+            if (id_value && id_value->is_string()) {
                 // This is at least a ping response
                 // Check for additional fields to determine the exact type
-                if (r.dictionary_contains("nodes") && r.dictionary_get("nodes").is_string()) {
+                const bencode::BencodeValue* nodes_value = r_value->get("nodes");
+                if (nodes_value && nodes_value->is_string()) {
                     // This is a find_node or get_peers response
-                    if (r.dictionary_contains("values") || r.dictionary_contains("token")) {
+                    const bencode::BencodeValue* values_value = r_value->get("values");
+                    const bencode::BencodeValue* token_value = r_value->get("token");
+                    if (values_value || token_value) {
                         // This is a get_peers response
                         // TODO: Implement get_peers response parsing
                         return nullptr;
@@ -98,7 +105,7 @@ std::shared_ptr<DHTMessage> DHTMessageFactory::create_from_bencode(const bencode
                 }
             }
         }
-        
+
         // Failed to determine the response type
         return nullptr;
     } else if (y == "e") {
@@ -130,29 +137,30 @@ std::string DHTMessageFactory::generate_transaction_id() {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, 255);
-    
+
     std::ostringstream oss;
     oss << static_cast<char>(dis(gen)) << static_cast<char>(dis(gen));
-    
+
     return oss.str();
 }
 
-std::shared_ptr<DHTPingMessage> DHTMessageFactory::parse_ping(const bencode::BencodeValue& value, 
-                                                             const std::string& transaction_id, 
+std::shared_ptr<DHTPingMessage> DHTMessageFactory::parse_ping(const bencode::BencodeValue& value,
+                                                             const std::string& transaction_id,
                                                              bool is_response) {
     // Get the arguments or response dictionary
     std::string dict_key = is_response ? "r" : "a";
-    if (!value.dictionary_contains(dict_key) || !value.dictionary_get(dict_key).is_dictionary()) {
+    const bencode::BencodeValue* dict_value = value.get(dict_key);
+    if (!dict_value || !dict_value->is_dict()) {
         return nullptr;
     }
-    auto dict = value.dictionary_get(dict_key);
-    
+
     // Get the node ID
-    if (!dict.dictionary_contains("id") || !dict.dictionary_get("id").is_string()) {
+    const bencode::BencodeValue* id_value = dict_value->get("id");
+    if (!id_value || !id_value->is_string()) {
         return nullptr;
     }
-    auto id_str = dict.dictionary_get("id").string_value();
-    
+    auto id_str = id_value->as_string();
+
     // Create a NodeID from the string
     types::NodeID node_id;
     try {
@@ -161,7 +169,7 @@ std::shared_ptr<DHTPingMessage> DHTMessageFactory::parse_ping(const bencode::Ben
         // Failed to create the NodeID
         return nullptr;
     }
-    
+
     // Create the ping message
     return std::make_shared<DHTPingMessage>(transaction_id, node_id, is_response);
 }

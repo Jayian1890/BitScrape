@@ -7,11 +7,39 @@
 namespace bitscrape::dht {
 
 DHTSession::DHTSession()
-    : DHTSession(types::NodeID(), 6881, nullptr) {
+    : node_id_(types::NodeID()),
+      port_(6881),
+      event_bus_(nullptr),
+      running_(false) {
+    // Create the socket
+    socket_ = std::make_unique<network::UDPSocket>();
+
+    // Create the routing table
+    routing_table_ = std::make_unique<RoutingTable>(node_id_);
+
+    // Create the message factory
+    message_factory_ = std::make_unique<DHTMessageFactory>();
+
+    // Create the token manager
+    token_manager_ = std::make_unique<TokenManager>();
 }
 
 DHTSession::DHTSession(const types::NodeID& node_id)
-    : DHTSession(node_id, 6881, nullptr) {
+    : node_id_(node_id),
+      port_(6881),
+      event_bus_(nullptr),
+      running_(false) {
+    // Create the socket
+    socket_ = std::make_unique<network::UDPSocket>();
+
+    // Create the routing table
+    routing_table_ = std::make_unique<RoutingTable>(node_id_);
+
+    // Create the message factory
+    message_factory_ = std::make_unique<DHTMessageFactory>();
+
+    // Create the token manager
+    token_manager_ = std::make_unique<TokenManager>();
 }
 
 DHTSession::DHTSession(const types::NodeID& node_id, uint16_t port, event::EventBus& event_bus)
@@ -21,13 +49,13 @@ DHTSession::DHTSession(const types::NodeID& node_id, uint16_t port, event::Event
       running_(false) {
     // Create the socket
     socket_ = std::make_unique<network::UDPSocket>();
-    
+
     // Create the routing table
     routing_table_ = std::make_unique<RoutingTable>(node_id_);
-    
+
     // Create the message factory
     message_factory_ = std::make_unique<DHTMessageFactory>();
-    
+
     // Create the token manager
     token_manager_ = std::make_unique<TokenManager>();
 }
@@ -44,16 +72,16 @@ bool DHTSession::start(const std::vector<types::Endpoint>& bootstrap_nodes) {
     if (running_) {
         return false;
     }
-    
+
     // Bind the socket to the port
     if (!socket_->bind(port_)) {
         return false;
     }
-    
+
     // Start the receive loop
     running_ = true;
     start_receive_loop();
-    
+
     // Bootstrap the DHT
     Bootstrap bootstrap(node_id_, *routing_table_, *socket_, *message_factory_);
     return bootstrap.start(bootstrap_nodes);
@@ -70,13 +98,13 @@ void DHTSession::stop() {
     if (!running_) {
         return;
     }
-    
+
     // Stop the receive loop
     running_ = false;
-    
+
     // Close the socket
     socket_->close();
-    
+
     // Wait for the receive thread to finish
     if (receive_thread_.joinable()) {
         receive_thread_.join();
@@ -86,7 +114,7 @@ void DHTSession::stop() {
 std::vector<types::DHTNode> DHTSession::find_nodes(const types::NodeID& target_id) {
     // Create a node lookup
     NodeLookup lookup(node_id_, target_id, *routing_table_, *socket_, *message_factory_);
-    
+
     // Start the lookup
     return lookup.start();
 }
@@ -106,15 +134,15 @@ std::vector<types::Endpoint> DHTSession::find_peers(const types::InfoHash& infoh
             return it->second;
         }
     }
-    
+
     // Convert the infohash to a node ID for the lookup
-    types::NodeID target_id(infohash.to_bytes());
-    
+    types::NodeID target_id(std::vector<uint8_t>(infohash.bytes().begin(), infohash.bytes().end()));
+
     // Find nodes close to the infohash
     auto nodes = find_nodes(target_id);
-    
+
     // TODO: Send get_peers messages to the found nodes
-    
+
     // Return the peers
     std::lock_guard<std::mutex> lock(peers_mutex_);
     return peers_[infohash];
@@ -128,13 +156,13 @@ std::future<std::vector<types::Endpoint>> DHTSession::find_peers_async(const typ
 
 bool DHTSession::announce_peer(const types::InfoHash& infohash, uint16_t port) {
     // Convert the infohash to a node ID for the lookup
-    types::NodeID target_id(infohash.to_bytes());
-    
+    types::NodeID target_id(std::vector<uint8_t>(infohash.bytes().begin(), infohash.bytes().end()));
+
     // Find nodes close to the infohash
     auto nodes = find_nodes(target_id);
-    
+
     // TODO: Send announce_peer messages to the found nodes
-    
+
     return true;
 }
 
@@ -162,7 +190,7 @@ void DHTSession::process_message(const std::vector<uint8_t>& data, const types::
     if (!message) {
         return;
     }
-    
+
     // Add the sender to the routing table if it's a valid node
     if (message->type() == DHTMessage::Type::PING ||
         message->type() == DHTMessage::Type::FIND_NODE ||
@@ -170,14 +198,14 @@ void DHTSession::process_message(const std::vector<uint8_t>& data, const types::
         message->type() == DHTMessage::Type::ANNOUNCE_PEER) {
         // TODO: Extract the node ID from the message and add it to the routing table
     }
-    
+
     // Check if this is a response to an active lookup
     if (message->type() == DHTMessage::Type::PING_RESPONSE ||
         message->type() == DHTMessage::Type::FIND_NODE_RESPONSE ||
         message->type() == DHTMessage::Type::GET_PEERS_RESPONSE ||
         message->type() == DHTMessage::Type::ANNOUNCE_PEER_RESPONSE) {
         std::lock_guard<std::mutex> lock(lookups_mutex_);
-        
+
         // Find the lookup with the matching transaction ID
         auto it = lookups_.find(message->transaction_id());
         if (it != lookups_.end()) {
@@ -186,7 +214,7 @@ void DHTSession::process_message(const std::vector<uint8_t>& data, const types::
             return;
         }
     }
-    
+
     // Handle the message based on its type
     switch (message->type()) {
         case DHTMessage::Type::PING:
@@ -213,10 +241,18 @@ void DHTSession::start_receive_loop() {
         while (running_) {
             try {
                 // Receive a message
-                auto result = socket_->receive_from();
-                auto& data = result.first;
-                auto& sender_endpoint = result.second;
-                
+                network::Buffer buffer;
+                network::Address address;
+                int bytes_received = socket_->receive_from(buffer, address);
+
+                if (bytes_received <= 0) {
+                    continue; // No data received or error
+                }
+
+                // Convert to vector<uint8_t> and Endpoint
+                std::vector<uint8_t> data(buffer.data(), buffer.data() + buffer.size());
+                types::Endpoint sender_endpoint(address.to_string(), address.port());
+
                 // Process the message
                 process_message(data, sender_endpoint);
             } catch (const std::exception& e) {
@@ -229,12 +265,13 @@ void DHTSession::start_receive_loop() {
 void DHTSession::handle_ping(const std::shared_ptr<DHTMessage>& message, const types::Endpoint& sender_endpoint) {
     // Create a ping response
     auto response = message_factory_->create_ping_response(message->transaction_id(), node_id_);
-    
+
     // Encode the response
     auto data = response->encode();
-    
+
     // Send the response
-    socket_->send_to(data, sender_endpoint);
+    network::Address address(sender_endpoint.address(), sender_endpoint.port());
+    socket_->send_to(data.data(), data.size(), address);
 }
 
 void DHTSession::handle_find_node(const std::shared_ptr<DHTMessage>& message, const types::Endpoint& sender_endpoint) {

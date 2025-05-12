@@ -23,6 +23,7 @@ target_link_libraries(bitscrape-core
         bitscrape::bittorrent
         bitscrape::tracker
         bitscrape::storage
+        bitscrape::dht
 )
 
 # Set target properties
@@ -68,6 +69,7 @@ if(BUILD_TESTS)
             bitscrape-bittorrent
             bitscrape-tracker
             bitscrape-storage
+            bitscrape-dht
             bitscrape-gtest
     )
 

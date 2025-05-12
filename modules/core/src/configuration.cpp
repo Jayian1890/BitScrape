@@ -333,6 +333,9 @@ private:
         config_["log.file"] = "bitscrape.log";
         config_["log.max_size"] = "10485760"; // 10 MB
         config_["log.max_files"] = "5";
+        config_["web.auto_start"] = "1"; // Auto-start web interface by default
+        config_["web.port"] = "8080"; // Default web interface port
+        config_["web.static_dir"] = "public"; // Default static files directory
 
         // Save default configuration
         save();

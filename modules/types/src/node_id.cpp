@@ -210,4 +210,18 @@ namespace bitscrape::types
         return !(*this < other);
     }
 
+    bool NodeID::is_bit_set(size_t bit_index) const
+    {
+        if (bit_index >= SIZE * 8) {
+            throw std::out_of_range("Bit index out of range");
+        }
+
+        // Calculate the byte index and bit position within the byte
+        size_t byte_index = bit_index / 8;
+        size_t bit_position = 7 - (bit_index % 8); // Most significant bit first
+
+        // Check if the bit is set
+        return (id_[byte_index] & (1 << bit_position)) != 0;
+    }
+
 } // namespace bitscrape::types

@@ -24,7 +24,8 @@ void DHTMessage::set_transaction_id(const std::string& transaction_id) {
 }
 
 bencode::BencodeValue DHTMessage::to_bencode() const {
-    bencode::BencodeValue dict = bencode::BencodeValue::create_dictionary();
+    std::map<std::string, bencode::BencodeValue> dict_map;
+    bencode::BencodeValue dict(dict_map);
     add_common_fields(dict);
     return dict;
 }
@@ -37,8 +38,8 @@ std::future<bencode::BencodeValue> DHTMessage::to_bencode_async() const {
 
 std::vector<uint8_t> DHTMessage::encode() const {
     bencode::BencodeValue dict = to_bencode();
-    bencode::BencodeEncoder encoder;
-    return encoder.encode(dict);
+    auto encoder = bencode::create_bencode_encoder();
+    return encoder->encode(dict);
 }
 
 std::future<std::vector<uint8_t>> DHTMessage::encode_async() const {
@@ -53,9 +54,9 @@ bool DHTMessage::is_valid() const {
 
 std::string DHTMessage::to_string() const {
     std::ostringstream oss;
-    
+
     oss << "DHTMessage[type=";
-    
+
     switch (type_) {
         case Type::PING:
             oss << "PING";
@@ -88,40 +89,40 @@ std::string DHTMessage::to_string() const {
             oss << "UNKNOWN";
             break;
     }
-    
+
     oss << ", transaction_id=" << transaction_id_ << "]";
-    
+
     return oss.str();
 }
 
 void DHTMessage::add_common_fields(bencode::BencodeValue& dict) const {
     // Add transaction ID
-    dict.dictionary_set("t", bencode::BencodeValue(transaction_id_));
-    
+    dict.set("t", bencode::BencodeValue(transaction_id_));
+
     // Add message type (y)
-    if (type_ == Type::PING || type_ == Type::FIND_NODE || 
+    if (type_ == Type::PING || type_ == Type::FIND_NODE ||
         type_ == Type::GET_PEERS || type_ == Type::ANNOUNCE_PEER) {
-        dict.dictionary_set("y", bencode::BencodeValue("q"));
-    } else if (type_ == Type::PING_RESPONSE || type_ == Type::FIND_NODE_RESPONSE || 
+        dict.set("y", bencode::BencodeValue("q"));
+    } else if (type_ == Type::PING_RESPONSE || type_ == Type::FIND_NODE_RESPONSE ||
                type_ == Type::GET_PEERS_RESPONSE || type_ == Type::ANNOUNCE_PEER_RESPONSE) {
-        dict.dictionary_set("y", bencode::BencodeValue("r"));
+        dict.set("y", bencode::BencodeValue("r"));
     } else if (type_ == Type::ERROR) {
-        dict.dictionary_set("y", bencode::BencodeValue("e"));
+        dict.set("y", bencode::BencodeValue("e"));
     }
-    
+
     // Add query type (q) for queries
     if (type_ == Type::PING) {
-        dict.dictionary_set("q", bencode::BencodeValue("ping"));
+        dict.set("q", bencode::BencodeValue("ping"));
     } else if (type_ == Type::FIND_NODE) {
-        dict.dictionary_set("q", bencode::BencodeValue("find_node"));
+        dict.set("q", bencode::BencodeValue("find_node"));
     } else if (type_ == Type::GET_PEERS) {
-        dict.dictionary_set("q", bencode::BencodeValue("get_peers"));
+        dict.set("q", bencode::BencodeValue("get_peers"));
     } else if (type_ == Type::ANNOUNCE_PEER) {
-        dict.dictionary_set("q", bencode::BencodeValue("announce_peer"));
+        dict.set("q", bencode::BencodeValue("announce_peer"));
     }
-    
+
     // Add version (v)
-    dict.dictionary_set("v", bencode::BencodeValue("BS"));
+    dict.set("v", bencode::BencodeValue("BS"));
 }
 
 // DHTPingMessage implementation
@@ -144,40 +145,42 @@ void DHTPingMessage::set_node_id(const types::NodeID& node_id) {
 
 bencode::BencodeValue DHTPingMessage::to_bencode() const {
     bencode::BencodeValue dict = DHTMessage::to_bencode();
-    
+
     if (type() == Type::PING) {
         // Add arguments dictionary (a)
-        bencode::BencodeValue args = bencode::BencodeValue::create_dictionary();
-        args.dictionary_set("id", bencode::BencodeValue(node_id_.to_bytes()));
-        dict.dictionary_set("a", args);
+        std::map<std::string, bencode::BencodeValue> args_map;
+        std::vector<uint8_t> id_bytes(node_id_.bytes().begin(), node_id_.bytes().end());
+        args_map["id"] = bencode::BencodeValue(id_bytes);
+        dict.set("a", bencode::BencodeValue(args_map));
     } else if (type() == Type::PING_RESPONSE) {
         // Add response dictionary (r)
-        bencode::BencodeValue response = bencode::BencodeValue::create_dictionary();
-        response.dictionary_set("id", bencode::BencodeValue(node_id_.to_bytes()));
-        dict.dictionary_set("r", response);
+        std::map<std::string, bencode::BencodeValue> response_map;
+        std::vector<uint8_t> id_bytes(node_id_.bytes().begin(), node_id_.bytes().end());
+        response_map["id"] = bencode::BencodeValue(id_bytes);
+        dict.set("r", bencode::BencodeValue(response_map));
     }
-    
+
     return dict;
 }
 
 bool DHTPingMessage::is_valid() const {
-    return DHTMessage::is_valid() && node_id_.is_valid();
+    return DHTMessage::is_valid();
 }
 
 std::string DHTPingMessage::to_string() const {
     std::ostringstream oss;
-    
+
     oss << "DHTPingMessage[type=";
-    
+
     if (type() == Type::PING) {
         oss << "PING";
     } else {
         oss << "PING_RESPONSE";
     }
-    
+
     oss << ", transaction_id=" << transaction_id()
         << ", node_id=" << node_id_.to_hex().substr(0, 8) << "...]";
-    
+
     return oss.str();
 }
 

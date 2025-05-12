@@ -177,6 +177,14 @@ namespace bitscrape::types
          */
         bool operator>=(const NodeID &other) const;
 
+        /**
+         * @brief Check if a specific bit is set in the NodeID
+         *
+         * @param bit_index The index of the bit to check (0 is the most significant bit)
+         * @return true if the bit is set, false otherwise
+         */
+        bool is_bit_set(size_t bit_index) const;
+
     private:
         IDStorage id_; ///< The internal storage for the NodeID
     };

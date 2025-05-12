@@ -87,6 +87,11 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/types/include
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/event/include
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/beacon/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/bencode/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/network/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/dht/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/bittorrent/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/tracker/include
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/storage/include
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/web/include
@@ -98,6 +103,7 @@ add_subdirectory(modules/event)
 add_subdirectory(modules/beacon)
 add_subdirectory(modules/bencode)
 add_subdirectory(modules/network)
+add_subdirectory(modules/dht) # Re-enabled DHT module
 add_subdirectory(modules/bittorrent)
 add_subdirectory(modules/tracker)
 add_subdirectory(modules/core)

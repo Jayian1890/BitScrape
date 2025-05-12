@@ -14,7 +14,7 @@ namespace bitscrape::network {
 
 /**
  * @brief TCPSocket class for TCP communication
- * 
+ *
  * This class provides a cross-platform abstraction for TCP socket operations.
  * It supports both synchronous and asynchronous APIs for connecting, sending, and receiving data.
  */
@@ -27,7 +27,7 @@ public:
 
     /**
      * @brief Construct a new TCPSocket object from an existing socket
-     * 
+     *
      * @param socket The socket to take ownership of
      */
     explicit TCPSocket(std::unique_ptr<Socket> socket);
@@ -51,7 +51,7 @@ public:
 
     /**
      * @brief Connect to a specific address
-     * 
+     *
      * @param address The address to connect to
      * @return true if successful, false otherwise
      */
@@ -59,7 +59,7 @@ public:
 
     /**
      * @brief Connect to a specific address asynchronously
-     * 
+     *
      * @param address The address to connect to
      * @return A future that will contain true if successful, false otherwise
      */
@@ -72,21 +72,21 @@ public:
 
     /**
      * @brief Check if the socket is valid
-     * 
+     *
      * @return true if the socket is valid, false otherwise
      */
     bool is_valid() const;
 
     /**
      * @brief Check if the socket is connected
-     * 
+     *
      * @return true if the socket is connected, false otherwise
      */
     bool is_connected() const;
 
     /**
      * @brief Send data
-     * 
+     *
      * @param data The data to send
      * @param size The size of the data
      * @return The number of bytes sent, or -1 on error
@@ -95,7 +95,7 @@ public:
 
     /**
      * @brief Send data asynchronously
-     * 
+     *
      * @param data The data to send
      * @param size The size of the data
      * @return A future that will contain the number of bytes sent, or -1 on error
@@ -104,7 +104,7 @@ public:
 
     /**
      * @brief Send a buffer
-     * 
+     *
      * @param buffer The buffer to send
      * @return The number of bytes sent, or -1 on error
      */
@@ -112,7 +112,7 @@ public:
 
     /**
      * @brief Send a buffer asynchronously
-     * 
+     *
      * @param buffer The buffer to send
      * @return A future that will contain the number of bytes sent, or -1 on error
      */
@@ -120,7 +120,7 @@ public:
 
     /**
      * @brief Receive data
-     * 
+     *
      * @param data The buffer to receive into
      * @param size The size of the buffer
      * @return The number of bytes received, or -1 on error
@@ -129,7 +129,7 @@ public:
 
     /**
      * @brief Receive data asynchronously
-     * 
+     *
      * @param data The buffer to receive into
      * @param size The size of the buffer
      * @return A future that will contain the number of bytes received, or -1 on error
@@ -138,7 +138,7 @@ public:
 
     /**
      * @brief Receive data into a buffer
-     * 
+     *
      * @param buffer The buffer to receive into
      * @return The number of bytes received, or -1 on error
      */
@@ -146,7 +146,7 @@ public:
 
     /**
      * @brief Receive data into a buffer asynchronously
-     * 
+     *
      * @param buffer The buffer to receive into
      * @return A future that will contain the number of bytes received, or -1 on error
      */
@@ -154,7 +154,7 @@ public:
 
     /**
      * @brief Set the socket to non-blocking mode
-     * 
+     *
      * @param non_blocking true to set non-blocking, false for blocking
      * @return true if successful, false otherwise
      */
@@ -162,7 +162,7 @@ public:
 
     /**
      * @brief Set the socket receive buffer size
-     * 
+     *
      * @param size The buffer size in bytes
      * @return true if successful, false otherwise
      */
@@ -170,7 +170,7 @@ public:
 
     /**
      * @brief Set the socket send buffer size
-     * 
+     *
      * @param size The buffer size in bytes
      * @return true if successful, false otherwise
      */
@@ -178,7 +178,7 @@ public:
 
     /**
      * @brief Set the socket receive timeout
-     * 
+     *
      * @param timeout_ms The timeout in milliseconds
      * @return true if successful, false otherwise
      */
@@ -186,7 +186,7 @@ public:
 
     /**
      * @brief Set the socket send timeout
-     * 
+     *
      * @param timeout_ms The timeout in milliseconds
      * @return true if successful, false otherwise
      */
@@ -194,14 +194,14 @@ public:
 
     /**
      * @brief Get the local address
-     * 
+     *
      * @return The local address
      */
     Address get_local_address() const;
 
     /**
      * @brief Get the remote address
-     * 
+     *
      * @return The remote address
      */
     Address get_remote_address() const;

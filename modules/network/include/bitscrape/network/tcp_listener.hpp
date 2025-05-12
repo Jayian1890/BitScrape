@@ -13,7 +13,7 @@ namespace bitscrape::network {
 
 /**
  * @brief TCPListener class for accepting TCP connections
- * 
+ *
  * This class provides a cross-platform abstraction for TCP listening socket operations.
  * It supports both synchronous and asynchronous APIs for accepting connections.
  */
@@ -43,7 +43,7 @@ public:
 
     /**
      * @brief Bind the listener to a specific port
-     * 
+     *
      * @param port The port to bind to
      * @return true if successful, false otherwise
      */
@@ -51,7 +51,7 @@ public:
 
     /**
      * @brief Bind the listener to a specific address and port
-     * 
+     *
      * @param address The address to bind to
      * @param port The port to bind to
      * @return true if successful, false otherwise
@@ -60,7 +60,7 @@ public:
 
     /**
      * @brief Start listening for connections
-     * 
+     *
      * @param backlog The maximum number of pending connections
      * @return true if successful, false otherwise
      */
@@ -68,7 +68,7 @@ public:
 
     /**
      * @brief Accept a new connection
-     * 
+     *
      * @param address The address of the client (output)
      * @return A new TCPSocket for the accepted connection, or nullptr on error
      */
@@ -76,7 +76,7 @@ public:
 
     /**
      * @brief Accept a new connection asynchronously
-     * 
+     *
      * @return A future that will contain a pair of a new TCPSocket for the accepted connection and the client address
      */
     std::future<std::pair<std::unique_ptr<TCPSocket>, Address>> accept_async();
@@ -88,21 +88,21 @@ public:
 
     /**
      * @brief Check if the listener is valid
-     * 
+     *
      * @return true if the listener is valid, false otherwise
      */
     bool is_valid() const;
 
     /**
      * @brief Check if the listener is listening
-     * 
+     *
      * @return true if the listener is listening, false otherwise
      */
     bool is_listening() const;
 
     /**
      * @brief Set the listener to non-blocking mode
-     * 
+     *
      * @param non_blocking true to set non-blocking, false for blocking
      * @return true if successful, false otherwise
      */
@@ -110,7 +110,7 @@ public:
 
     /**
      * @brief Get the local address
-     * 
+     *
      * @return The local address
      */
     Address get_local_address() const;

@@ -89,6 +89,10 @@ InfoHash::from_bencode_async(const std::vector<uint8_t> &data) {
                     [data]() { return from_bencode(data); });
 }
 
+InfoHash InfoHash::from_hex(const std::string& hex) {
+  return InfoHash(hex);
+}
+
 InfoHash InfoHash::random() {
   std::random_device rd;
   std::mt19937 gen(rd());

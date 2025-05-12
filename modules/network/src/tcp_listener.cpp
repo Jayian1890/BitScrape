@@ -56,14 +56,9 @@ std::unique_ptr<TCPSocket> TCPListener::accept(Address& address) {
 
     // Create a new Socket object for the client
     auto client_socket = std::make_unique<Socket>(SocketType::TCP);
-    
-    // Close the default socket and replace it with the accepted one
-    client_socket->close();
-    
+
     // Set the socket descriptor to the accepted client socket
-    // Note: This is a bit of a hack, but it works for now
-    // In a real implementation, we would need to add a method to Socket to set the descriptor
-    *reinterpret_cast<int*>(client_socket.get()) = client_fd;
+    client_socket->set_descriptor(client_fd);
 
     // Get the client address
     char ip_str[INET_ADDRSTRLEN];

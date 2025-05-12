@@ -18,7 +18,7 @@ enum class SocketType {
 
 /**
  * @brief Socket class for low-level socket operations
- * 
+ *
  * This class provides a cross-platform abstraction for socket operations.
  * It supports both UDP and TCP sockets with synchronous and asynchronous APIs.
  */
@@ -26,7 +26,7 @@ class Socket {
 public:
     /**
      * @brief Construct a new Socket object
-     * 
+     *
      * @param type The socket type (UDP or TCP)
      */
     explicit Socket(SocketType type);
@@ -50,7 +50,7 @@ public:
 
     /**
      * @brief Bind the socket to a specific port
-     * 
+     *
      * @param port The port to bind to
      * @return true if successful, false otherwise
      */
@@ -58,7 +58,7 @@ public:
 
     /**
      * @brief Bind the socket to a specific address and port
-     * 
+     *
      * @param address The address to bind to
      * @param port The port to bind to
      * @return true if successful, false otherwise
@@ -72,28 +72,37 @@ public:
 
     /**
      * @brief Check if the socket is valid
-     * 
+     *
      * @return true if the socket is valid, false otherwise
      */
     bool is_valid() const;
 
     /**
      * @brief Get the socket type
-     * 
+     *
      * @return The socket type
      */
     SocketType type() const;
 
     /**
      * @brief Get the socket descriptor
-     * 
+     *
      * @return The socket descriptor
      */
     int descriptor() const;
 
     /**
+     * @brief Set the socket descriptor
+     *
+     * This is used internally by TCPListener::accept to set the descriptor of a newly accepted socket.
+     *
+     * @param fd The socket descriptor
+     */
+    void set_descriptor(int fd);
+
+    /**
      * @brief Set the socket to non-blocking mode
-     * 
+     *
      * @param non_blocking true to set non-blocking, false for blocking
      * @return true if successful, false otherwise
      */
@@ -101,7 +110,7 @@ public:
 
     /**
      * @brief Set the socket receive buffer size
-     * 
+     *
      * @param size The buffer size in bytes
      * @return true if successful, false otherwise
      */
@@ -109,7 +118,7 @@ public:
 
     /**
      * @brief Set the socket send buffer size
-     * 
+     *
      * @param size The buffer size in bytes
      * @return true if successful, false otherwise
      */
@@ -117,7 +126,7 @@ public:
 
     /**
      * @brief Set the socket receive timeout
-     * 
+     *
      * @param timeout_ms The timeout in milliseconds
      * @return true if successful, false otherwise
      */
@@ -125,7 +134,7 @@ public:
 
     /**
      * @brief Set the socket send timeout
-     * 
+     *
      * @param timeout_ms The timeout in milliseconds
      * @return true if successful, false otherwise
      */

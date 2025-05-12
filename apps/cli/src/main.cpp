@@ -4,6 +4,13 @@
 #include <bitscrape/storage/query_interface.hpp>
 #include <bitscrape/storage/data_models.hpp>
 
+#ifdef ENABLE_WEB_INTERFACE
+#include <bitscrape/web/http_server.hpp>
+#include <bitscrape/web/web_controller.hpp>
+#include <bitscrape/web/api_handler.hpp>
+#include <bitscrape/web/static_file_handler.hpp>
+#endif
+
 #include <iostream>
 #include <string>
 #include <thread>
@@ -17,6 +24,7 @@
 #include <functional>
 #include <map>
 #include <mutex>
+#include <filesystem>
 
 // Global variables for signal handling
 std::atomic running = true;
@@ -25,6 +33,12 @@ std::shared_ptr<bitscrape::core::Controller> controller;
 // Global variables for CLI state
 std::atomic<bool> interactive_mode = true;
 std::mutex console_mutex;
+
+#ifdef ENABLE_WEB_INTERFACE
+// Global variables for web interface
+std::shared_ptr<bitscrape::web::HTTPServer> http_server;
+std::shared_ptr<bitscrape::web::WebController> web_controller;
+#endif
 
 // Signal handler
 void signal_handler(int signal) {
@@ -35,6 +49,12 @@ void signal_handler(int signal) {
         if (controller) {
             controller->stop();
         }
+
+#ifdef ENABLE_WEB_INTERFACE
+        if (http_server) {
+            http_server->stop();
+        }
+#endif
     }
 }
 
@@ -124,6 +144,11 @@ void print_usage(const char* program_name) {
     std::cout << "  --crawl, -C             Start crawling immediately" << std::endl;
     std::cout << "  --interactive, -i       Start in interactive mode" << std::endl;
     std::cout << "  --version, -v           Show version information" << std::endl;
+#ifdef ENABLE_WEB_INTERFACE
+    std::cout << "  --web, -w               Enable web interface" << std::endl;
+    std::cout << "  --port=PORT             Web interface port (default: 8080)" << std::endl;
+    std::cout << "  --static-dir=PATH       Path to static files (default: public)" << std::endl;
+#endif
 }
 
 void print_version() {
@@ -479,6 +504,11 @@ void display_interactive_help() {
     std::cout << "  search <query>         - Search for metadata by name" << std::endl;
     std::cout << "  start                  - Start crawling" << std::endl;
     std::cout << "  stop                   - Stop crawling" << std::endl;
+#ifdef ENABLE_WEB_INTERFACE
+    std::cout << "  web status              - Show web interface status" << std::endl;
+    std::cout << "  web start [port]        - Start web interface" << std::endl;
+    std::cout << "  web stop                - Stop web interface" << std::endl;
+#endif
     std::cout << "  clear                  - Clear the screen" << std::endl;
     std::cout << "  exit                   - Exit the application" << std::endl;
 
@@ -495,6 +525,12 @@ int main(int argc, char *argv[])
     std::string config_path = "bitscrape.conf";
     std::string db_path;
     bool start_crawling = false;
+
+#ifdef ENABLE_WEB_INTERFACE
+    bool enable_web = false;
+    uint16_t web_port = 8080;
+    std::string static_dir = "public";
+#endif
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -513,7 +549,17 @@ int main(int argc, char *argv[])
             config_path = argv[++i];
         } else if ((arg == "--database" || arg == "-d") && i + 1 < argc) {
             db_path = argv[++i];
-        } else {
+        }
+#ifdef ENABLE_WEB_INTERFACE
+        else if (arg == "--web" || arg == "-w") {
+            enable_web = true;
+        } else if (arg.find("--port=") == 0) {
+            web_port = std::stoi(arg.substr(7));
+        } else if (arg.find("--static-dir=") == 0) {
+            static_dir = arg.substr(13);
+        }
+#endif
+        else {
             std::cerr << "Unknown option: " << arg << std::endl;
             print_usage(argv[0]);
             return 1;
@@ -557,6 +603,53 @@ int main(int argc, char *argv[])
             beacon->error("Failed to start crawling", SYSTEM);
         }
     }
+
+#ifdef ENABLE_WEB_INTERFACE
+    // Start web interface if requested
+    if (enable_web) {
+        beacon->info("Starting web interface on port " + std::to_string(web_port), SYSTEM);
+
+        // Create web controller
+        web_controller = std::make_shared<bitscrape::web::WebController>(config_path);
+
+        // Initialize web controller
+        if (!web_controller->initialize()) {
+            beacon->error("Failed to initialize web controller", SYSTEM);
+        } else {
+            // Start web controller
+            if (!web_controller->start()) {
+                beacon->error("Failed to start web controller", SYSTEM);
+            } else {
+                // Create HTTP server
+                http_server = std::make_shared<
+                    bitscrape::web::HTTPServer>(web_port, web_controller);
+
+                // Register API routes
+                bitscrape::web::APIHandler::register_routes(http_server->router());
+
+                // Resolve static directory path
+                std::filesystem::path static_path(static_dir);
+                if (!static_path.is_absolute()) {
+                    // If relative, make it relative to the executable directory
+                    static_path = std::filesystem::current_path() / static_path;
+                }
+
+                // Register static file routes
+                bitscrape::web::StaticFileHandler::register_routes(
+                    http_server->router(), static_path.string());
+
+                // Start HTTP server
+                if (!http_server->start()) {
+                    beacon->error("Failed to start HTTP server", SYSTEM);
+                } else {
+                    beacon->info(
+                        "Web interface available at http://localhost:" + std::to_string(web_port),
+                        SYSTEM);
+                }
+            }
+        }
+    }
+#endif
 
     // Main loop
     beacon->info("BitScrape CLI started", SYSTEM);
@@ -708,7 +801,99 @@ int main(int argc, char *argv[])
                 } else {
                     std::cout << "Failed to stop crawling." << std::endl;
                 }
-            } else if (cmd == "clear") {
+            }
+#ifdef ENABLE_WEB_INTERFACE
+            else if (cmd == "web") {
+                std::string web_cmd;
+                if (iss >> web_cmd) {
+                    if (web_cmd == "status") {
+                        // Show web interface status
+                        if (http_server) {
+                            std::cout << "Web interface is " << (http_server->is_running()
+                                                                     ? "running"
+                                                                     : "stopped") << std::endl;
+                            if (http_server->is_running()) {
+                                std::cout << "Port: " << http_server->port() << std::endl;
+                                std::cout << "URL: http://localhost:" << http_server->port() <<
+                                    std::endl;
+                            }
+                        } else {
+                            std::cout << "Web interface is not initialized" << std::endl;
+                        }
+                    } else if (web_cmd == "start") {
+                        // Start web interface
+                        uint16_t port = 8080;
+                        if (iss >> port) {
+                            // Port is provided
+                        }
+
+                        if (http_server && http_server->is_running()) {
+                            std::cout << "Web interface is already running on port " << http_server
+                                ->port() << std::endl;
+                        } else {
+                            // Create web controller if not already created
+                            if (!web_controller) {
+                                web_controller = std::make_shared<bitscrape::web::WebController>(
+                                    config_path);
+                                if (!web_controller->initialize()) {
+                                    std::cout << "Failed to initialize web controller" << std::endl;
+                                    continue;
+                                }
+                                if (!web_controller->start()) {
+                                    std::cout << "Failed to start web controller" << std::endl;
+                                    continue;
+                                }
+                            }
+
+                            // Create HTTP server
+                            http_server = std::make_shared<bitscrape::web::HTTPServer>(
+                                port, web_controller);
+
+                            // Register API routes
+                            bitscrape::web::APIHandler::register_routes(http_server->router());
+
+                            // Resolve static directory path
+                            std::string static_dir = "public";
+                            std::filesystem::path static_path(static_dir);
+                            if (!static_path.is_absolute()) {
+                                // If relative, make it relative to the executable directory
+                                static_path = std::filesystem::current_path() / static_path;
+                            }
+
+                            // Register static file routes
+                            bitscrape::web::StaticFileHandler::register_routes(
+                                http_server->router(), static_path.string());
+
+                            // Start HTTP server
+                            if (!http_server->start()) {
+                                std::cout << "Failed to start HTTP server" << std::endl;
+                            } else {
+                                std::cout << "Web interface started on port " << port << std::endl;
+                                std::cout << "URL: http://localhost:" << port << std::endl;
+                            }
+                        }
+                    } else if (web_cmd == "stop") {
+                        // Stop web interface
+                        if (http_server && http_server->is_running()) {
+                            if (http_server->stop()) {
+                                std::cout << "Web interface stopped" << std::endl;
+                            } else {
+                                std::cout << "Failed to stop web interface" << std::endl;
+                            }
+                        } else {
+                            std::cout << "Web interface is not running" << std::endl;
+                        }
+                    } else {
+                        std::cout << "Unknown web command: " << web_cmd << std::endl;
+                        std::cout << "Available web commands: status, start, stop" << std::endl;
+                    }
+                } else {
+                    std::cout << "Usage: web <command>" << std::endl;
+                    std::cout << "Available commands: status, start, stop" << std::endl;
+                }
+            }
+#endif
+            else if (cmd == "clear") {
                 // Clear the screen (platform-dependent)
 #ifdef _WIN32
                 system("cls");
@@ -746,6 +931,14 @@ int main(int argc, char *argv[])
     if (running) {
         beacon->info("BitScrape CLI shutting down", SYSTEM);
         controller->stop();
+
+#ifdef ENABLE_WEB_INTERFACE
+        // Stop web interface if it was started
+        if (http_server && http_server->is_running()) {
+            beacon->info("Stopping web interface", SYSTEM);
+            http_server->stop();
+        }
+#endif
     }
 
     return 0;

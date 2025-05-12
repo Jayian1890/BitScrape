@@ -113,6 +113,14 @@ int Socket::descriptor() const {
     return socket_fd_;
 }
 
+void Socket::set_descriptor(int fd) {
+    // Close the current socket if it's valid
+    close();
+
+    // Set the new descriptor
+    socket_fd_ = fd;
+}
+
 bool Socket::set_non_blocking(bool non_blocking) {
     if (!is_valid()) {
         return false;

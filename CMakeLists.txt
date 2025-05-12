@@ -89,6 +89,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/beacon/include
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/storage/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/web/include
 )
 
 # Add modules
@@ -101,6 +102,7 @@ add_subdirectory(modules/bittorrent)
 add_subdirectory(modules/tracker)
 add_subdirectory(modules/core)
 add_subdirectory(modules/storage)
+add_subdirectory(modules/web)
 
 # Add applications
 add_subdirectory(apps)

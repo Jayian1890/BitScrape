@@ -14,7 +14,7 @@ namespace bitscrape::network {
 
 /**
  * @brief UDPSocket class for UDP communication
- * 
+ *
  * This class provides a cross-platform abstraction for UDP socket operations.
  * It supports both synchronous and asynchronous APIs for sending and receiving data.
  */
@@ -44,7 +44,7 @@ public:
 
     /**
      * @brief Bind the socket to a specific port
-     * 
+     *
      * @param port The port to bind to
      * @return true if successful, false otherwise
      */
@@ -52,7 +52,7 @@ public:
 
     /**
      * @brief Bind the socket to a specific address and port
-     * 
+     *
      * @param address The address to bind to
      * @param port The port to bind to
      * @return true if successful, false otherwise
@@ -66,14 +66,14 @@ public:
 
     /**
      * @brief Check if the socket is valid
-     * 
+     *
      * @return true if the socket is valid, false otherwise
      */
     bool is_valid() const;
 
     /**
      * @brief Send data to a specific address
-     * 
+     *
      * @param data The data to send
      * @param size The size of the data
      * @param address The destination address
@@ -83,7 +83,7 @@ public:
 
     /**
      * @brief Send data to a specific address asynchronously
-     * 
+     *
      * @param data The data to send
      * @param size The size of the data
      * @param address The destination address
@@ -93,7 +93,7 @@ public:
 
     /**
      * @brief Send a buffer to a specific address
-     * 
+     *
      * @param buffer The buffer to send
      * @param address The destination address
      * @return The number of bytes sent, or -1 on error
@@ -102,7 +102,7 @@ public:
 
     /**
      * @brief Send a buffer to a specific address asynchronously
-     * 
+     *
      * @param buffer The buffer to send
      * @param address The destination address
      * @return A future that will contain the number of bytes sent, or -1 on error
@@ -111,7 +111,7 @@ public:
 
     /**
      * @brief Receive data from any address
-     * 
+     *
      * @param data The buffer to receive into
      * @param size The size of the buffer
      * @param address The source address (output)
@@ -121,7 +121,7 @@ public:
 
     /**
      * @brief Receive data from any address asynchronously
-     * 
+     *
      * @param data The buffer to receive into
      * @param size The size of the buffer
      * @return A future that will contain a pair of the number of bytes received and the source address
@@ -130,7 +130,7 @@ public:
 
     /**
      * @brief Receive data into a buffer from any address
-     * 
+     *
      * @param buffer The buffer to receive into
      * @param address The source address (output)
      * @return The number of bytes received, or -1 on error
@@ -139,7 +139,7 @@ public:
 
     /**
      * @brief Receive data into a buffer from any address asynchronously
-     * 
+     *
      * @param buffer The buffer to receive into
      * @return A future that will contain a pair of the number of bytes received and the source address
      */
@@ -147,7 +147,7 @@ public:
 
     /**
      * @brief Set the socket to non-blocking mode
-     * 
+     *
      * @param non_blocking true to set non-blocking, false for blocking
      * @return true if successful, false otherwise
      */
@@ -155,7 +155,7 @@ public:
 
     /**
      * @brief Set the socket receive buffer size
-     * 
+     *
      * @param size The buffer size in bytes
      * @return true if successful, false otherwise
      */
@@ -163,7 +163,7 @@ public:
 
     /**
      * @brief Set the socket send buffer size
-     * 
+     *
      * @param size The buffer size in bytes
      * @return true if successful, false otherwise
      */
@@ -171,7 +171,7 @@ public:
 
     /**
      * @brief Set the socket receive timeout
-     * 
+     *
      * @param timeout_ms The timeout in milliseconds
      * @return true if successful, false otherwise
      */
@@ -179,7 +179,7 @@ public:
 
     /**
      * @brief Set the socket send timeout
-     * 
+     *
      * @param timeout_ms The timeout in milliseconds
      * @return true if successful, false otherwise
      */

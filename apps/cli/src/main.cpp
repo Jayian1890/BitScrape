@@ -811,8 +811,8 @@ int main(int argc, char *argv[])
                         bool auto_start = controller->get_configuration()->get_bool(
                             "web.auto_start", true);
                         std::cout << "Web interface auto-start: " << (auto_start
-                            ? "enabled"
-                            : "disabled") << std::endl;
+                                ? "enabled"
+                                : "disabled") << std::endl;
 
                         if (http_server) {
                             std::cout << "Web interface is " << (http_server->is_running()
@@ -837,7 +837,8 @@ int main(int argc, char *argv[])
                             std::cout << "Web interface is already running on port " << http_server
                                 ->port() << std::endl;
                         } else {
-                            if (start_web_interface(config_path, port, "public", controller->get_beacon())) {
+                            if (start_web_interface(config_path, port, "public",
+                                                    controller->get_beacon())) {
                                 std::cout << "Web interface started on port " << port << std::endl;
                                 std::cout << "URL: http://localhost:" << port << std::endl;
                             }

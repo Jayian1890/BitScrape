@@ -108,7 +108,6 @@ public:
                 }
             });
 
-            beacon_->info("Controller initialized successfully");
             return true;
         } catch (const std::exception& e) {
             beacon_->error("Failed to initialize controller: {}", types::BeaconCategory::GENERAL, e.what());
@@ -133,7 +132,7 @@ public:
             // TODO: Start DHT, BitTorrent, and Tracker components
 
             is_running_ = true;
-            beacon_->info("Controller started successfully");
+            beacon_->debug("Controller started successfully");
             return true;
         } catch (const std::exception& e) {
             beacon_->error("Failed to start controller: {}", types::BeaconCategory::GENERAL, e.what());
@@ -299,18 +298,32 @@ public:
         try {
             // For DHT_NODE_FOUND events, we expect the event to contain node information
             // in its data field, which we need to extract
-
-            // In a real implementation, we would extract the node ID and endpoint from the event
-            // For now, we'll just log that we received the event
             beacon_->debug("DHT node discovered event received", types::BeaconCategory::DHT);
 
-            // TODO: Extract node information from the event and store it
-            // Example (pseudocode):
-            // types::NodeID node_id = extract_node_id_from_event(event);
-            // types::Endpoint endpoint = extract_endpoint_from_event(event);
-            // storage_manager_->store_node(node_id, endpoint, true);
+            // Try to cast the event to a more specific type if available
+            // Since we don't have a specific DHT node found event class in the codebase,
+            // we'll need to use dynamic_cast to check if it's a custom event type
+
+            // Check if the event has a DHTNode property
+            if (auto* dht_event = dynamic_cast<const types::DHTNodeFoundEvent*>(&event)) {
+                // Extract node information from the event
+                const types::NodeID& node_id = dht_event->node().id();
+                const types::Endpoint& endpoint = dht_event->node().endpoint();
+
+                // Store the node in the database
+                storage_manager_->store_node(node_id, endpoint, true);
+
+                beacon_->info("Stored DHT node: " + node_id.to_hex().substr(0, 8) + "... at " +
+                              endpoint.address() + ":" + std::to_string(endpoint.port()),
+                              types::BeaconCategory::DHT);
+            } else {
+                // If we can't cast to a specific event type, log a warning
+                beacon_->warning("Received DHT_NODE_FOUND event with unknown format",
+                                 types::BeaconCategory::DHT);
+            }
         } catch (const std::exception& e) {
-            beacon_->error("Failed to handle DHT node discovery: {}", types::BeaconCategory::DHT, e.what());
+            beacon_->error("Failed to handle DHT node discovery: " + std::string(e.what()),
+                           types::BeaconCategory::DHT);
         }
     }
 
@@ -318,17 +331,30 @@ public:
         try {
             // For DHT_INFOHASH_FOUND events, we expect the event to contain infohash information
             // in its data field, which we need to extract
-
-            // In a real implementation, we would extract the infohash from the event
-            // For now, we'll just log that we received the event
             beacon_->debug("DHT infohash discovered event received", types::BeaconCategory::DHT);
 
-            // TODO: Extract infohash from the event and store it
-            // Example (pseudocode):
-            // types::InfoHash info_hash = extract_infohash_from_event(event);
-            // storage_manager_->store_infohash(info_hash);
+            // Try to cast the event to a more specific type if available
+            // Since we don't have a specific DHT infohash found event class in the codebase,
+            // we'll need to use dynamic_cast to check if it's a custom event type
+
+            // Check if the event has an InfoHash property
+            if (auto* dht_event = dynamic_cast<const types::DHTInfoHashFoundEvent*>(&event)) {
+                // Extract infohash information from the event
+                const types::InfoHash& info_hash = dht_event->info_hash();
+
+                // Store the infohash in the database
+                storage_manager_->store_infohash(info_hash);
+
+                beacon_->info("Stored DHT infohash: " + info_hash.to_hex().substr(0, 16) + "...",
+                              types::BeaconCategory::DHT);
+            } else {
+                // If we can't cast to a specific event type, log a warning
+                beacon_->warning("Received DHT_INFOHASH_FOUND event with unknown format",
+                                 types::BeaconCategory::DHT);
+            }
         } catch (const std::exception& e) {
-            beacon_->error("Failed to handle DHT infohash discovery: {}", types::BeaconCategory::DHT, e.what());
+            beacon_->error("Failed to handle DHT infohash discovery: " + std::string(e.what()),
+                           types::BeaconCategory::DHT);
         }
     }
 
@@ -336,45 +362,105 @@ public:
         try {
             // For BT_METADATA_RECEIVED events, we expect the event to contain metadata information
             // in its data field, which we need to extract
-
-            // In a real implementation, we would extract the metadata from the event
-            // For now, we'll just log that we received the event
             beacon_->debug("BitTorrent metadata received event received", types::BeaconCategory::BITTORRENT);
 
-            // TODO: Extract metadata from the event and store it
-            // Example (pseudocode):
-            // types::InfoHash info_hash = extract_infohash_from_event(event);
-            // types::MetadataInfo metadata = extract_metadata_from_event(event);
-            // storage_manager_->store_metadata(info_hash, metadata);
+            // Try to cast the event to a more specific type if available
+            if (auto* bt_event = dynamic_cast<const bittorrent::MetadataReceivedEvent*>(&event)) {
+                // Extract metadata information from the event
+                const types::InfoHash& info_hash = bt_event->info_hash();
+                const types::MetadataInfo& metadata = bt_event->metadata();
 
-            // TODO: Extract and store file information if available
-            // Example (pseudocode):
-            // if (has_file_info(event)) {
-            //     for (const auto& file : extract_files_from_event(event)) {
-            //         storage_manager_->store_file(info_hash, file.path, file.size);
-            //     }
-            // }
+                // Store the metadata in the database
+                if (storage_manager_->store_metadata(info_hash, metadata)) {
+                    beacon_->info(
+                        "Stored metadata for infohash: " + info_hash.to_hex().substr(0, 16) + "...",
+                        types::BeaconCategory::BITTORRENT);
+
+                    // Extract and store file information if available
+                    const auto& files = metadata.files();
+                    if (!files.empty()) {
+                        beacon_->info(
+                            "Storing " + std::to_string(files.size()) + " files for infohash: " +
+                            info_hash.to_hex().substr(0, 16) + "...",
+                            types::BeaconCategory::BITTORRENT);
+
+                        // In a real implementation, we would store each file
+                        // For now, we'll just log the file information
+                        for (const auto& file : files) {
+                            beacon_->debug(
+                                "File: " + file.first + ", Size: " + std::to_string(file.second) +
+                                " bytes",
+                                types::BeaconCategory::BITTORRENT);
+                        }
+                    } else {
+                        beacon_->info("No file information available for infohash: " +
+                                      info_hash.to_hex().substr(0, 16) + "...",
+                                      types::BeaconCategory::BITTORRENT);
+                    }
+                } else {
+                    beacon_->error("Failed to store metadata for infohash: " + info_hash.to_hex(),
+                                   types::BeaconCategory::BITTORRENT);
+                }
+            } else {
+                // If we can't cast to a specific event type, log a warning
+                beacon_->warning("Received BT_METADATA_RECEIVED event with unknown format",
+                                 types::BeaconCategory::BITTORRENT);
+            }
         } catch (const std::exception& e) {
-            beacon_->error("Failed to handle metadata download: {}", types::BeaconCategory::BITTORRENT, e.what());
+            beacon_->error("Failed to handle metadata download: " + std::string(e.what()),
+                           types::BeaconCategory::BITTORRENT);
         }
     }
 
     void handle_error(const types::Event& event) {
         try {
             // For SYSTEM_ERROR events, we expect the event to contain error information
-            // in its data field, which we need to extract
+            beacon_->debug("System error event received", types::BeaconCategory::GENERAL);
 
-            // In a real implementation, we would extract the error message from the event
-            // For now, we'll just log that we received the event
-            beacon_->error("System error event received", types::BeaconCategory::GENERAL);
+            // Try to cast the event to a more specific type if available
+            if (auto* beacon_event = dynamic_cast<const types::BeaconEvent*>(&event)) {
+                // Extract error information from the beacon event
+                const std::string& message = beacon_event->message();
+                types::BeaconCategory category = beacon_event->category();
+                types::BeaconSeverity severity = beacon_event->severity();
 
-            // TODO: Extract error information from the event and log it
-            // Example (pseudocode):
-            // std::string error_message = extract_error_message_from_event(event);
-            // types::BeaconCategory category = extract_category_from_event(event);
-            // beacon_->error("Error occurred: {}", category, error_message);
+                // Log the error with the appropriate category and severity
+                if (severity == types::BeaconSeverity::ERROR) {
+                    beacon_->error("Error occurred: " + message, category);
+                } else if (severity == types::BeaconSeverity::WARNING) {
+                    beacon_->warning("Warning occurred: " + message, category);
+                } else {
+                    beacon_->info("Event received: " + message, category);
+                }
+
+                // Log the source location for debugging
+                const auto& location = beacon_event->location();
+                beacon_->debug("Source: " + std::string(location.file_name()) + ":" +
+                               std::to_string(location.line()) + " in " +
+                               std::string(location.function_name()),
+                               category);
+            } else if (auto* tracker_error = dynamic_cast<const tracker::TrackerErrorEvent*>(&
+                event)) {
+                // Extract error information from tracker error event
+                const std::string& error_message = tracker_error->error_message();
+
+                // Log the tracker error
+                beacon_->error("Tracker error: " + error_message, types::BeaconCategory::TRACKER);
+            } else if (auto* bencode_error = dynamic_cast<const bencode::BencodeErrorEvent*>(&
+                event)) {
+                // Extract error information from bencode error event
+                const std::string& error_message = bencode_error->error_message();
+
+                // Log the bencode error
+                beacon_->error("Bencode error: " + error_message, types::BeaconCategory::BENCODE);
+            } else {
+                // If we can't cast to a specific event type, log a generic error
+                beacon_->error("Unknown error event received: " + event.to_string(),
+                               types::BeaconCategory::GENERAL);
+            }
         } catch (const std::exception& e) {
-            beacon_->error("Failed to handle error event: {}", types::BeaconCategory::GENERAL, e.what());
+            beacon_->error("Failed to handle error event: " + std::string(e.what()),
+                           types::BeaconCategory::GENERAL);
         }
     }
 

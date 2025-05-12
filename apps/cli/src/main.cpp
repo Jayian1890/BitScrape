@@ -577,7 +577,6 @@ int main(int argc, char *argv[])
     auto beacon = controller->get_beacon();
 
     // Initialize controller
-    beacon->info("Initializing BitScrape...", SYSTEM);
     if (!controller->initialize()) {
         beacon->critical("Failed to initialize BitScrape", SYSTEM);
         return 1;
@@ -590,7 +589,6 @@ int main(int argc, char *argv[])
     }
 
     // Start controller
-    beacon->info("Starting BitScrape...", SYSTEM);
     if (!controller->start()) {
         beacon->critical("Failed to start BitScrape", SYSTEM);
         return 1;
@@ -598,7 +596,7 @@ int main(int argc, char *argv[])
 
     // Start crawling if requested
     if (start_crawling) {
-        beacon->info("Starting DHT crawling...", SYSTEM);
+        //beacon->info("Starting DHT crawling...", SYSTEM);
         if (!controller->start_crawling()) {
             beacon->error("Failed to start crawling", SYSTEM);
         }

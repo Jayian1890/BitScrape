@@ -5,7 +5,7 @@ This document describes how to build the BitScrape project using CMake.
 ## Prerequisites
 
 - CMake 3.14 or higher
-- C++20 compatible compiler
+- C++23 compatible compiler
 - Git (for fetching dependencies)
 
 ## Building the Project

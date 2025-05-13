@@ -1,78 +1,35 @@
-# Define the library
-add_library(bitscrape-core
-    src/controller.cpp
-    src/configuration.cpp
-)
+set(MODULE_NAME core)
+
+# Source files
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
+# Create library
+add_library(${MODULE_NAME} STATIC ${SOURCES})
 
 # Set include directories
-target_include_directories(bitscrape-core
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+target_include_directories(${MODULE_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link dependencies
-target_link_libraries(bitscrape-core
-    PUBLIC
-        bitscrape::types
-    PRIVATE
-        bitscrape::event
-        bitscrape::beacon
-        bitscrape::network
-        bitscrape::bencode
-        bitscrape::bittorrent
-        bitscrape::tracker
-        bitscrape::storage
-        bitscrape::dht
+# Set dependencies
+target_link_libraries(${MODULE_NAME} PUBLIC
+        types
+        event
+        beacon
+        network
+        storage
+        bencode
+        dht
+        bittorrent
+        tracker
 )
 
-# Set target properties
-set_target_properties(bitscrape-core PROPERTIES
-    OUTPUT_NAME bitscrape-core
-    EXPORT_NAME core
+# Set compile options for debug build
+target_compile_options(${MODULE_NAME} PRIVATE
+        $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
 )
 
-# Install targets
-install(TARGETS bitscrape-core
-    EXPORT bitscrape-targets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-# Install headers
-install(DIRECTORY include/bitscrape/core
-    DESTINATION include/bitscrape
-    FILES_MATCHING PATTERN "*.hpp"
-)
-
-# Add alias target
-add_library(bitscrape::core ALIAS bitscrape-core)
-
-# Tests
-if(BUILD_TESTS)
-    # Create test executable
-    add_executable(core_test
-        tests/unit/controller_test.cpp
-        tests/unit/configuration_test.cpp
-    )
-
-    # Link dependencies
-    target_link_libraries(core_test
-        PRIVATE
-            bitscrape-core
-            bitscrape-event
-            bitscrape-beacon
-            bitscrape-network
-            bitscrape-bencode
-            bitscrape-bittorrent
-            bitscrape-tracker
-            bitscrape-storage
-            bitscrape-dht
-            bitscrape-gtest
-    )
-
-    # Add to core tests group
-    add_dependencies(foundation_tests core_test)
+# Add tests if they exist
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
+    add_subdirectory(tests)
 endif()

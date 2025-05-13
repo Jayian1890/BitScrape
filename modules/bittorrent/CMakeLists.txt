@@ -1,95 +1,32 @@
-# Define the library
-add_library(bitscrape-bittorrent
-    src/peer_connection.cpp
-    src/peer_message.cpp
-    src/peer_wire_protocol.cpp
-    src/metadata_exchange.cpp
-    src/peer_manager.cpp
-    src/bittorrent_event_processor.cpp
-    src/extended_message.cpp
-)
+set(MODULE_NAME bittorrent)
 
-# If files don't exist yet, create empty files
-file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/peer_connection.cpp)
-file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/peer_message.cpp)
-file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/peer_wire_protocol.cpp)
-file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/metadata_exchange.cpp)
-file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/peer_manager.cpp)
-file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/bittorrent_event_processor.cpp)
-file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/extended_message.cpp)
+# Source files
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
+# Create library
+add_library(${MODULE_NAME} STATIC ${SOURCES})
 
 # Set include directories
-target_include_directories(bitscrape-bittorrent
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+target_include_directories(${MODULE_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link dependencies
-target_link_libraries(bitscrape-bittorrent
-    PUBLIC
-        bitscrape::types
-        bitscrape::network
-        bitscrape::bencode
-    PRIVATE
-        bitscrape::event
-        Threads::Threads
+# Set dependencies
+target_link_libraries(${MODULE_NAME} PUBLIC
+        types
+        event
+        beacon
+        network
+        bencode
+        dht
 )
 
-# Set target properties
-set_target_properties(bitscrape-bittorrent PROPERTIES
-    OUTPUT_NAME bitscrape-bittorrent
-    EXPORT_NAME bittorrent
+# Set compile options for debug build
+target_compile_options(${MODULE_NAME} PRIVATE
+        $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
 )
 
-# Install targets
-install(TARGETS bitscrape-bittorrent
-    EXPORT bitscrape-targets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-# Install headers
-install(DIRECTORY include/bitscrape/bittorrent
-    DESTINATION include/bitscrape
-    FILES_MATCHING PATTERN "*.hpp"
-)
-
-# Add alias target
-add_library(bitscrape::bittorrent ALIAS bitscrape-bittorrent)
-
-# Tests
-if(BUILD_TESTS)
-    # Create test executable
-    add_executable(bittorrent_test
-        tests/unit/peer_connection_test.cpp
-        tests/unit/peer_message_test.cpp
-        tests/unit/peer_wire_protocol_test.cpp
-        tests/unit/metadata_exchange_test.cpp
-        tests/unit/peer_manager_test.cpp
-        tests/unit/bittorrent_event_processor_test.cpp
-    )
-
-    # If test files don't exist yet, create empty files
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/peer_connection_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/peer_message_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/peer_wire_protocol_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/metadata_exchange_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/peer_manager_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/bittorrent_event_processor_test.cpp)
-
-    # Link dependencies
-    target_link_libraries(bittorrent_test
-        PRIVATE
-            bitscrape-bittorrent
-            bitscrape-gtest
-    )
-
-    # Add to protocol tests group
-    add_dependencies(protocol_tests bittorrent_test)
-
-    # Add test to CTest
-    add_test(NAME bittorrent_test COMMAND bittorrent_test)
+# Add tests if they exist
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
+    add_subdirectory(tests)
 endif()

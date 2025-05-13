@@ -1,66 +1,27 @@
-# Define the library
-add_library(bitscrape-event
-    src/event_bus.cpp
-    src/event_processor.cpp
-    src/event_adapter.cpp
-    src/event_filter.cpp
-)
+set(MODULE_NAME event)
+
+# Source files
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
+# Create library
+add_library(${MODULE_NAME} STATIC ${SOURCES})
 
 # Set include directories
-target_include_directories(bitscrape-event
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+target_include_directories(${MODULE_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link dependencies
-target_link_libraries(bitscrape-event
-    PUBLIC
-        bitscrape::types
-        Threads::Threads
+# Set dependencies
+target_link_libraries(${MODULE_NAME} PUBLIC
+        types
 )
 
-# Set target properties
-set_target_properties(bitscrape-event PROPERTIES
-    OUTPUT_NAME bitscrape-event
-    EXPORT_NAME event
+# Set compile options for debug build
+target_compile_options(${MODULE_NAME} PRIVATE
+        $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
 )
 
-# Install targets
-install(TARGETS bitscrape-event
-    EXPORT bitscrape-targets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-# Install headers
-install(DIRECTORY include/bitscrape/event
-    DESTINATION include/bitscrape
-    FILES_MATCHING PATTERN "*.hpp"
-)
-
-# Add alias target
-add_library(bitscrape::event ALIAS bitscrape-event)
-
-# Tests
-if(BUILD_TESTS)
-    # Create test executable
-    add_executable(event_test
-        tests/unit/event_bus_test.cpp
-        tests/unit/event_processor_test.cpp
-        tests/unit/event_adapter_test.cpp
-        tests/unit/event_filter_test.cpp
-    )
-
-    # Link dependencies
-    target_link_libraries(event_test
-        PRIVATE
-            bitscrape-event
-            bitscrape-gtest
-    )
-
-    # Add to foundation tests group
-    add_dependencies(foundation_tests event_test)
+# Add tests if they exist
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
+    add_subdirectory(tests)
 endif()

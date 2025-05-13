@@ -13,7 +13,7 @@ namespace bitscrape::network {
 
 // NetworkEvent implementation
 NetworkEvent::NetworkEvent(NetworkEventType type)
-    : types::Event(types::Event::Type::CUSTOM, static_cast<uint32_t>(type)),
+    : types::Event(types::Event::Type::USER_DEFINED, static_cast<uint32_t>(type)),
       network_event_type_(type) {}
 
 NetworkEventType NetworkEvent::network_event_type() const {
@@ -149,7 +149,7 @@ std::unique_ptr<types::Event> TCPSendResultEvent::clone() const {
 
 // NetworkEventProcessor implementation
 NetworkEventProcessor::NetworkEventProcessor()
-    : running_(false), event_bus_(nullptr),
+    : running_(false), event_bus_(nullptr), token_(0),
       udp_socket_(std::make_unique<UDPSocket>()),
       tcp_socket_(std::make_unique<TCPSocket>()),
       http_client_(std::make_unique<HTTPClient>()) {}
@@ -188,7 +188,7 @@ void NetworkEventProcessor::process(const types::Event &event) {
   }
 
   // Check if the event is a NetworkEvent
-  if (event.type() == types::Event::Type::CUSTOM) {
+  if (event.type() == types::Event::Type::USER_DEFINED) {
     // Try to process the event
     process_event(event);
   }
@@ -202,8 +202,14 @@ NetworkEventProcessor::process_async(const types::Event &event) {
 
 bool NetworkEventProcessor::process_event(const types::Event &event) {
   // Check if the event is a NetworkEvent
-  if (event.type() < static_cast<uint32_t>(NetworkEventType::UDP_SEND) ||
-      event.type() > static_cast<uint32_t>(NetworkEventType::HTTP_REQUEST)) {
+  if (event.type() != types::Event::Type::USER_DEFINED) {
+    return false;
+  }
+
+  // Check if the custom type ID is in the valid range
+  uint32_t type_id = event.custom_type_id();
+  if (type_id < static_cast<uint32_t>(NetworkEventType::UDP_SEND) ||
+      type_id > static_cast<uint32_t>(NetworkEventType::HTTP_REQUEST)) {
     return false;
   }
 

@@ -1,70 +1,29 @@
-# Define the library
-add_library(bitscrape-network
-    src/socket.cpp
-    src/address.cpp
-    src/buffer.cpp
-    src/udp_socket.cpp
-    src/tcp_socket.cpp
-    src/tcp_listener.cpp
-    src/http_client.cpp
-    src/nat_traversal.cpp
-)
+set(MODULE_NAME network)
+
+# Source files
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
+# Create library
+add_library(${MODULE_NAME} STATIC ${SOURCES})
 
 # Set include directories
-target_include_directories(bitscrape-network
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+target_include_directories(${MODULE_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link dependencies
-target_link_libraries(bitscrape-network
-    PUBLIC
-        bitscrape::types
-    PRIVATE
-        Threads::Threads
+# Set dependencies
+target_link_libraries(${MODULE_NAME} PUBLIC
+        types
+        event
+        beacon
 )
 
-# Set target properties
-set_target_properties(bitscrape-network PROPERTIES
-    OUTPUT_NAME bitscrape-network
-    EXPORT_NAME network
+# Set compile options for debug build
+target_compile_options(${MODULE_NAME} PRIVATE
+        $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
 )
 
-# Install targets
-install(TARGETS bitscrape-network
-    EXPORT bitscrape-targets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-# Install headers
-install(DIRECTORY include/bitscrape/network
-    DESTINATION include/bitscrape
-    FILES_MATCHING PATTERN "*.hpp"
-)
-
-# Add alias target
-add_library(bitscrape::network ALIAS bitscrape-network)
-
-# Tests
-if(BUILD_TESTS)
-    # Create test executable
-    add_executable(network_test
-        tests/unit/socket_test.cpp
-        tests/unit/address_test.cpp
-        tests/unit/buffer_test.cpp
-    )
-
-    # Link dependencies
-    target_link_libraries(network_test
-        PRIVATE
-            bitscrape-network
-            bitscrape-gtest
-    )
-
-    # Add to foundation tests group
-    add_dependencies(foundation_tests network_test)
+# Add tests if they exist
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
+    add_subdirectory(tests)
 endif()

@@ -1,95 +1,31 @@
-# Define the library
-add_library(bitscrape-tracker
-    src/tracker_request.cpp
-    src/tracker_response.cpp
-    src/http_tracker.cpp
-    src/udp_tracker.cpp
-    src/tracker_manager.cpp
-    src/tracker_event_processor.cpp
-    src/tracker_event.cpp
-    src/tracker_announce.cpp
-    src/tracker_scrape.cpp
-)
+set(MODULE_NAME tracker)
+
+# Source files
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
+# Create library
+add_library(${MODULE_NAME} STATIC ${SOURCES})
 
 # Set include directories
-target_include_directories(bitscrape-tracker
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+target_include_directories(${MODULE_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link dependencies
-target_link_libraries(bitscrape-tracker
-    PUBLIC
-        bitscrape::types
-    PRIVATE
-        bitscrape::event
-        bitscrape::network
-        bitscrape::bencode
-        bitscrape::beacon
+# Set dependencies
+target_link_libraries(${MODULE_NAME} PUBLIC
+        types
+        event
+        beacon
+        network
+        bencode
 )
 
-# Set target properties
-set_target_properties(bitscrape-tracker PROPERTIES
-    OUTPUT_NAME bitscrape-tracker
-    EXPORT_NAME tracker
+# Set compile options for debug build
+target_compile_options(${MODULE_NAME} PRIVATE
+        $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
 )
 
-# Install targets
-install(TARGETS bitscrape-tracker
-    EXPORT bitscrape-targets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-# Install headers
-install(DIRECTORY include/bitscrape/tracker
-    DESTINATION include/bitscrape
-    FILES_MATCHING PATTERN "*.hpp"
-)
-
-# Add alias target
-add_library(bitscrape::tracker ALIAS bitscrape-tracker)
-
-# Tests
-if(BUILD_TESTS)
-    # Create test executable
-    add_executable(tracker_test
-        tests/unit/tracker_request_test.cpp
-        tests/unit/tracker_response_test.cpp
-        tests/unit/http_tracker_test.cpp
-        tests/unit/udp_tracker_test.cpp
-        tests/unit/tracker_manager_test.cpp
-        tests/unit/tracker_event_processor_test.cpp
-        tests/unit/tracker_event_test.cpp
-        tests/unit/tracker_announce_test.cpp
-        tests/unit/tracker_scrape_test.cpp
-    )
-
-    # If test files don't exist yet, create empty files
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/http_tracker_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/udp_tracker_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_manager_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_event_processor_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_event_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_announce_test.cpp)
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/tracker_scrape_test.cpp)
-
-    # Link dependencies
-    target_link_libraries(tracker_test
-        PRIVATE
-            bitscrape-tracker
-            bitscrape-event
-            bitscrape-network
-            bitscrape-bencode
-            bitscrape-beacon
-            bitscrape-gtest
-    )
-
-    # Add to protocol tests group
-    add_dependencies(protocol_tests tracker_test)
+# Add tests if they exist
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
+    add_subdirectory(tests)
 endif()
-
-# Source files have been created manually

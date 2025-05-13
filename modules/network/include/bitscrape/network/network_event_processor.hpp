@@ -497,7 +497,7 @@ public:
    * @param event The event to process
    * @return true if the event was processed, false otherwise
    */
-  bool process_event(const types::Event &event) override;
+  bool process_event(const types::Event &event);
 
 private:
   std::atomic<bool> running_;

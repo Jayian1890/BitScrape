@@ -3,6 +3,7 @@
 
 # Build directories
 build/
+bin/
 
 # Cache files
 .cache/
@@ -73,7 +74,7 @@ install_manifest.txt
 cmake/
 
 # Memory bank
-.memory-bank/
+memory-bank/
 bitscrape.log
 !/apps/cli/src/main.cpp
 !/apps/gui/src/main.cpp

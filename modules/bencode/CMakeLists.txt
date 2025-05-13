@@ -1,70 +1,29 @@
-# Define the library
-add_library(bitscrape-bencode
-    src/bencode_value.cpp
-    src/bencode_encoder.cpp
-    src/bencode_decoder.cpp
-    src/bencode_stream.cpp
-    src/bencode_event_processor.cpp
-)
+set(MODULE_NAME bencode)
+
+# Source files
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
+# Create library
+add_library(${MODULE_NAME} STATIC ${SOURCES})
 
 # Set include directories
-target_include_directories(bitscrape-bencode
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+target_include_directories(${MODULE_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link dependencies
-target_link_libraries(bitscrape-bencode
-    PUBLIC
-        bitscrape::types
-    PRIVATE
-        bitscrape::event
+# Set dependencies
+target_link_libraries(${MODULE_NAME} PUBLIC
+        types
+        event
+        beacon
 )
 
-# Set target properties
-set_target_properties(bitscrape-bencode PROPERTIES
-    OUTPUT_NAME bitscrape-bencode
-    EXPORT_NAME bencode
+# Set compile options for debug build
+target_compile_options(${MODULE_NAME} PRIVATE
+        $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
 )
 
-# Install targets
-install(TARGETS bitscrape-bencode
-    EXPORT bitscrape-targets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-# Install headers
-install(DIRECTORY include/bitscrape/bencode
-    DESTINATION include/bitscrape
-    FILES_MATCHING PATTERN "*.hpp"
-)
-
-# Add alias target
-add_library(bitscrape::bencode ALIAS bitscrape-bencode)
-
-# Tests
-if(BUILD_TESTS)
-    # Create test executable
-    add_executable(bencode_test
-        tests/unit/bencode_value_test.cpp
-        tests/unit/bencode_encoder_test.cpp
-        tests/unit/bencode_decoder_test.cpp
-        tests/unit/bencode_stream_test.cpp
-        tests/unit/bencode_event_processor_test.cpp
-    )
-
-    # Link dependencies
-    target_link_libraries(bencode_test
-        PRIVATE
-            bitscrape-bencode
-            bitscrape-event
-            bitscrape-gtest
-    )
-
-    # Add to foundation tests group
-    add_dependencies(foundation_tests bencode_test)
+# Add tests if they exist
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
+    add_subdirectory(tests)
 endif()

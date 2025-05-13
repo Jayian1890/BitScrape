@@ -27,38 +27,38 @@ class TrackerStatisticsEvent : public types::Event {
 public:
     /**
      * @brief Create a new tracker statistics event
-     * 
+     *
      * @param type Statistics event type
      */
     explicit TrackerStatisticsEvent(TrackerStatisticsEventType type)
         : types::Event(types::Event::Type::USER_DEFINED, static_cast<uint32_t>(type)),
           statistics_event_type_(type) {}
-    
+
     /**
      * @brief Get the statistics event type
-     * 
+     *
      * @return Statistics event type
      */
     TrackerStatisticsEventType statistics_event_type() const { return statistics_event_type_; }
-    
+
     /**
      * @brief Clone the event
-     * 
+     *
      * @return A new heap-allocated copy of the event
      */
     std::unique_ptr<types::Event> clone() const override {
         return std::make_unique<TrackerStatisticsEvent>(*this);
     }
-    
+
     /**
      * @brief Convert the event to a string representation
-     * 
+     *
      * @return String representation of the event
      */
     std::string to_string() const override {
         std::string base = types::Event::to_string();
         std::string type;
-        
+
         switch (statistics_event_type_) {
             case TrackerStatisticsEventType::TRACKER_STATS_UPDATE:
                 type = "TRACKER_STATS_UPDATE";
@@ -76,10 +76,10 @@ public:
                 type = "UNKNOWN";
                 break;
         }
-        
+
         return base + " [TrackerStatisticsEvent: " + type + "]";
     }
-    
+
 private:
     TrackerStatisticsEventType statistics_event_type_; ///< Statistics event type
 };
@@ -91,7 +91,7 @@ class TrackerStatsUpdateEvent : public TrackerStatisticsEvent {
 public:
     /**
      * @brief Create a new tracker statistics update event
-     * 
+     *
      * @param tracker_url URL of the tracker
      * @param active_announces Number of active announce requests
      * @param active_scrapes Number of active scrape requests
@@ -120,75 +120,75 @@ public:
           failed_announces_(failed_announces),
           failed_scrapes_(failed_scrapes),
           average_response_time_ms_(average_response_time_ms) {}
-    
+
     /**
      * @brief Get the tracker URL
-     * 
+     *
      * @return Tracker URL
      */
     const std::string& tracker_url() const { return tracker_url_; }
-    
+
     /**
      * @brief Get the number of active announce requests
-     * 
+     *
      * @return Number of active announce requests
      */
     uint32_t active_announces() const { return active_announces_; }
-    
+
     /**
      * @brief Get the number of active scrape requests
-     * 
+     *
      * @return Number of active scrape requests
      */
     uint32_t active_scrapes() const { return active_scrapes_; }
-    
+
     /**
      * @brief Get the number of successful announce requests
-     * 
+     *
      * @return Number of successful announce requests
      */
     uint32_t successful_announces() const { return successful_announces_; }
-    
+
     /**
      * @brief Get the number of successful scrape requests
-     * 
+     *
      * @return Number of successful scrape requests
      */
     uint32_t successful_scrapes() const { return successful_scrapes_; }
-    
+
     /**
      * @brief Get the number of failed announce requests
-     * 
+     *
      * @return Number of failed announce requests
      */
     uint32_t failed_announces() const { return failed_announces_; }
-    
+
     /**
      * @brief Get the number of failed scrape requests
-     * 
+     *
      * @return Number of failed scrape requests
      */
     uint32_t failed_scrapes() const { return failed_scrapes_; }
-    
+
     /**
      * @brief Get the average response time in milliseconds
-     * 
+     *
      * @return Average response time in milliseconds
      */
     double average_response_time_ms() const { return average_response_time_ms_; }
-    
+
     /**
      * @brief Clone the event
-     * 
+     *
      * @return A new heap-allocated copy of the event
      */
     std::unique_ptr<types::Event> clone() const override {
         return std::make_unique<TrackerStatsUpdateEvent>(*this);
     }
-    
+
     /**
      * @brief Convert the event to a string representation
-     * 
+     *
      * @return String representation of the event
      */
     std::string to_string() const override {
@@ -204,7 +204,7 @@ public:
             << ", Avg Response Time: " << average_response_time_ms_ << " ms]";
         return oss.str();
     }
-    
+
 private:
     std::string tracker_url_;              ///< URL of the tracker
     uint32_t active_announces_;            ///< Number of active announce requests
@@ -223,7 +223,7 @@ class TrackerSwarmSizeThresholdEvent : public TrackerStatisticsEvent {
 public:
     /**
      * @brief Create a new tracker swarm size threshold event
-     * 
+     *
      * @param info_hash InfoHash of the torrent
      * @param tracker_url URL of the tracker
      * @param swarm_size Current swarm size (number of peers)
@@ -246,67 +246,67 @@ public:
           threshold_(threshold),
           seeders_(seeders),
           leechers_(leechers) {}
-    
+
     /**
      * @brief Get the InfoHash
-     * 
+     *
      * @return InfoHash of the torrent
      */
     const types::InfoHash& info_hash() const { return info_hash_; }
-    
+
     /**
      * @brief Get the tracker URL
-     * 
+     *
      * @return Tracker URL
      */
     const std::string& tracker_url() const { return tracker_url_; }
-    
+
     /**
      * @brief Get the swarm size
-     * 
+     *
      * @return Current swarm size (number of peers)
      */
     uint32_t swarm_size() const { return swarm_size_; }
-    
+
     /**
      * @brief Get the threshold
-     * 
+     *
      * @return Threshold that was reached
      */
     uint32_t threshold() const { return threshold_; }
-    
+
     /**
      * @brief Get the number of seeders
-     * 
+     *
      * @return Number of seeders
      */
     uint32_t seeders() const { return seeders_; }
-    
+
     /**
      * @brief Get the number of leechers
-     * 
+     *
      * @return Number of leechers
      */
     uint32_t leechers() const { return leechers_; }
-    
+
     /**
      * @brief Clone the event
-     * 
+     *
      * @return A new heap-allocated copy of the event
      */
     std::unique_ptr<types::Event> clone() const override {
         return std::make_unique<TrackerSwarmSizeThresholdEvent>(*this);
     }
-    
+
     /**
      * @brief Convert the event to a string representation
-     * 
+     *
      * @return String representation of the event
      */
     std::string to_string() const override {
         std::string base = TrackerStatisticsEvent::to_string();
         std::ostringstream oss;
-        oss << base << " [InfoHash: " << info_hash_.to_string()
+        oss << base << " [InfoHash: " << info_hash_.to_hex()
             << ", Tracker: " << tracker_url_
             << ", Swarm Size: " << swarm_size_
             << ", Threshold: " << threshold_
@@ -314,7 +314,7 @@ public:
             << ", Leechers: " << leechers_ << "]";
         return oss.str();
     }
-    
+
 private:
     types::InfoHash info_hash_;    ///< InfoHash of the torrent
     std::string tracker_url_;      ///< URL of the tracker

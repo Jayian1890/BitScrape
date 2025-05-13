@@ -1,55 +1,32 @@
-# Define the library
-add_library(bitscrape-web
-        src/http_server.cpp
-        src/http_router.cpp
-        src/api_handler.cpp
-        src/websocket_server.cpp
-        src/web_controller.cpp
-        src/static_file_handler.cpp
-)
+set(MODULE_NAME web)
+
+# Source files
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
+# Create library
+add_library(${MODULE_NAME} STATIC ${SOURCES})
 
 # Set include directories
-target_include_directories(bitscrape-web
-        PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+target_include_directories(${MODULE_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link dependencies
-target_link_libraries(bitscrape-web
-        PUBLIC
-        bitscrape::types
-        bitscrape::network
-        bitscrape::core
-        bitscrape::storage
-        PRIVATE
-        Threads::Threads
+# Set dependencies
+target_link_libraries(${MODULE_NAME} PUBLIC
+        types
+        event
+        beacon
+        network
+        storage
+        core
 )
 
-# Set target properties
-set_target_properties(bitscrape-web PROPERTIES
-        OUTPUT_NAME bitscrape-web
-        EXPORT_NAME web
+# Set compile options for debug build
+target_compile_options(${MODULE_NAME} PRIVATE
+        $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
 )
 
-# Add alias
-add_library(bitscrape::web ALIAS bitscrape-web)
-
-# Install targets
-install(TARGETS bitscrape-web
-        EXPORT bitscrape-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include
-)
-
-# Install headers
-install(DIRECTORY include/
-        DESTINATION include
-)
-
-# Add tests if enabled
-if (BUILD_TESTING)
+# Add tests if they exist
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
     add_subdirectory(tests)
 endif ()

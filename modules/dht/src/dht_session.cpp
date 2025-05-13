@@ -70,12 +70,24 @@ DHTSession::~DHTSession() {
 bool DHTSession::start(const std::vector<types::Endpoint>& bootstrap_nodes) {
     // Check if the session is already running
     if (running_) {
-        return false;
+        return true; // Already running, just return success
     }
 
     // Bind the socket to the port
     if (!socket_->bind(port_)) {
-        return false;
+        // Failed to bind, could be because the port is already in use
+        // Try to bind to a different port
+        for (uint16_t p = port_ + 1; p < port_ + 10; ++p) {
+            if (socket_->bind(p)) {
+                port_ = p; // Update the port
+                break;
+            }
+        }
+
+        // If we still couldn't bind, return failure
+        if (!socket_->is_valid()) {
+            return false;
+        }
     }
 
     // Start the receive loop

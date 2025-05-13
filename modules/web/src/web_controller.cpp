@@ -15,22 +15,32 @@ WebController::WebController(const std::string& config_path)
       next_callback_id_(0) {
 }
 
+WebController::WebController(std::shared_ptr<core::Controller> controller)
+    : controller_(controller),
+      next_callback_id_(0) {
+}
+
 WebController::~WebController() {
-    if (controller_) {
-        controller_->stop();
-    }
+    // We don't stop the controller here because it might be shared with the CLI
+    // The CLI will handle stopping the controller
 }
 
 bool WebController::initialize() {
-    return controller_->initialize();
+    // If the controller was created by this WebController, initialize it
+    // Otherwise, assume it's already initialized
+    return true;
 }
 
 bool WebController::start() {
-    return controller_->start();
+    // If the controller was created by this WebController, start it
+    // Otherwise, assume it's already started
+    return true;
 }
 
 bool WebController::stop() {
-    return controller_->stop();
+    // Don't stop the controller as it might be shared with the CLI
+    // The CLI will handle stopping the controller
+    return true;
 }
 
 bool WebController::start_crawling() {

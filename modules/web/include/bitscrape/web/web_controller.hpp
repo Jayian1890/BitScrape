@@ -22,17 +22,24 @@ using WebSocketMessageCallback = std::function<void(const std::string&)>;
 
 /**
  * @brief Web controller class
- * 
+ *
  * This class wraps the core Controller and provides methods for the web interface.
  */
 class WebController {
 public:
     /**
-     * @brief Construct a new WebController object
-     * 
+     * @brief Construct a new WebController object with a new Controller instance
+     *
      * @param config_path Path to the configuration file
      */
     explicit WebController(const std::string& config_path);
+
+    /**
+     * @brief Construct a new WebController object with an existing Controller instance
+     *
+     * @param controller Existing Controller instance to use
+     */
+    explicit WebController(std::shared_ptr<core::Controller> controller);
 
     /**
      * @brief Destroy the WebController object
@@ -41,49 +48,49 @@ public:
 
     /**
      * @brief Initialize the controller
-     * 
+     *
      * @return true if successful, false otherwise
      */
     bool initialize();
 
     /**
      * @brief Start the controller
-     * 
+     *
      * @return true if successful, false otherwise
      */
     bool start();
 
     /**
      * @brief Stop the controller
-     * 
+     *
      * @return true if successful, false otherwise
      */
     bool stop();
 
     /**
      * @brief Start crawling
-     * 
+     *
      * @return true if successful, false otherwise
      */
     bool start_crawling();
 
     /**
      * @brief Stop crawling
-     * 
+     *
      * @return true if successful, false otherwise
      */
     bool stop_crawling();
 
     /**
      * @brief Get statistics
-     * 
+     *
      * @return Statistics map
      */
     std::unordered_map<std::string, std::string> get_statistics() const;
 
     /**
      * @brief Get nodes
-     * 
+     *
      * @param limit Maximum number of nodes to return
      * @param offset Offset to start from
      * @return Vector of node models
@@ -92,7 +99,7 @@ public:
 
     /**
      * @brief Get infohashes
-     * 
+     *
      * @param limit Maximum number of infohashes to return
      * @param offset Offset to start from
      * @return Vector of infohash models
@@ -101,7 +108,7 @@ public:
 
     /**
      * @brief Get metadata
-     * 
+     *
      * @param limit Maximum number of metadata entries to return
      * @param offset Offset to start from
      * @return Vector of metadata models
@@ -110,7 +117,7 @@ public:
 
     /**
      * @brief Get metadata by infohash
-     * 
+     *
      * @param info_hash The infohash
      * @return Metadata model if found, std::nullopt otherwise
      */
@@ -118,7 +125,7 @@ public:
 
     /**
      * @brief Get files for an infohash
-     * 
+     *
      * @param info_hash The infohash
      * @return Vector of file models
      */
@@ -126,7 +133,7 @@ public:
 
     /**
      * @brief Get peers for an infohash
-     * 
+     *
      * @param info_hash The infohash
      * @return Vector of peer models
      */
@@ -134,7 +141,7 @@ public:
 
     /**
      * @brief Get trackers for an infohash
-     * 
+     *
      * @param info_hash The infohash
      * @return Vector of tracker models
      */
@@ -142,7 +149,7 @@ public:
 
     /**
      * @brief Search for metadata by name
-     * 
+     *
      * @param query The search query
      * @param limit Maximum number of results to return
      * @param offset Offset to start from
@@ -152,7 +159,7 @@ public:
 
     /**
      * @brief Register a WebSocket message callback
-     * 
+     *
      * @param callback The callback function
      * @return Callback ID
      */
@@ -160,14 +167,14 @@ public:
 
     /**
      * @brief Unregister a WebSocket message callback
-     * 
+     *
      * @param callback_id The callback ID
      */
     void unregister_websocket_callback(size_t callback_id);
 
     /**
      * @brief Get the core controller
-     * 
+     *
      * @return The core controller
      */
     std::shared_ptr<core::Controller> get_controller() const;

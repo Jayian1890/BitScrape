@@ -149,25 +149,15 @@ void print_version() {
 }
 
 // Function to start the web interface
-bool start_web_interface(const std::string& config_path, uint16_t web_port,
+bool start_web_interface(uint16_t web_port,
                          const std::string& static_dir,
                          const std::shared_ptr<bitscrape::beacon::Beacon>& beacon) {
     using enum bitscrape::types::BeaconCategory;
 
-    // Create a web controller
-    web_controller = std::make_shared<bitscrape::web::WebController>(config_path);
+    // Create a web controller using the existing controller instance
+    web_controller = std::make_shared<bitscrape::web::WebController>(controller);
 
-    // Initialize web controller
-    if (!web_controller->initialize()) {
-        beacon->error("Failed to initialize web controller", SYSTEM);
-        return false;
-    }
-
-    // Start web controller
-    if (!web_controller->start()) {
-        beacon->error("Failed to start web controller", SYSTEM);
-        return false;
-    }
+    // No need to initialize or start the controller as it's already running in the CLI
 
     // Create HTTP server
     http_server = std::make_shared<bitscrape::web::HTTPServer>(web_port, web_controller);
@@ -658,7 +648,7 @@ int main(int argc, char *argv[])
 
         // Start the web interface if auto-start is enabled and not explicitly disabled
         if (auto_start_web) {
-            start_web_interface(config_path, web_port, static_dir, beacon);
+            start_web_interface(web_port, static_dir, beacon);
         }
 
         // Get a query interface for data access
@@ -837,7 +827,7 @@ int main(int argc, char *argv[])
                             std::cout << "Web interface is already running on port " << http_server
                                 ->port() << std::endl;
                         } else {
-                            if (start_web_interface(config_path, port, "public",
+                            if (start_web_interface(port, "public",
                                                     controller->get_beacon())) {
                                 std::cout << "Web interface started on port " << port << std::endl;
                                 std::cout << "URL: http://localhost:" << port << std::endl;

@@ -2,6 +2,7 @@
 #include "bitscrape/web/http_server.hpp"
 #include "bitscrape/web/sha1.hpp"
 #include "bitscrape/web/base64.hpp"
+#include "bitscrape/web/json.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -62,6 +63,14 @@ void WebSocketServer::broadcast(const std::string& message) {
     }
 }
 
+void WebSocketServer::send_message(std::unique_ptr<network::TCPSocket>& socket, const std::string& message) {
+    // Encode message
+    auto frame = encode_frame(message);
+
+    // Send frame
+    socket->send(frame.data(), frame.size());
+}
+
 void WebSocketServer::handle_client(std::unique_ptr<network::TCPSocket> socket) {
     // Add client to list
     {
@@ -84,7 +93,110 @@ void WebSocketServer::handle_client(std::unique_ptr<network::TCPSocket> socket) 
             // Decode frame
             std::string message = decode_frame(std::vector<uint8_t>(buffer.data(), buffer.data() + bytes_received));
 
-            // TODO: Handle message
+            // Handle message
+            try {
+                // Parse JSON message
+                JSON json = JSON::parse(message);
+
+                // Check if it's a command
+                if (json.contains("command")) {
+                    std::string command = json["command"].as_string();
+
+                    if (command == "search") {
+                        // Search for metadata
+                        std::string query = json.value("query", "");
+                        size_t limit = json.value("limit", 100);
+                        size_t offset = json.value("offset", 0);
+
+                        // Perform search
+                        auto results = web_controller_->search_metadata(query, limit, offset);
+
+                        // Create response
+                        JSON response = JSON::object();
+                        response["type"] = "search_results";
+                        response["query"] = query;
+                        response["total"] = results.size();
+
+                        // Add results
+                        JSON results_array = JSON::array();
+                        for (const auto& result : results) {
+                            JSON result_obj = JSON::object();
+                            result_obj["info_hash"] = result.info_hash.to_hex();
+                            result_obj["name"] = result.name;
+                            result_obj["size"] = static_cast<double>(result.total_size);
+                            result_obj["download_time"] = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(result.download_time.time_since_epoch()).count());
+                            results_array.push_back(result_obj);
+                        }
+                        response["results"] = results_array;
+
+                        // Send response
+                        std::string response_str = response.dump();
+                        auto frame = encode_frame(response_str);
+                        clients_[socket.get()]->send(frame.data(), frame.size());
+                    }
+                    else if (command == "get_metadata") {
+                        // Get metadata for a specific info hash
+                        std::string info_hash_str = json.value("info_hash", "");
+
+                        // Convert string to InfoHash
+                        types::InfoHash info_hash;
+                        try {
+                            info_hash = types::InfoHash(info_hash_str);
+                        } catch (const std::exception& e) {
+                            // Invalid info hash
+                            JSON error_response = JSON::object();
+                            error_response["type"] = "error";
+                            error_response["message"] = "Invalid info hash";
+                            send_message(socket, error_response.dump());
+                            continue;
+                        }
+
+                        // Get metadata
+                        auto metadata = web_controller_->get_metadata_by_infohash(info_hash);
+
+                        // Create response
+                        JSON response = JSON::object();
+                        response["type"] = "metadata";
+                        response["info_hash"] = info_hash_str;
+
+                        if (metadata) {
+                            response["found"] = true;
+                            response["name"] = metadata->name;
+                            response["size"] = static_cast<double>(metadata->total_size);
+                            response["download_time"] = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(metadata->download_time.time_since_epoch()).count());
+                            response["piece_count"] = static_cast<double>(metadata->piece_count);
+                            response["file_count"] = static_cast<double>(metadata->file_count);
+                            response["comment"] = metadata->comment;
+                            response["created_by"] = metadata->created_by;
+
+                            if (metadata->creation_date) {
+                                response["creation_date"] = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(metadata->creation_date->time_since_epoch()).count());
+                            }
+
+                            // Add files - we don't have direct access to files in the model
+                            // In a real implementation, we would query the database for files
+                            JSON files_array = JSON::array();
+                            // Example file entry
+                            JSON file_obj = JSON::object();
+                            file_obj["path"] = metadata->name;
+                            file_obj["size"] = static_cast<double>(metadata->total_size);
+                            files_array.push_back(file_obj);
+
+                            response["files"] = files_array;
+                        } else {
+                            response["found"] = false;
+                        }
+
+                        // Send response
+                        std::string response_str = response.dump();
+                        auto frame = encode_frame(response_str);
+                        clients_[socket.get()]->send(frame.data(), frame.size());
+                    }
+                }
+            } catch (const std::exception& e) {
+                std::cerr << "Error handling WebSocket message: " << e.what() << std::endl;
+            }
+
             std::cout << "Received message: " << message << std::endl;
         }
     } catch (const std::exception& e) {

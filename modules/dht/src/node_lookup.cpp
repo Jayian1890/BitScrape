@@ -65,8 +65,14 @@ void NodeLookup::process_response(const std::shared_ptr<DHTMessage>& response, c
         --active_queries_;
 
         // Extract the nodes from the response
-        // TODO: Implement this when find_node response is implemented
         std::vector<types::DHTNode> new_nodes;
+
+        // Check if the response is a find_node response
+        auto find_node_response = std::dynamic_pointer_cast<DHTFindNodeMessage>(response);
+        if (find_node_response) {
+            // Get the nodes from the response
+            new_nodes = find_node_response->nodes();
+        }
 
         // Add the new nodes to the lookup process
         add_nodes(new_nodes);
@@ -132,9 +138,7 @@ bool NodeLookup::send_query(const types::DHTNode& node) {
     if (it != nodes_.end() && it->state == NodeState::UNKNOWN) {
         // Create a find_node message
         auto transaction_id = DHTMessageFactory::generate_transaction_id();
-        // TODO: Implement create_find_node in DHTMessageFactory
-        // For now, use a placeholder message
-        auto message = message_factory_.create_ping(transaction_id, local_id_);
+        auto message = message_factory_.create_find_node(transaction_id, local_id_, target_id_);
 
         // Encode the message
         auto data = message->encode();

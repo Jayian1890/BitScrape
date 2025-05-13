@@ -14,11 +14,28 @@ const NetworkVisualizer = {
         // Initialize Three.js scene
         this.initScene();
 
+        // Create tooltip element
+        this.createTooltip();
+
         // Start animation loop
         this.animate();
 
         // Add window resize handler
         window.addEventListener('resize', this.onWindowResize.bind(this));
+    },
+
+    // Create tooltip element
+    createTooltip: function () {
+        // Get container
+        const container = document.getElementById('network-visualization');
+
+        // Create tooltip element
+        this.tooltip = document.createElement('div');
+        this.tooltip.className = 'network-tooltip hidden';
+        this.tooltip.innerHTML = '';
+
+        // Add to container
+        container.appendChild(this.tooltip);
     },
 
     // Initialize Three.js scene
@@ -226,6 +243,88 @@ const NetworkVisualizer = {
         const rect = container.getBoundingClientRect();
         this.mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
         this.mouse.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+        // Store actual mouse position for tooltip positioning
+        this.mouseX = event.clientX - rect.left;
+        this.mouseY = event.clientY - rect.top;
+    },
+
+    // Show node tooltip
+    showNodeTooltip: function (node) {
+        if (!node || !this.tooltip) return;
+
+        // Format node data
+        const nodeId = this.truncateString(node.node_id, 16);
+        const endpoint = node.endpoint ? node.endpoint.address + ':' + node.endpoint.port : 'Unknown';
+        const status = node.is_responsive ? 'Active' : 'Inactive';
+        const statusClass = node.is_responsive ? 'text-green-400' : 'text-red-400';
+
+        // Format last seen time
+        const lastSeen = new Date(node.last_seen * 1000);
+        const timeAgo = this.formatTimeAgo(lastSeen);
+
+        // Set tooltip content
+        this.tooltip.innerHTML = `
+            <div class="p-3">
+                <div class="font-semibold mb-1">${nodeId}</div>
+                <div class="text-sm text-gray-300">${endpoint}</div>
+                <div class="text-sm mt-1">Status: <span class="${statusClass}">${status}</span></div>
+                <div class="text-sm text-gray-400">Last seen: ${timeAgo}</div>
+            </div>
+        `;
+
+        // Position tooltip near the mouse but ensure it stays within the container
+        const container = document.getElementById('network-visualization');
+        const tooltipWidth = this.tooltip.offsetWidth;
+        const tooltipHeight = this.tooltip.offsetHeight;
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+
+        // Calculate position (offset slightly from cursor)
+        let left = this.mouseX + 15;
+        let top = this.mouseY + 15;
+
+        // Ensure tooltip stays within container bounds
+        if (left + tooltipWidth > containerWidth) {
+            left = this.mouseX - tooltipWidth - 15;
+        }
+        if (top + tooltipHeight > containerHeight) {
+            top = this.mouseY - tooltipHeight - 15;
+        }
+
+        // Set position
+        this.tooltip.style.left = left + 'px';
+        this.tooltip.style.top = top + 'px';
+
+        // Show tooltip
+        this.tooltip.classList.remove('hidden');
+    },
+
+    // Hide node tooltip
+    hideNodeTooltip: function () {
+        if (this.tooltip) {
+            this.tooltip.classList.add('hidden');
+        }
+    },
+
+    // Format time ago
+    formatTimeAgo: function (date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHour = Math.floor(diffMin / 60);
+        const diffDay = Math.floor(diffHour / 24);
+
+        if (diffSec < 60) {
+            return diffSec + ' seconds ago';
+        } else if (diffMin < 60) {
+            return diffMin + ' minutes ago';
+        } else if (diffHour < 24) {
+            return diffHour + ' hours ago';
+        } else {
+            return diffDay + ' days ago';
+        }
     },
 
     // Handle window resize
@@ -239,6 +338,69 @@ const NetworkVisualizer = {
 
         // Update renderer
         this.renderer.setSize(container.clientWidth, container.clientHeight);
+    },
+
+    // Create tooltip element
+    createTooltip: function () {
+        // Check if tooltip already exists
+        if (document.getElementById('node-tooltip')) {
+            return;
+        }
+
+        // Create tooltip element
+        const tooltip = document.createElement('div');
+        tooltip.id = 'node-tooltip';
+        tooltip.className = 'fixed hidden z-50 bg-gray-800 text-white p-3 rounded-lg shadow-lg border border-gray-700 text-sm max-w-xs';
+        tooltip.style.pointerEvents = 'none'; // Prevent tooltip from interfering with mouse events
+        document.body.appendChild(tooltip);
+    },
+
+    // Show node tooltip
+    showNodeTooltip: function (node, x, y) {
+        const tooltip = document.getElementById('node-tooltip');
+        if (!tooltip) {
+            this.createTooltip();
+        }
+
+        // Format node data
+        const nodeData = node.userData.nodeData;
+        const nodeId = this.truncateString(nodeData.node_id, 16);
+        const ip = nodeData.endpoint ? nodeData.endpoint.split(':')[0] : 'Unknown';
+        const port = nodeData.endpoint ? nodeData.endpoint.split(':')[1] : 'Unknown';
+        const status = nodeData.is_responsive ? 'Active' : 'Inactive';
+        const statusClass = nodeData.is_responsive ? 'text-green-400' : 'text-red-400';
+
+        // Set tooltip content
+        tooltip.innerHTML = `
+            <div>
+                <div class="font-semibold mb-1">Node ID: <span class="text-blue-400">${nodeId}</span></div>
+                <div>IP: ${ip}</div>
+                <div>Port: ${port}</div>
+                <div>Status: <span class="${statusClass}">${status}</span></div>
+            </div>
+        `;
+
+        // Position tooltip
+        tooltip.style.left = `${x + 15}px`;
+        tooltip.style.top = `${y + 15}px`;
+
+        // Show tooltip
+        tooltip.classList.remove('hidden');
+    },
+
+    // Hide node tooltip
+    hideNodeTooltip: function () {
+        const tooltip = document.getElementById('node-tooltip');
+        if (tooltip) {
+            tooltip.classList.add('hidden');
+        }
+    },
+
+    // Helper: Truncate string with ellipsis
+    truncateString: function (str, maxLength) {
+        if (!str) return '';
+        if (str.length <= maxLength) return str;
+        return str.substring(0, maxLength) + '...';
     },
 
     // Animation loop
@@ -260,12 +422,20 @@ const NetworkVisualizer = {
             this.nodeObjects[nodeId].scale.set(1, 1, 1);
         }
 
-        // Highlight intersected node
+        // Hide tooltip if no intersection
+        if (intersects.length === 0) {
+            this.hideNodeTooltip();
+        }
+
+        // Highlight intersected node and show tooltip
         if (intersects.length > 0) {
             const object = intersects[0].object;
             object.scale.set(1.5, 1.5, 1.5);
 
-            // TODO: Show node info tooltip
+            // Show node info tooltip
+            if (object.userData && object.userData.nodeData) {
+                this.showNodeTooltip(object.userData.nodeData);
+            }
         }
 
         // Render scene

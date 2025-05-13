@@ -662,8 +662,8 @@ int main(int argc, char *argv[])
         }
 
         // Get a query interface for data access
-        auto storage_manager = controller->get_storage_manager();
-        auto query = storage_manager->query_interface();
+        auto& storage_manager = controller->get_storage_manager();
+        auto query = storage_manager.query_interface();
 
         // Interactive command loop
         std::string command;

@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cstring>
+#include <limits>
+#include <stdexcept>
 
 namespace bitscrape::network {
 
@@ -10,8 +12,14 @@ Buffer::Buffer(size_t capacity) {
 }
 
 Buffer::Buffer(const uint8_t* data, size_t size) {
+    if (data == nullptr && size > 0) {
+        throw std::invalid_argument("Buffer: data is null but size is non-zero");
+    }
+
     data_.resize(size);
-    std::memcpy(data_.data(), data, size);
+    if (size > 0) {
+        std::memcpy(data_.data(), data, size);
+    }
 }
 
 Buffer::Buffer(const std::vector<uint8_t>& data)
@@ -47,8 +55,17 @@ void Buffer::clear() {
 }
 
 void Buffer::append(const uint8_t* data, size_t size) {
-    if (data == nullptr || size == 0) {
+    if (data == nullptr && size > 0) {
+        throw std::invalid_argument("Buffer::append: data is null but size is non-zero");
+    }
+
+    if (size == 0) {
         return;
+    }
+
+    // Check for potential overflow
+    if (data_.size() > std::numeric_limits<size_t>::max() - size) {
+        throw std::overflow_error("Buffer::append: size would overflow");
     }
 
     size_t old_size = data_.size();
@@ -77,8 +94,17 @@ std::vector<uint8_t> Buffer::to_vector() const {
 }
 
 size_t Buffer::read_at(size_t offset, uint8_t* data, size_t size) const {
-    if (offset >= data_.size() || data == nullptr || size == 0) {
+    if (data == nullptr && size > 0) {
+        throw std::invalid_argument("Buffer::read_at: data is null but size is non-zero");
+    }
+
+    if (offset >= data_.size() || size == 0) {
         return 0;
+    }
+
+    // Check for potential overflow in offset + bytes calculation
+    if (offset > data_.size()) {
+        return 0; // Offset is beyond the end of the buffer
     }
 
     size_t bytes_to_read = std::min(size, data_.size() - offset);
@@ -87,8 +113,17 @@ size_t Buffer::read_at(size_t offset, uint8_t* data, size_t size) const {
 }
 
 size_t Buffer::write_at(size_t offset, const uint8_t* data, size_t size) {
-    if (data == nullptr || size == 0) {
+    if (data == nullptr && size > 0) {
+        throw std::invalid_argument("Buffer::write_at: data is null but size is non-zero");
+    }
+
+    if (size == 0) {
         return 0;
+    }
+
+    // Check for potential overflow in offset + size calculation
+    if (offset > std::numeric_limits<size_t>::max() - size) {
+        throw std::overflow_error("Buffer::write_at: offset + size would overflow");
     }
 
     if (offset + size > data_.size()) {

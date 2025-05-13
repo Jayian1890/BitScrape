@@ -8,6 +8,9 @@ add_library(bitscrape-dht
         src/dht_message_factory.cpp
         src/token_manager.cpp
         src/k_bucket.cpp
+        src/dht_get_peers_message.cpp
+        src/dht_find_node_message.cpp
+        src/dht_announce_peer_message.cpp
 )
 
 # Set include directories

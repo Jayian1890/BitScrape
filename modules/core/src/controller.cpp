@@ -28,6 +28,8 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <algorithm>
+#include <random>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
@@ -414,8 +416,29 @@ public:
             if (dht_session_ && dht_session_->is_running()) {
                 beacon_->info("Starting DHT crawling", types::BeaconCategory::DHT);
 
-                // TODO: Implement DHT crawling logic here
-                // For now, we'll just use the existing infohashes
+                // Start a background thread for DHT crawling
+                std::thread([this]() {
+                    try {
+                        // Continue crawling until stopped
+                        while (is_crawling_ && is_running_) {
+                            // Perform random node lookups to discover new nodes
+                            perform_random_node_lookups();
+
+                            // Perform infohash lookups to discover new infohashes
+                            perform_infohash_lookups();
+
+                            // Sleep for a while before the next round of lookups
+                            std::this_thread::sleep_for(std::chrono::seconds(30));
+
+                            if (!is_crawling_ || !is_running_) {
+                                break; // Exit the loop if crawling or controller has stopped
+                            }
+                        }
+                    } catch (const std::exception& e) {
+                        beacon_->error("Error in DHT crawling thread: " + std::string(e.what()),
+                                      types::BeaconCategory::DHT);
+                    }
+                }).detach(); // Detach the thread so it runs independently
             } else {
                 beacon_->warning("DHT component is not running, crawling will be limited",
                                  types::BeaconCategory::DHT);
@@ -986,6 +1009,133 @@ public:
         }
     }
 
+    void perform_random_node_lookups() {
+        if (!dht_session_ || !dht_session_->is_running()) {
+            return;
+        }
+
+        try {
+            // Number of random lookups to perform
+            const size_t NUM_LOOKUPS = 5;
+
+            beacon_->info("Performing " + std::to_string(NUM_LOOKUPS) + " random node lookups",
+                         types::BeaconCategory::DHT);
+
+            // Perform multiple random lookups to discover new nodes
+            for (size_t i = 0; i < NUM_LOOKUPS; ++i) {
+                // Generate a random node ID to look up
+                types::NodeID random_id = types::NodeID::random();
+
+                // Perform the lookup
+                beacon_->debug("Looking up random node ID: " + random_id.to_hex().substr(0, 16) + "...",
+                              types::BeaconCategory::DHT);
+
+                // Use async version to avoid blocking
+                auto future = dht_session_->find_nodes_async(random_id);
+
+                // Wait for the result
+                auto nodes = future.get();
+
+                // Store the discovered nodes in the database
+                for (const auto& node : nodes) {
+                    storage_manager_->store_node(node.id(), node.endpoint(), true);
+
+                    // Publish a DHT_NODE_FOUND event
+                    // Create a custom event derived from Event for DHT_NODE_FOUND
+                    // In a real implementation, we would create a proper event class
+                    // For now, we'll just log the node discovery
+                    beacon_->info("Discovered node: " + node.id().to_hex().substr(0, 16) + "...",
+                                 types::BeaconCategory::DHT);
+                }
+
+                beacon_->info("Found " + std::to_string(nodes.size()) + " nodes in random lookup",
+                             types::BeaconCategory::DHT);
+
+                // Sleep briefly between lookups to avoid overwhelming the network
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            }
+        } catch (const std::exception& e) {
+            beacon_->error("Error performing random node lookups: " + std::string(e.what()),
+                          types::BeaconCategory::DHT);
+        }
+    }
+
+    void perform_infohash_lookups() {
+        if (!dht_session_ || !dht_session_->is_running()) {
+            return;
+        }
+
+        try {
+            // Number of infohash lookups to perform
+            const size_t NUM_LOOKUPS = 10;
+
+            beacon_->info("Performing " + std::to_string(NUM_LOOKUPS) + " infohash lookups",
+                         types::BeaconCategory::DHT);
+
+            // Get some nodes from the routing table to query
+            auto nodes = dht_session_->routing_table().get_all_nodes();
+            if (nodes.empty()) {
+                beacon_->warning("No nodes available for infohash lookups",
+                               types::BeaconCategory::DHT);
+                return;
+            }
+
+            // Shuffle the nodes to query different ones each time
+            std::random_device rd;
+            std::mt19937 g(rd());
+            // Use a lambda with the random generator as a custom shuffle function
+            std::shuffle(nodes.begin(), nodes.end(), g);
+
+            // Limit the number of nodes to query
+            const size_t MAX_NODES = 20;
+            if (nodes.size() > MAX_NODES) {
+                nodes.resize(MAX_NODES);
+            }
+
+            // Generate random infohashes to look up
+            for (size_t i = 0; i < NUM_LOOKUPS; ++i) {
+                // Generate a random infohash
+                types::InfoHash random_infohash = types::InfoHash::random();
+
+                beacon_->debug("Looking up random infohash: " + random_infohash.to_hex().substr(0, 16) + "...",
+                              types::BeaconCategory::DHT);
+
+                // Use the find_peers method to look for peers with this infohash
+                auto future = dht_session_->find_peers_async(random_infohash);
+
+                // Wait for the result
+                auto peers = future.get();
+
+                // If we found peers, store the infohash in the database
+                if (!peers.empty()) {
+                    storage_manager_->store_infohash(random_infohash);
+
+                    // Publish a DHT_INFOHASH_FOUND event
+                    // Create a custom event derived from Event for DHT_INFOHASH_FOUND
+                    // In a real implementation, we would create a proper event class
+                    // For now, we'll just log the infohash discovery
+                    beacon_->info("Discovered infohash: " + random_infohash.to_hex().substr(0, 16) + "...",
+                                 types::BeaconCategory::DHT);
+
+                    beacon_->info("Found " + std::to_string(peers.size()) + " peers for infohash: " +
+                                 random_infohash.to_hex().substr(0, 16) + "...",
+                                 types::BeaconCategory::DHT);
+
+                    // If crawling is active, create a PeerManager for this infohash
+                    if (is_crawling_ && is_running_) {
+                        create_peer_manager_for_infohash(random_infohash);
+                    }
+                }
+
+                // Sleep briefly between lookups to avoid overwhelming the network
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            }
+        } catch (const std::exception& e) {
+            beacon_->error("Error performing infohash lookups: " + std::string(e.what()),
+                          types::BeaconCategory::DHT);
+        }
+    }
+
     // Member variables
     std::shared_ptr<Configuration> config_;
     std::shared_ptr<storage::StorageManager> storage_manager_;
@@ -1044,8 +1194,8 @@ std::shared_ptr<Configuration> Controller::get_configuration() const {
     return impl_->config_;
 }
 
-std::shared_ptr<storage::StorageManager> Controller::get_storage_manager() const {
-    return impl_->storage_manager_;
+storage::StorageManager& Controller::get_storage_manager() const {
+    return *impl_->storage_manager_;
 }
 
 std::shared_ptr<event::EventBus> Controller::get_event_bus() const {

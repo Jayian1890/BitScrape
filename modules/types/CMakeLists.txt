@@ -42,6 +42,8 @@ install(DIRECTORY include/bitscrape/types
     FILES_MATCHING PATTERN "*.hpp"
 )
 
+# No external dependencies
+
 # Add alias target
 add_library(bitscrape::types ALIAS bitscrape-types)
 

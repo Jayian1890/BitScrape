@@ -95,9 +95,9 @@ public:
     /**
      * @brief Get the storage manager object
      *
-     * @return std::shared_ptr<storage::StorageManager> The storage manager object
+     * @return storage::StorageManager& Reference to the storage manager object
      */
-    std::shared_ptr<storage::StorageManager> get_storage_manager() const;
+    storage::StorageManager& get_storage_manager() const;
 
     /**
      * @brief Get the event bus
@@ -174,6 +174,10 @@ private:
     void handle_dht_infohash_discovered(const types::Event& event);
     void handle_metadata_downloaded(const types::Event& event);
     void handle_error(const types::Event& event);
+
+    // DHT crawling methods
+    void perform_random_node_lookups();
+    void perform_infohash_lookups();
 
     // Private implementation
     class Impl;

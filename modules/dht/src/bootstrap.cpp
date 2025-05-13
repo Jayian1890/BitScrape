@@ -45,15 +45,40 @@ std::future<bool> Bootstrap::start_async(const std::vector<types::Endpoint>& boo
 void Bootstrap::process_message(const std::shared_ptr<DHTMessage>& message, const types::Endpoint& sender_endpoint) {
     // Process the message based on its type
     if (message->type() == DHTMessage::Type::PING_RESPONSE) {
-        // Add the node to the routing table
-        types::NodeID node_id;
+        // Check if this is a response to one of our pings
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = pending_pings_.find(message->transaction_id());
+        if (it == pending_pings_.end()) {
+            // Not one of our pings
+            return;
+        }
+
+        // Remove the pending ping
+        pending_pings_.erase(it);
 
         // Extract the node ID from the message
-        // TODO: Implement this when ping response is implemented
+        auto ping_response = std::dynamic_pointer_cast<DHTPingMessage>(message);
+        if (!ping_response) {
+            return;
+        }
+
+        // Get the node ID from the response
+        types::NodeID node_id = ping_response->node_id();
 
         // Create a node and add it to the routing table
         types::DHTNode node(node_id, sender_endpoint);
-        routing_table_.add_node(node);
+        bool added = routing_table_.add_node(node);
+
+        // Decrement the active lookups counter
+        if (active_lookups_ > 0) {
+            --active_lookups_;
+        }
+
+        // Check if we're done
+        if (active_lookups_ == 0) {
+            complete_.store(true);
+            cv_.notify_all();
+        }
     }
     // Other message types are handled by the node lookup
 }
@@ -89,20 +114,33 @@ bool Bootstrap::contact_bootstrap_node(const types::Endpoint& endpoint) {
 
     // Send the message
     network::Address address(endpoint.address(), endpoint.port());
-    socket_.send_to(data.data(), data.size(), address);
+    if (!socket_.send_to(data.data(), data.size(), address)) {
+        return false;
+    }
+
+    // Store the transaction ID and endpoint
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        pending_pings_[transaction_id] = endpoint;
+    }
 
     // Increment the active lookups counter
     ++active_lookups_;
 
     // Schedule a timeout
-    std::thread([this, endpoint]() {
+    std::thread([this, transaction_id]() {
         // Sleep for a timeout duration
         std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
         std::lock_guard<std::mutex> lock(mutex_);
 
+        // Remove the pending ping
+        pending_pings_.erase(transaction_id);
+
         // Decrement the active lookups counter
-        --active_lookups_;
+        if (active_lookups_ > 0) {
+            --active_lookups_;
+        }
 
         // Check if we're done
         if (active_lookups_ == 0) {
@@ -118,16 +156,16 @@ bool Bootstrap::perform_random_lookup() {
     // Generate a random node ID
     types::NodeID target_id = generate_random_node_id();
 
-    // Create a node lookup
-    NodeLookup lookup(local_id_, target_id, routing_table_, socket_, message_factory_);
-
     // Increment the active lookups counter
     ++active_lookups_;
 
+    // Create a node lookup on the heap so it persists after this function returns
+    auto lookup_ptr = std::make_shared<NodeLookup>(local_id_, target_id, routing_table_, socket_, message_factory_);
+
     // Start the lookup in a separate thread
-    std::thread([this, &lookup]() {
+    std::thread([this, lookup_ptr]() {
         // Start the lookup
-        auto nodes = lookup.start();
+        auto nodes = lookup_ptr->start();
 
         // Add the found nodes to the routing table
         for (const auto& node : nodes) {

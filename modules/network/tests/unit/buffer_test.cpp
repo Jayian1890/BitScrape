@@ -137,4 +137,75 @@ TEST(BufferTest, WriteAt) {
     EXPECT_EQ(std::memcmp(buffer.data(), expected, sizeof(expected)), 0);
 }
 
+TEST(BufferTest, ConstructWithNullData) {
+    // Test with null data but zero size (should be valid)
+    Buffer buffer(nullptr, 0);
+    EXPECT_EQ(buffer.size(), 0UL);
+}
+
+TEST(BufferTest, ConstructWithNullDataNonZeroSize) {
+    // Test with null data and non-zero size (should throw)
+    EXPECT_THROW(Buffer(nullptr, 5), std::invalid_argument);
+}
+
+TEST(BufferTest, AppendNullData) {
+    Buffer buffer;
+
+    // Test with null data but zero size (should be valid)
+    buffer.append(nullptr, 0);
+    EXPECT_EQ(buffer.size(), 0UL);
+
+    // Test with null data and non-zero size (should throw)
+    EXPECT_THROW(buffer.append(nullptr, 5), std::invalid_argument);
+}
+
+TEST(BufferTest, ReadAtNullData) {
+    const uint8_t data[] = {1, 2, 3, 4, 5};
+    Buffer buffer(data, sizeof(data));
+
+    // Test with null data but zero size (should be valid)
+    size_t bytes_read = buffer.read_at(0, nullptr, 0);
+    EXPECT_EQ(bytes_read, 0UL);
+
+    // Test with null data and non-zero size (should throw)
+    EXPECT_THROW(buffer.read_at(0, nullptr, 3), std::invalid_argument);
+}
+
+TEST(BufferTest, ReadAtOutOfBounds) {
+    const uint8_t data[] = {1, 2, 3, 4, 5};
+    Buffer buffer(data, sizeof(data));
+
+    uint8_t read_data[3];
+
+    // Test reading from an offset beyond the end of the buffer
+    size_t bytes_read = buffer.read_at(10, read_data, sizeof(read_data));
+    EXPECT_EQ(bytes_read, 0UL);
+}
+
+TEST(BufferTest, WriteAtNullData) {
+    Buffer buffer(5);
+
+    // Test with null data but zero size (should be valid)
+    size_t bytes_written = buffer.write_at(0, nullptr, 0);
+    EXPECT_EQ(bytes_written, 0UL);
+
+    // Test with null data and non-zero size (should throw)
+    EXPECT_THROW(buffer.write_at(0, nullptr, 3), std::invalid_argument);
+}
+
+TEST(BufferTest, WriteAtResize) {
+    Buffer buffer;
+
+    // Test writing beyond the current size (should resize)
+    const uint8_t data[] = {1, 2, 3};
+    size_t bytes_written = buffer.write_at(2, data, sizeof(data));
+
+    EXPECT_EQ(bytes_written, sizeof(data));
+    EXPECT_EQ(buffer.size(), 5UL); // 2 (offset) + 3 (data size)
+
+    // Verify the data
+    const uint8_t expected[] = {0, 0, 1, 2, 3};
+    EXPECT_EQ(std::memcmp(buffer.data(), expected, buffer.size()), 0);
+}
+
 } // namespace bitscrape::network::test

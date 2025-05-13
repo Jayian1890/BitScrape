@@ -29,6 +29,10 @@ const Buffer &UDPSendEvent::buffer() const { return buffer_; }
 
 const Address &UDPSendEvent::address() const { return address_; }
 
+std::unique_ptr<types::Event> UDPSendEvent::clone() const {
+  return std::make_unique<UDPSendEvent>(*this);
+}
+
 // UDPReceiveEvent implementation
 UDPReceiveEvent::UDPReceiveEvent(const Buffer &buffer, const Address &address)
     : NetworkEvent(NetworkEventType::UDP_RECEIVE), buffer_(buffer),
@@ -38,11 +42,19 @@ const Buffer &UDPReceiveEvent::buffer() const { return buffer_; }
 
 const Address &UDPReceiveEvent::address() const { return address_; }
 
+std::unique_ptr<types::Event> UDPReceiveEvent::clone() const {
+  return std::make_unique<UDPReceiveEvent>(*this);
+}
+
 // TCPConnectEvent implementation
 TCPConnectEvent::TCPConnectEvent(const Address &address)
     : NetworkEvent(NetworkEventType::TCP_CONNECT), address_(address) {}
 
 const Address &TCPConnectEvent::address() const { return address_; }
+
+std::unique_ptr<types::Event> TCPConnectEvent::clone() const {
+  return std::make_unique<TCPConnectEvent>(*this);
+}
 
 // TCPSendEvent implementation
 TCPSendEvent::TCPSendEvent(const Buffer &buffer)
@@ -50,11 +62,19 @@ TCPSendEvent::TCPSendEvent(const Buffer &buffer)
 
 const Buffer &TCPSendEvent::buffer() const { return buffer_; }
 
+std::unique_ptr<types::Event> TCPSendEvent::clone() const {
+  return std::make_unique<TCPSendEvent>(*this);
+}
+
 // TCPReceiveEvent implementation
 TCPReceiveEvent::TCPReceiveEvent(const Buffer &buffer)
     : NetworkEvent(NetworkEventType::TCP_RECEIVE), buffer_(buffer) {}
 
 const Buffer &TCPReceiveEvent::buffer() const { return buffer_; }
+
+std::unique_ptr<types::Event> TCPReceiveEvent::clone() const {
+  return std::make_unique<TCPReceiveEvent>(*this);
+}
 
 // HTTPRequestEvent implementation
 HTTPRequestEvent::HTTPRequestEvent(
@@ -73,11 +93,59 @@ const std::map<std::string, std::string> &HTTPRequestEvent::headers() const {
 
 const Buffer &HTTPRequestEvent::body() const { return body_; }
 
+std::unique_ptr<types::Event> HTTPRequestEvent::clone() const {
+  return std::make_unique<HTTPRequestEvent>(*this);
+}
+
 // HTTPResponseEvent implementation
 HTTPResponseEvent::HTTPResponseEvent(const HTTPResponse &response)
-    : NetworkEvent(NetworkEventType::HTTP_REQUEST), response_(response) {}
+    : NetworkEvent(NetworkEventType::HTTP_RESPONSE), response_(response) {}
 
 const HTTPResponse &HTTPResponseEvent::response() const { return response_; }
+
+std::unique_ptr<types::Event> HTTPResponseEvent::clone() const {
+  return std::make_unique<HTTPResponseEvent>(*this);
+}
+
+// UDPSendResultEvent implementation
+UDPSendResultEvent::UDPSendResultEvent(int bytes_sent, const Address &address)
+    : NetworkEvent(NetworkEventType::UDP_SEND_RESULT), bytes_sent_(bytes_sent),
+      address_(address) {}
+
+int UDPSendResultEvent::bytes_sent() const { return bytes_sent_; }
+
+const Address &UDPSendResultEvent::address() const { return address_; }
+
+bool UDPSendResultEvent::is_success() const { return bytes_sent_ > 0; }
+
+std::unique_ptr<types::Event> UDPSendResultEvent::clone() const {
+  return std::make_unique<UDPSendResultEvent>(*this);
+}
+
+// TCPConnectResultEvent implementation
+TCPConnectResultEvent::TCPConnectResultEvent(bool success, const Address &address)
+    : NetworkEvent(NetworkEventType::TCP_CONNECT_RESULT), success_(success),
+      address_(address) {}
+
+bool TCPConnectResultEvent::is_success() const { return success_; }
+
+const Address &TCPConnectResultEvent::address() const { return address_; }
+
+std::unique_ptr<types::Event> TCPConnectResultEvent::clone() const {
+  return std::make_unique<TCPConnectResultEvent>(*this);
+}
+
+// TCPSendResultEvent implementation
+TCPSendResultEvent::TCPSendResultEvent(int bytes_sent)
+    : NetworkEvent(NetworkEventType::TCP_SEND_RESULT), bytes_sent_(bytes_sent) {}
+
+int TCPSendResultEvent::bytes_sent() const { return bytes_sent_; }
+
+bool TCPSendResultEvent::is_success() const { return bytes_sent_ > 0; }
+
+std::unique_ptr<types::Event> TCPSendResultEvent::clone() const {
+  return std::make_unique<TCPSendResultEvent>(*this);
+}
 
 // NetworkEventProcessor implementation
 NetworkEventProcessor::NetworkEventProcessor()
@@ -150,7 +218,10 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
     int bytes_sent =
         udp_socket_->send_to(send_event.buffer(), send_event.address());
 
-    // TODO: Publish UDPSendResultEvent with the result of the send operation
+    // Publish UDPSendResultEvent with the result of the send operation
+    if (event_bus_) {
+      event_bus_->publish(UDPSendResultEvent(bytes_sent, send_event.address()));
+    }
 
     return true;
   }
@@ -162,8 +233,9 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
     Address address;
     int bytes_received = udp_socket_->receive_from(buffer, address);
 
-    if (bytes_received > 0) {
-      // TODO: Publish UDPReceiveEvent with the received data
+    if (bytes_received > 0 && event_bus_) {
+      // Publish UDPReceiveEvent with the received data
+      event_bus_->publish(UDPReceiveEvent(buffer, address));
     }
 
     return true;
@@ -174,7 +246,10 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
         static_cast<const TCPConnectEvent &>(network_event);
     bool success = tcp_socket_->connect(connect_event.address());
 
-    // TODO: Publish TCPConnectResultEvent with the result of the connect operation
+    // Publish TCPConnectResultEvent with the result of the connect operation
+    if (event_bus_) {
+      event_bus_->publish(TCPConnectResultEvent(success, connect_event.address()));
+    }
 
     return true;
   }
@@ -184,7 +259,10 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
         static_cast<const TCPSendEvent &>(network_event);
     int bytes_sent = tcp_socket_->send(send_event.buffer());
 
-    // TODO: Publish TCPSendResultEvent with the result of the send operation
+    // Publish TCPSendResultEvent with the result of the send operation
+    if (event_bus_) {
+      event_bus_->publish(TCPSendResultEvent(bytes_sent));
+    }
 
     return true;
   }
@@ -195,8 +273,9 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
     Buffer buffer;
     int bytes_received = tcp_socket_->receive(buffer);
 
-    if (bytes_received > 0) {
-      // TODO: Publish TCPReceiveEvent with the received data
+    if (bytes_received > 0 && event_bus_) {
+      // Publish TCPReceiveEvent with the received data
+      event_bus_->publish(TCPReceiveEvent(buffer));
     }
 
     return true;
@@ -209,7 +288,10 @@ bool NetworkEventProcessor::process_event(const types::Event &event) {
         http_client_->request(request_event.method(), request_event.url(),
                               request_event.headers(), request_event.body());
 
-    // TODO: Publish HTTPResponseEvent with the response data
+    // Publish HTTPResponseEvent with the response data
+    if (event_bus_) {
+      event_bus_->publish(HTTPResponseEvent(response));
+    }
 
     return true;
   }

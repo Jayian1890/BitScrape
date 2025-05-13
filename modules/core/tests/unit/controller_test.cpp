@@ -34,14 +34,14 @@ TEST_F(ControllerTest, ConstructorTest) {
     // Test default constructor
     Controller controller;
     EXPECT_NE(nullptr, controller.get_configuration());
-    EXPECT_NE(nullptr, controller.get_storage_manager());
+    // No need to check for nullptr with references
     EXPECT_NE(nullptr, controller.get_event_bus());
     EXPECT_NE(nullptr, controller.get_beacon());
 
     // Test constructor with config path
     Controller controller_with_path(config_path_);
     EXPECT_NE(nullptr, controller_with_path.get_configuration());
-    EXPECT_NE(nullptr, controller_with_path.get_storage_manager());
+    // No need to check for nullptr with references
     EXPECT_NE(nullptr, controller_with_path.get_event_bus());
     EXPECT_NE(nullptr, controller_with_path.get_beacon());
     EXPECT_EQ(config_path_, controller_with_path.get_configuration()->get_config_path());

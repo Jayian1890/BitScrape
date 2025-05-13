@@ -1,6 +1,9 @@
 #include "bitscrape/web/web_controller.hpp"
 #include "bitscrape/web/json.hpp"
 #include "bitscrape/storage/query_interface.hpp"
+#include "bitscrape/types/event_types.hpp"
+#include "bitscrape/bittorrent/bittorrent_event_processor.hpp"
+#include "bitscrape/tracker/tracker_event.hpp"
 
 #include <iostream>
 #include <mutex>
@@ -43,8 +46,8 @@ std::unordered_map<std::string, std::string> WebController::get_statistics() con
 }
 
 std::vector<storage::NodeModel> WebController::get_nodes(size_t limit, size_t offset) const {
-    auto storage_manager = controller_->get_storage_manager();
-    auto query = storage_manager->query_interface();
+    auto& storage_manager = controller_->get_storage_manager();
+    auto query = storage_manager.query_interface();
 
     storage::QueryInterface::NodeQueryOptions options;
     options.limit = limit;
@@ -56,8 +59,8 @@ std::vector<storage::NodeModel> WebController::get_nodes(size_t limit, size_t of
 }
 
 std::vector<storage::InfoHashModel> WebController::get_infohashes(size_t limit, size_t offset) const {
-    auto storage_manager = controller_->get_storage_manager();
-    auto query = storage_manager->query_interface();
+    auto& storage_manager = controller_->get_storage_manager();
+    auto query = storage_manager.query_interface();
 
     storage::QueryInterface::InfoHashQueryOptions options;
     options.limit = limit;
@@ -69,8 +72,8 @@ std::vector<storage::InfoHashModel> WebController::get_infohashes(size_t limit, 
 }
 
 std::vector<storage::MetadataModel> WebController::get_metadata(size_t limit, size_t offset) const {
-    auto storage_manager = controller_->get_storage_manager();
-    auto query = storage_manager->query_interface();
+    auto& storage_manager = controller_->get_storage_manager();
+    auto query = storage_manager.query_interface();
 
     storage::QueryInterface::MetadataQueryOptions options;
     options.limit = limit;
@@ -82,36 +85,36 @@ std::vector<storage::MetadataModel> WebController::get_metadata(size_t limit, si
 }
 
 std::optional<storage::MetadataModel> WebController::get_metadata_by_infohash(const types::InfoHash& info_hash) const {
-    auto storage_manager = controller_->get_storage_manager();
-    auto query = storage_manager->query_interface();
+    auto& storage_manager = controller_->get_storage_manager();
+    auto query = storage_manager.query_interface();
 
     return query->get_metadata(info_hash);
 }
 
 std::vector<storage::FileModel> WebController::get_files(const types::InfoHash& info_hash) const {
-    auto storage_manager = controller_->get_storage_manager();
-    auto query = storage_manager->query_interface();
+    auto& storage_manager = controller_->get_storage_manager();
+    auto query = storage_manager.query_interface();
 
     return query->get_files(info_hash);
 }
 
 std::vector<storage::PeerModel> WebController::get_peers(const types::InfoHash& info_hash) const {
-    auto storage_manager = controller_->get_storage_manager();
-    auto query = storage_manager->query_interface();
+    auto& storage_manager = controller_->get_storage_manager();
+    auto query = storage_manager.query_interface();
 
     return query->get_peers(info_hash);
 }
 
 std::vector<storage::TrackerModel> WebController::get_trackers(const types::InfoHash& info_hash) const {
-    auto storage_manager = controller_->get_storage_manager();
-    auto query = storage_manager->query_interface();
+    auto& storage_manager = controller_->get_storage_manager();
+    auto query = storage_manager.query_interface();
 
     return query->get_trackers(info_hash);
 }
 
 std::vector<storage::MetadataModel> WebController::search_metadata(const std::string& query, size_t limit, size_t offset) const {
-    auto storage_manager = controller_->get_storage_manager();
-    auto query_interface = storage_manager->query_interface();
+    auto& storage_manager = controller_->get_storage_manager();
+    auto query_interface = storage_manager.query_interface();
 
     storage::QueryInterface::MetadataQueryOptions options;
     options.name_contains = query;
@@ -143,8 +146,41 @@ void WebController::handle_event(const types::Event& event) {
     // Convert event to JSON
     JSON json = JSON::object();
     json["type"] = static_cast<int>(event.type());
+    json["timestamp"] = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        event.timestamp().time_since_epoch()).count());
 
-    // TODO: Add event-specific data based on event type
+    // Add event-specific data based on event type
+    switch (event.type()) {
+        case types::Event::Type::DHT_NODE_FOUND:
+            // For now, just add basic event info
+            json["event_name"] = "DHT_NODE_FOUND";
+            break;
+
+        case types::Event::Type::DHT_INFOHASH_FOUND:
+            // For now, just add basic event info
+            json["event_name"] = "DHT_INFOHASH_FOUND";
+            break;
+
+        case types::Event::Type::BT_METADATA_RECEIVED:
+            // For now, just add basic event info
+            json["event_name"] = "BT_METADATA_RECEIVED";
+            break;
+
+        case types::Event::Type::BT_PEER_CONNECTED:
+            // For now, just add basic event info
+            json["event_name"] = "BT_PEER_CONNECTED";
+            break;
+
+        case types::Event::Type::TRACKER_ANNOUNCE_COMPLETE:
+            // For now, just add basic event info
+            json["event_name"] = "TRACKER_ANNOUNCE_COMPLETE";
+            break;
+
+        default:
+            // For other event types, just include the string representation
+            json["message"] = event.to_string();
+            break;
+    }
 
     // Serialize to string
     std::string message = json.dump();

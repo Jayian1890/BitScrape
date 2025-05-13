@@ -19,11 +19,15 @@ namespace bitscrape::network {
  */
 enum class NetworkEventType {
   UDP_SEND,
+  UDP_SEND_RESULT,
   UDP_RECEIVE,
   TCP_CONNECT,
+  TCP_CONNECT_RESULT,
   TCP_SEND,
+  TCP_SEND_RESULT,
   TCP_RECEIVE,
-  HTTP_REQUEST
+  HTTP_REQUEST,
+  HTTP_RESPONSE
 };
 
 /**
@@ -83,6 +87,13 @@ public:
    */
   const Address &address() const;
 
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
+
 private:
   Buffer buffer_;
   Address address_;
@@ -115,6 +126,13 @@ public:
    */
   const Address &address() const;
 
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
+
 private:
   Buffer buffer_;
   Address address_;
@@ -139,6 +157,13 @@ public:
    */
   const Address &address() const;
 
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
+
 private:
   Address address_;
 };
@@ -162,6 +187,13 @@ public:
    */
   const Buffer &buffer() const;
 
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
+
 private:
   Buffer buffer_;
 };
@@ -184,6 +216,13 @@ public:
    * @return The buffer
    */
   const Buffer &buffer() const;
+
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
 
 private:
   Buffer buffer_;
@@ -234,11 +273,140 @@ public:
    */
   const Buffer &body() const;
 
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
+
 private:
   HTTPMethod method_;
   std::string url_;
   std::map<std::string, std::string> headers_;
   Buffer body_;
+};
+
+/**
+ * @brief UDP send result event
+ */
+class UDPSendResultEvent : public NetworkEvent {
+public:
+  /**
+   * @brief Construct a new UDPSendResultEvent object
+   *
+   * @param bytes_sent Number of bytes sent, or -1 on error
+   * @param address The destination address
+   */
+  UDPSendResultEvent(int bytes_sent, const Address &address);
+
+  /**
+   * @brief Get the number of bytes sent
+   *
+   * @return Number of bytes sent, or -1 on error
+   */
+  int bytes_sent() const;
+
+  /**
+   * @brief Get the address
+   *
+   * @return The address
+   */
+  const Address &address() const;
+
+  /**
+   * @brief Check if the send was successful
+   *
+   * @return true if the send was successful, false otherwise
+   */
+  bool is_success() const;
+
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
+
+private:
+  int bytes_sent_;
+  Address address_;
+};
+
+/**
+ * @brief TCP connect result event
+ */
+class TCPConnectResultEvent : public NetworkEvent {
+public:
+  /**
+   * @brief Construct a new TCPConnectResultEvent object
+   *
+   * @param success Whether the connection was successful
+   * @param address The address that was connected to
+   */
+  TCPConnectResultEvent(bool success, const Address &address);
+
+  /**
+   * @brief Check if the connection was successful
+   *
+   * @return true if the connection was successful, false otherwise
+   */
+  bool is_success() const;
+
+  /**
+   * @brief Get the address
+   *
+   * @return The address
+   */
+  const Address &address() const;
+
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
+
+private:
+  bool success_;
+  Address address_;
+};
+
+/**
+ * @brief TCP send result event
+ */
+class TCPSendResultEvent : public NetworkEvent {
+public:
+  /**
+   * @brief Construct a new TCPSendResultEvent object
+   *
+   * @param bytes_sent Number of bytes sent, or -1 on error
+   */
+  explicit TCPSendResultEvent(int bytes_sent);
+
+  /**
+   * @brief Get the number of bytes sent
+   *
+   * @return Number of bytes sent, or -1 on error
+   */
+  int bytes_sent() const;
+
+  /**
+   * @brief Check if the send was successful
+   *
+   * @return true if the send was successful, false otherwise
+   */
+  bool is_success() const;
+
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
+
+private:
+  int bytes_sent_;
 };
 
 /**
@@ -259,6 +427,13 @@ public:
    * @return The HTTP response
    */
   const HTTPResponse &response() const;
+
+  /**
+   * @brief Clone the event
+   *
+   * @return A unique pointer to a copy of the event
+   */
+  std::unique_ptr<types::Event> clone() const override;
 
 private:
   HTTPResponse response_;

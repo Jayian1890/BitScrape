@@ -46,6 +46,6 @@ if(BUILD_GUI)
 endif()
 
 # Web application
-if (ENABLE_WEB_INTERFACE)
+if (ENABLE_WEB_INTERFACE AND BUILD_WEB_APP)
     add_subdirectory(web)
 endif ()

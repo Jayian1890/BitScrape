@@ -49,6 +49,14 @@ public:
      */
     void broadcast(const std::string& message);
 
+    /**
+     * @brief Send a message to a specific client
+     *
+     * @param socket The client socket
+     * @param message The message
+     */
+    void send_message(std::unique_ptr<network::TCPSocket>& socket, const std::string& message);
+
 private:
     void handle_client(std::unique_ptr<network::TCPSocket> socket);
     bool perform_handshake(const HTTPRequest& request, network::TCPSocket& socket);

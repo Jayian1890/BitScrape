@@ -1016,6 +1016,33 @@ build modules/dht/CMakeFiles/bitscrape-dht.dir/src/k_bucket.cpp.o: CXX_COMPILER_
   OBJECT_DIR = modules/dht/CMakeFiles/bitscrape-dht.dir
   OBJECT_FILE_DIR = modules/dht/CMakeFiles/bitscrape-dht.dir/src
 
+build modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_get_peers_message.cpp.o: CXX_COMPILER__bitscrape-dht_unscanned_Debug /Volumes/Media/projects/coding/bitscrape/modules/dht/src/dht_get_peers_message.cpp || cmake_object_order_depends_target_bitscrape-dht
+  CONFIG = Debug
+  DEFINES = -Dbitscrape_dht_EXPORTS
+  DEP_FILE = modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_get_peers_message.cpp.o.d
+  FLAGS = -g -std=c++2b -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk -fPIC -fcolor-diagnostics -Wno-unused-parameter -Wno-unused-variable -Wno-missing-field-initializers -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+  INCLUDES = -I/Volumes/Media/projects/coding/bitscrape -I/Volumes/Media/projects/coding/bitscrape/modules/types/include -I/Volumes/Media/projects/coding/bitscrape/modules/event/include -I/Volumes/Media/projects/coding/bitscrape/modules/beacon/include -I/Volumes/Media/projects/coding/bitscrape/modules/bencode/include -I/Volumes/Media/projects/coding/bitscrape/modules/network/include -I/Volumes/Media/projects/coding/bitscrape/modules/dht/include -I/Volumes/Media/projects/coding/bitscrape/modules/bittorrent/include -I/Volumes/Media/projects/coding/bitscrape/modules/tracker/include -I/Volumes/Media/projects/coding/bitscrape/modules/core/include -I/Volumes/Media/projects/coding/bitscrape/modules/storage/include -I/Volumes/Media/projects/coding/bitscrape/modules/web/include
+  OBJECT_DIR = modules/dht/CMakeFiles/bitscrape-dht.dir
+  OBJECT_FILE_DIR = modules/dht/CMakeFiles/bitscrape-dht.dir/src
+
+build modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_find_node_message.cpp.o: CXX_COMPILER__bitscrape-dht_unscanned_Debug /Volumes/Media/projects/coding/bitscrape/modules/dht/src/dht_find_node_message.cpp || cmake_object_order_depends_target_bitscrape-dht
+  CONFIG = Debug
+  DEFINES = -Dbitscrape_dht_EXPORTS
+  DEP_FILE = modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_find_node_message.cpp.o.d
+  FLAGS = -g -std=c++2b -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk -fPIC -fcolor-diagnostics -Wno-unused-parameter -Wno-unused-variable -Wno-missing-field-initializers -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+  INCLUDES = -I/Volumes/Media/projects/coding/bitscrape -I/Volumes/Media/projects/coding/bitscrape/modules/types/include -I/Volumes/Media/projects/coding/bitscrape/modules/event/include -I/Volumes/Media/projects/coding/bitscrape/modules/beacon/include -I/Volumes/Media/projects/coding/bitscrape/modules/bencode/include -I/Volumes/Media/projects/coding/bitscrape/modules/network/include -I/Volumes/Media/projects/coding/bitscrape/modules/dht/include -I/Volumes/Media/projects/coding/bitscrape/modules/bittorrent/include -I/Volumes/Media/projects/coding/bitscrape/modules/tracker/include -I/Volumes/Media/projects/coding/bitscrape/modules/core/include -I/Volumes/Media/projects/coding/bitscrape/modules/storage/include -I/Volumes/Media/projects/coding/bitscrape/modules/web/include
+  OBJECT_DIR = modules/dht/CMakeFiles/bitscrape-dht.dir
+  OBJECT_FILE_DIR = modules/dht/CMakeFiles/bitscrape-dht.dir/src
+
+build modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_announce_peer_message.cpp.o: CXX_COMPILER__bitscrape-dht_unscanned_Debug /Volumes/Media/projects/coding/bitscrape/modules/dht/src/dht_announce_peer_message.cpp || cmake_object_order_depends_target_bitscrape-dht
+  CONFIG = Debug
+  DEFINES = -Dbitscrape_dht_EXPORTS
+  DEP_FILE = modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_announce_peer_message.cpp.o.d
+  FLAGS = -g -std=c++2b -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk -fPIC -fcolor-diagnostics -Wno-unused-parameter -Wno-unused-variable -Wno-missing-field-initializers -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+  INCLUDES = -I/Volumes/Media/projects/coding/bitscrape -I/Volumes/Media/projects/coding/bitscrape/modules/types/include -I/Volumes/Media/projects/coding/bitscrape/modules/event/include -I/Volumes/Media/projects/coding/bitscrape/modules/beacon/include -I/Volumes/Media/projects/coding/bitscrape/modules/bencode/include -I/Volumes/Media/projects/coding/bitscrape/modules/network/include -I/Volumes/Media/projects/coding/bitscrape/modules/dht/include -I/Volumes/Media/projects/coding/bitscrape/modules/bittorrent/include -I/Volumes/Media/projects/coding/bitscrape/modules/tracker/include -I/Volumes/Media/projects/coding/bitscrape/modules/core/include -I/Volumes/Media/projects/coding/bitscrape/modules/storage/include -I/Volumes/Media/projects/coding/bitscrape/modules/web/include
+  OBJECT_DIR = modules/dht/CMakeFiles/bitscrape-dht.dir
+  OBJECT_FILE_DIR = modules/dht/CMakeFiles/bitscrape-dht.dir/src
+
 
 # =============================================================================
 # Link build statements for SHARED_LIBRARY target bitscrape-dht
@@ -1024,7 +1051,7 @@ build modules/dht/CMakeFiles/bitscrape-dht.dir/src/k_bucket.cpp.o: CXX_COMPILER_
 #############################################
 # Link the shared library lib/libbitscrape-dht.dylib
 
-build lib/libbitscrape-dht.dylib: CXX_SHARED_LIBRARY_LINKER__bitscrape-dht_Debug modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_session.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/routing_table.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/bootstrap.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/node_lookup.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_message.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_message_factory.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/token_manager.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/k_bucket.cpp.o | lib/libbitscrape-network.dylib lib/libbitscrape-bencode.dylib lib/libbitscrape-event.dylib lib/libbitscrape-types.dylib || lib/libbitscrape-bencode.dylib lib/libbitscrape-event.dylib lib/libbitscrape-network.dylib lib/libbitscrape-types.dylib
+build lib/libbitscrape-dht.dylib: CXX_SHARED_LIBRARY_LINKER__bitscrape-dht_Debug modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_session.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/routing_table.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/bootstrap.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/node_lookup.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_message.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_message_factory.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/token_manager.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/k_bucket.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_get_peers_message.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_find_node_message.cpp.o modules/dht/CMakeFiles/bitscrape-dht.dir/src/dht_announce_peer_message.cpp.o | lib/libbitscrape-network.dylib lib/libbitscrape-bencode.dylib lib/libbitscrape-event.dylib lib/libbitscrape-types.dylib || lib/libbitscrape-bencode.dylib lib/libbitscrape-event.dylib lib/libbitscrape-network.dylib lib/libbitscrape-types.dylib
   ARCH_FLAGS = -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk
   CONFIG = Debug
   INSTALLNAME_DIR = @rpath/
@@ -2089,112 +2116,6 @@ build apps/gui/CMakeFiles/install/strip.util: CUSTOM_COMMAND apps/gui/all
 build apps/gui/install/strip: phony apps/gui/CMakeFiles/install/strip.util
 
 # =============================================================================
-# Write statements declared in CMakeLists.txt:
-# /Volumes/Media/projects/coding/bitscrape/apps/CMakeLists.txt
-# =============================================================================
-
-# =============================================================================
-# Object build statements for EXECUTABLE target bitscrape_web
-
-
-#############################################
-# Order-only phony target for bitscrape_web
-
-build cmake_object_order_depends_target_bitscrape_web: phony || cmake_object_order_depends_target_bitscrape-beacon cmake_object_order_depends_target_bitscrape-core cmake_object_order_depends_target_bitscrape-event cmake_object_order_depends_target_bitscrape-network cmake_object_order_depends_target_bitscrape-storage cmake_object_order_depends_target_bitscrape-types cmake_object_order_depends_target_bitscrape-web
-
-build apps/web/CMakeFiles/bitscrape_web.dir/src/main.cpp.o: CXX_COMPILER__bitscrape_web_unscanned_Debug /Volumes/Media/projects/coding/bitscrape/apps/web/src/main.cpp || cmake_object_order_depends_target_bitscrape_web
-  CONFIG = Debug
-  DEP_FILE = apps/web/CMakeFiles/bitscrape_web.dir/src/main.cpp.o.d
-  FLAGS = -g -std=c++2b -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk -fcolor-diagnostics -Wno-unused-parameter -Wno-unused-variable -Wno-missing-field-initializers -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
-  INCLUDES = -I/Volumes/Media/projects/coding/bitscrape -I/Volumes/Media/projects/coding/bitscrape/modules/types/include -I/Volumes/Media/projects/coding/bitscrape/modules/event/include -I/Volumes/Media/projects/coding/bitscrape/modules/beacon/include -I/Volumes/Media/projects/coding/bitscrape/modules/bencode/include -I/Volumes/Media/projects/coding/bitscrape/modules/network/include -I/Volumes/Media/projects/coding/bitscrape/modules/dht/include -I/Volumes/Media/projects/coding/bitscrape/modules/bittorrent/include -I/Volumes/Media/projects/coding/bitscrape/modules/tracker/include -I/Volumes/Media/projects/coding/bitscrape/modules/core/include -I/Volumes/Media/projects/coding/bitscrape/modules/storage/include -I/Volumes/Media/projects/coding/bitscrape/modules/web/include
-  OBJECT_DIR = apps/web/CMakeFiles/bitscrape_web.dir
-  OBJECT_FILE_DIR = apps/web/CMakeFiles/bitscrape_web.dir/src
-
-
-# =============================================================================
-# Link build statements for EXECUTABLE target bitscrape_web
-
-
-#############################################
-# Link the executable bin/bitscrape_web
-
-build bin/bitscrape_web: CXX_EXECUTABLE_LINKER__bitscrape_web_Debug apps/web/CMakeFiles/bitscrape_web.dir/src/main.cpp.o | lib/libbitscrape-web.dylib lib/libbitscrape-core.dylib lib/libbitscrape-storage.dylib lib/libbitscrape-beacon.dylib lib/libbitscrape-event.dylib lib/libbitscrape-network.dylib lib/libbitscrape-types.dylib || lib/libbitscrape-beacon.dylib lib/libbitscrape-core.dylib lib/libbitscrape-event.dylib lib/libbitscrape-network.dylib lib/libbitscrape-storage.dylib lib/libbitscrape-types.dylib lib/libbitscrape-web.dylib
-  CONFIG = Debug
-  FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk
-  LINK_LIBRARIES = -Wl,-rpath,/Volumes/Media/projects/coding/bitscrape/lib  lib/libbitscrape-web.dylib  lib/libbitscrape-core.dylib  lib/libbitscrape-storage.dylib  lib/libbitscrape-beacon.dylib  lib/libbitscrape-event.dylib  lib/libbitscrape-network.dylib  lib/libbitscrape-types.dylib
-  OBJECT_DIR = apps/web/CMakeFiles/bitscrape_web.dir
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = bin/bitscrape_web
-  TARGET_PDB = bitscrape_web.dbg
-
-
-#############################################
-# Utility command for edit_cache
-
-build apps/web/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Volumes/Media/projects/coding/bitscrape/apps/web && /opt/homebrew/bin/ccmake -S/Volumes/Media/projects/coding/bitscrape -B/Volumes/Media/projects/coding/bitscrape
-  DESC = Running CMake cache editor...
-  pool = console
-  restat = 1
-
-build apps/web/edit_cache: phony apps/web/CMakeFiles/edit_cache.util
-
-
-#############################################
-# Utility command for rebuild_cache
-
-build apps/web/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Volumes/Media/projects/coding/bitscrape/apps/web && /opt/homebrew/bin/cmake --regenerate-during-build -S/Volumes/Media/projects/coding/bitscrape -B/Volumes/Media/projects/coding/bitscrape
-  DESC = Running CMake to regenerate build system...
-  pool = console
-  restat = 1
-
-build apps/web/rebuild_cache: phony apps/web/CMakeFiles/rebuild_cache.util
-
-
-#############################################
-# Utility command for list_install_components
-
-build apps/web/list_install_components: phony
-
-
-#############################################
-# Utility command for install
-
-build apps/web/CMakeFiles/install.util: CUSTOM_COMMAND apps/web/all
-  COMMAND = cd /Volumes/Media/projects/coding/bitscrape/apps/web && /opt/homebrew/bin/cmake -P cmake_install.cmake
-  DESC = Install the project...
-  pool = console
-  restat = 1
-
-build apps/web/install: phony apps/web/CMakeFiles/install.util
-
-
-#############################################
-# Utility command for install/local
-
-build apps/web/CMakeFiles/install/local.util: CUSTOM_COMMAND apps/web/all
-  COMMAND = cd /Volumes/Media/projects/coding/bitscrape/apps/web && /opt/homebrew/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-  DESC = Installing only the local directory...
-  pool = console
-  restat = 1
-
-build apps/web/install/local: phony apps/web/CMakeFiles/install/local.util
-
-
-#############################################
-# Utility command for install/strip
-
-build apps/web/CMakeFiles/install/strip.util: CUSTOM_COMMAND apps/web/all
-  COMMAND = cd /Volumes/Media/projects/coding/bitscrape/apps/web && /opt/homebrew/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
-  DESC = Installing the project stripped...
-  pool = console
-  restat = 1
-
-build apps/web/install/strip: phony apps/web/CMakeFiles/install/strip.util
-
-# =============================================================================
 # Target aliases.
 
 build bitscrape-beacon: phony lib/libbitscrape-beacon.dylib
@@ -2222,8 +2143,6 @@ build bitscrape-web: phony lib/libbitscrape-web.dylib
 build bitscrape_cli: phony bin/bitscrape_cli
 
 build bitscrape_gui: phony bin/bitscrape_gui
-
-build bitscrape_web: phony bin/bitscrape_web
 
 build libbitscrape-beacon.dylib: phony lib/libbitscrape-beacon.dylib
 
@@ -2262,7 +2181,7 @@ build all: phony modules/types/all modules/event/all modules/beacon/all modules/
 #############################################
 # Folder: /Volumes/Media/projects/coding/bitscrape/apps
 
-build apps/all: phony bin/bitscrape_cli apps/gui/all apps/web/all
+build apps/all: phony bin/bitscrape_cli apps/gui/all
 
 # =============================================================================
 
@@ -2270,13 +2189,6 @@ build apps/all: phony bin/bitscrape_cli apps/gui/all apps/web/all
 # Folder: /Volumes/Media/projects/coding/bitscrape/apps/gui
 
 build apps/gui/all: phony bin/bitscrape_gui
-
-# =============================================================================
-
-#############################################
-# Folder: /Volumes/Media/projects/coding/bitscrape/apps/web
-
-build apps/web/all: phony bin/bitscrape_web
 
 # =============================================================================
 
@@ -2362,14 +2274,14 @@ build modules/web/all: phony lib/libbitscrape-web.dylib
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja /Volumes/Media/projects/coding/bitscrape/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/types/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/event/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/beacon/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/bencode/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/network/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/dht/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/bittorrent/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/tracker/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/core/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/storage/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/web/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/apps/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/apps/gui/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/apps/web/cmake_install.cmake: RERUN_CMAKE | /opt/homebrew/share/cmake/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /opt/homebrew/share/cmake/Modules/CMakeCXXInformation.cmake /opt/homebrew/share/cmake/Modules/CMakeCommonLanguageInclude.cmake /opt/homebrew/share/cmake/Modules/CMakeGenericSystem.cmake /opt/homebrew/share/cmake/Modules/CMakeInitializeConfigs.cmake /opt/homebrew/share/cmake/Modules/CMakeLanguageInformation.cmake /opt/homebrew/share/cmake/Modules/CMakePackageConfigHelpers.cmake /opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInformation.cmake /opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake /opt/homebrew/share/cmake/Modules/CheckCXXSourceCompiles.cmake /opt/homebrew/share/cmake/Modules/CheckIncludeFileCXX.cmake /opt/homebrew/share/cmake/Modules/CheckLibraryExists.cmake /opt/homebrew/share/cmake/Modules/Compiler/AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake /opt/homebrew/share/cmake/Modules/Compiler/Clang.cmake /opt/homebrew/share/cmake/Modules/Compiler/GNU.cmake /opt/homebrew/share/cmake/Modules/ExternalProject/shared_internal_commands.cmake /opt/homebrew/share/cmake/Modules/FetchContent.cmake /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake /opt/homebrew/share/cmake/Modules/FindPackageMessage.cmake /opt/homebrew/share/cmake/Modules/FindThreads.cmake /opt/homebrew/share/cmake/Modules/Internal/CMakeCXXLinkerInformation.cmake /opt/homebrew/share/cmake/Modules/Internal/CMakeCommonLinkerInformation.cmake /opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake /opt/homebrew/share/cmake/Modules/Linker/AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Linker/AppleClang.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-Clang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-Clang.cmake /opt/homebrew/share/cmake/Modules/Platform/Darwin-Initialize.cmake /opt/homebrew/share/cmake/Modules/Platform/Darwin.cmake /opt/homebrew/share/cmake/Modules/Platform/Linker/Apple-AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Linker/Apple-AppleClang.cmake /opt/homebrew/share/cmake/Modules/Platform/UnixPaths.cmake /opt/homebrew/share/cmake/Modules/WriteBasicConfigVersionFile.cmake CMakeCache.txt CMakeFiles/4.0.1/CMakeCXXCompiler.cmake CMakeFiles/4.0.1/CMakeSystem.cmake CMakeLists.txt apps/CMakeLists.txt apps/gui/CMakeLists.txt apps/web/CMakeLists.txt cmake/bitscrape-config.cmake.in modules/beacon/CMakeLists.txt modules/bencode/CMakeLists.txt modules/bittorrent/CMakeLists.txt modules/core/CMakeLists.txt modules/dht/CMakeLists.txt modules/event/CMakeLists.txt modules/network/CMakeLists.txt modules/storage/CMakeLists.txt modules/tracker/CMakeLists.txt modules/types/CMakeLists.txt modules/web/CMakeLists.txt
+build build.ninja /Volumes/Media/projects/coding/bitscrape/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/types/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/event/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/beacon/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/bencode/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/network/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/dht/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/bittorrent/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/tracker/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/core/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/storage/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/modules/web/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/apps/cmake_install.cmake /Volumes/Media/projects/coding/bitscrape/apps/gui/cmake_install.cmake: RERUN_CMAKE | /opt/homebrew/share/cmake/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /opt/homebrew/share/cmake/Modules/CMakeCXXInformation.cmake /opt/homebrew/share/cmake/Modules/CMakeCommonLanguageInclude.cmake /opt/homebrew/share/cmake/Modules/CMakeGenericSystem.cmake /opt/homebrew/share/cmake/Modules/CMakeInitializeConfigs.cmake /opt/homebrew/share/cmake/Modules/CMakeLanguageInformation.cmake /opt/homebrew/share/cmake/Modules/CMakePackageConfigHelpers.cmake /opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInformation.cmake /opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake /opt/homebrew/share/cmake/Modules/CheckCXXSourceCompiles.cmake /opt/homebrew/share/cmake/Modules/CheckIncludeFileCXX.cmake /opt/homebrew/share/cmake/Modules/CheckLibraryExists.cmake /opt/homebrew/share/cmake/Modules/Compiler/AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake /opt/homebrew/share/cmake/Modules/Compiler/Clang.cmake /opt/homebrew/share/cmake/Modules/Compiler/GNU.cmake /opt/homebrew/share/cmake/Modules/ExternalProject/shared_internal_commands.cmake /opt/homebrew/share/cmake/Modules/FetchContent.cmake /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake /opt/homebrew/share/cmake/Modules/FindPackageMessage.cmake /opt/homebrew/share/cmake/Modules/FindThreads.cmake /opt/homebrew/share/cmake/Modules/Internal/CMakeCXXLinkerInformation.cmake /opt/homebrew/share/cmake/Modules/Internal/CMakeCommonLinkerInformation.cmake /opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake /opt/homebrew/share/cmake/Modules/Linker/AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Linker/AppleClang.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-Clang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-Clang.cmake /opt/homebrew/share/cmake/Modules/Platform/Darwin-Initialize.cmake /opt/homebrew/share/cmake/Modules/Platform/Darwin.cmake /opt/homebrew/share/cmake/Modules/Platform/Linker/Apple-AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Linker/Apple-AppleClang.cmake /opt/homebrew/share/cmake/Modules/Platform/UnixPaths.cmake /opt/homebrew/share/cmake/Modules/WriteBasicConfigVersionFile.cmake CMakeCache.txt CMakeFiles/4.0.1/CMakeCXXCompiler.cmake CMakeFiles/4.0.1/CMakeSystem.cmake CMakeLists.txt apps/CMakeLists.txt apps/gui/CMakeLists.txt cmake/bitscrape-config.cmake.in modules/beacon/CMakeLists.txt modules/bencode/CMakeLists.txt modules/bittorrent/CMakeLists.txt modules/core/CMakeLists.txt modules/dht/CMakeLists.txt modules/event/CMakeLists.txt modules/network/CMakeLists.txt modules/storage/CMakeLists.txt modules/tracker/CMakeLists.txt modules/types/CMakeLists.txt modules/web/CMakeLists.txt
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /opt/homebrew/share/cmake/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /opt/homebrew/share/cmake/Modules/CMakeCXXInformation.cmake /opt/homebrew/share/cmake/Modules/CMakeCommonLanguageInclude.cmake /opt/homebrew/share/cmake/Modules/CMakeGenericSystem.cmake /opt/homebrew/share/cmake/Modules/CMakeInitializeConfigs.cmake /opt/homebrew/share/cmake/Modules/CMakeLanguageInformation.cmake /opt/homebrew/share/cmake/Modules/CMakePackageConfigHelpers.cmake /opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInformation.cmake /opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake /opt/homebrew/share/cmake/Modules/CheckCXXSourceCompiles.cmake /opt/homebrew/share/cmake/Modules/CheckIncludeFileCXX.cmake /opt/homebrew/share/cmake/Modules/CheckLibraryExists.cmake /opt/homebrew/share/cmake/Modules/Compiler/AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake /opt/homebrew/share/cmake/Modules/Compiler/Clang.cmake /opt/homebrew/share/cmake/Modules/Compiler/GNU.cmake /opt/homebrew/share/cmake/Modules/ExternalProject/shared_internal_commands.cmake /opt/homebrew/share/cmake/Modules/FetchContent.cmake /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake /opt/homebrew/share/cmake/Modules/FindPackageMessage.cmake /opt/homebrew/share/cmake/Modules/FindThreads.cmake /opt/homebrew/share/cmake/Modules/Internal/CMakeCXXLinkerInformation.cmake /opt/homebrew/share/cmake/Modules/Internal/CMakeCommonLinkerInformation.cmake /opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake /opt/homebrew/share/cmake/Modules/Linker/AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Linker/AppleClang.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-Clang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-Clang.cmake /opt/homebrew/share/cmake/Modules/Platform/Darwin-Initialize.cmake /opt/homebrew/share/cmake/Modules/Platform/Darwin.cmake /opt/homebrew/share/cmake/Modules/Platform/Linker/Apple-AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Linker/Apple-AppleClang.cmake /opt/homebrew/share/cmake/Modules/Platform/UnixPaths.cmake /opt/homebrew/share/cmake/Modules/WriteBasicConfigVersionFile.cmake CMakeCache.txt CMakeFiles/4.0.1/CMakeCXXCompiler.cmake CMakeFiles/4.0.1/CMakeSystem.cmake CMakeLists.txt apps/CMakeLists.txt apps/gui/CMakeLists.txt apps/web/CMakeLists.txt cmake/bitscrape-config.cmake.in modules/beacon/CMakeLists.txt modules/bencode/CMakeLists.txt modules/bittorrent/CMakeLists.txt modules/core/CMakeLists.txt modules/dht/CMakeLists.txt modules/event/CMakeLists.txt modules/network/CMakeLists.txt modules/storage/CMakeLists.txt modules/tracker/CMakeLists.txt modules/types/CMakeLists.txt modules/web/CMakeLists.txt: phony
+build /opt/homebrew/share/cmake/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /opt/homebrew/share/cmake/Modules/CMakeCXXInformation.cmake /opt/homebrew/share/cmake/Modules/CMakeCommonLanguageInclude.cmake /opt/homebrew/share/cmake/Modules/CMakeGenericSystem.cmake /opt/homebrew/share/cmake/Modules/CMakeInitializeConfigs.cmake /opt/homebrew/share/cmake/Modules/CMakeLanguageInformation.cmake /opt/homebrew/share/cmake/Modules/CMakePackageConfigHelpers.cmake /opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInformation.cmake /opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake /opt/homebrew/share/cmake/Modules/CheckCXXSourceCompiles.cmake /opt/homebrew/share/cmake/Modules/CheckIncludeFileCXX.cmake /opt/homebrew/share/cmake/Modules/CheckLibraryExists.cmake /opt/homebrew/share/cmake/Modules/Compiler/AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake /opt/homebrew/share/cmake/Modules/Compiler/Clang.cmake /opt/homebrew/share/cmake/Modules/Compiler/GNU.cmake /opt/homebrew/share/cmake/Modules/ExternalProject/shared_internal_commands.cmake /opt/homebrew/share/cmake/Modules/FetchContent.cmake /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake /opt/homebrew/share/cmake/Modules/FindPackageMessage.cmake /opt/homebrew/share/cmake/Modules/FindThreads.cmake /opt/homebrew/share/cmake/Modules/Internal/CMakeCXXLinkerInformation.cmake /opt/homebrew/share/cmake/Modules/Internal/CMakeCommonLinkerInformation.cmake /opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake /opt/homebrew/share/cmake/Modules/Linker/AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Linker/AppleClang.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-Clang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Apple-Clang.cmake /opt/homebrew/share/cmake/Modules/Platform/Darwin-Initialize.cmake /opt/homebrew/share/cmake/Modules/Platform/Darwin.cmake /opt/homebrew/share/cmake/Modules/Platform/Linker/Apple-AppleClang-CXX.cmake /opt/homebrew/share/cmake/Modules/Platform/Linker/Apple-AppleClang.cmake /opt/homebrew/share/cmake/Modules/Platform/UnixPaths.cmake /opt/homebrew/share/cmake/Modules/WriteBasicConfigVersionFile.cmake CMakeCache.txt CMakeFiles/4.0.1/CMakeCXXCompiler.cmake CMakeFiles/4.0.1/CMakeSystem.cmake CMakeLists.txt apps/CMakeLists.txt apps/gui/CMakeLists.txt cmake/bitscrape-config.cmake.in modules/beacon/CMakeLists.txt modules/bencode/CMakeLists.txt modules/bittorrent/CMakeLists.txt modules/core/CMakeLists.txt modules/dht/CMakeLists.txt modules/event/CMakeLists.txt modules/network/CMakeLists.txt modules/storage/CMakeLists.txt modules/tracker/CMakeLists.txt modules/types/CMakeLists.txt modules/web/CMakeLists.txt: phony
 
 
 #############################################

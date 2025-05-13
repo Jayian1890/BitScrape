@@ -32,6 +32,7 @@ option(BUILD_GUI "Build GUI application" ON)
 option(BUILD_CLI "Build CLI application" ON)
 option(BUILD_DOCS "Build documentation" OFF)
 option(ENABLE_WEB_INTERFACE "Enable web interface" ON)
+option(BUILD_WEB_APP "Build standalone web application" OFF)
 option(ENABLE_NAT_TRAVERSAL "Enable NAT traversal" ON)
 
 # Enable AddressSanitizer if requested

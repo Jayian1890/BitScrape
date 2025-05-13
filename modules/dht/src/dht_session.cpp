@@ -83,8 +83,8 @@ bool DHTSession::start(const std::vector<types::Endpoint>& bootstrap_nodes) {
     start_receive_loop();
 
     // Bootstrap the DHT
-    Bootstrap bootstrap(node_id_, *routing_table_, *socket_, *message_factory_);
-    return bootstrap.start(bootstrap_nodes);
+    bootstrap_ = std::make_unique<Bootstrap>(node_id_, *routing_table_, *socket_, *message_factory_);
+    return bootstrap_->start(bootstrap_nodes);
 }
 
 std::future<bool> DHTSession::start_async(const std::vector<types::Endpoint>& bootstrap_nodes) {
@@ -141,7 +141,23 @@ std::vector<types::Endpoint> DHTSession::find_peers(const types::InfoHash& infoh
     // Find nodes close to the infohash
     auto nodes = find_nodes(target_id);
 
-    // TODO: Send get_peers messages to the found nodes
+    // Send get_peers messages to the found nodes
+    std::vector<types::Endpoint> found_peers;
+    for (const auto& node : nodes) {
+        // Create a get_peers message
+        auto transaction_id = DHTMessageFactory::generate_transaction_id();
+        auto message = message_factory_->create_get_peers(transaction_id, node_id_, infohash);
+
+        // Encode the message
+        auto data = message->encode();
+
+        // Send the message
+        network::Address address(node.endpoint().address(), node.endpoint().port());
+        socket_->send_to(data.data(), data.size(), address);
+
+        // Note: In a real implementation, we would wait for responses and collect peers
+        // For now, we just send the messages and return any existing peers
+    }
 
     // Return the peers
     std::lock_guard<std::mutex> lock(peers_mutex_);
@@ -161,9 +177,29 @@ bool DHTSession::announce_peer(const types::InfoHash& infohash, uint16_t port) {
     // Find nodes close to the infohash
     auto nodes = find_nodes(target_id);
 
-    // TODO: Send announce_peer messages to the found nodes
+    // Send announce_peer messages to the found nodes
+    bool success = false;
+    for (const auto& node : nodes) {
+        // Check if we have a token for this node
+        // In a real implementation, we would track tokens received from get_peers responses
+        // For now, just use a random token
+        types::DHTToken token = types::DHTToken::random();
 
-    return true;
+        // Create an announce_peer message
+        auto transaction_id = DHTMessageFactory::generate_transaction_id();
+        auto message = message_factory_->create_announce_peer(transaction_id, node_id_, infohash, port, token);
+
+        // Encode the message
+        auto data = message->encode();
+
+        // Send the message
+        network::Address address(node.endpoint().address(), node.endpoint().port());
+        if (socket_->send_to(data.data(), data.size(), address)) {
+            success = true;
+        }
+    }
+
+    return success;
 }
 
 std::future<bool> DHTSession::announce_peer_async(const types::InfoHash& infohash, uint16_t port) {
@@ -191,12 +227,27 @@ void DHTSession::process_message(const std::vector<uint8_t>& data, const types::
         return;
     }
 
+    // If we're bootstrapping, pass the message to the bootstrap object
+    if (bootstrap_ && !bootstrap_->is_complete()) {
+        bootstrap_->process_message(message, sender_endpoint);
+    }
+
     // Add the sender to the routing table if it's a valid node
     if (message->type() == DHTMessage::Type::PING ||
         message->type() == DHTMessage::Type::FIND_NODE ||
         message->type() == DHTMessage::Type::GET_PEERS ||
         message->type() == DHTMessage::Type::ANNOUNCE_PEER) {
-        // TODO: Extract the node ID from the message and add it to the routing table
+        // For now, we'll just use the DHTPingMessage as an example
+        // In a real implementation, we'd need to handle all message types
+        auto ping_message = std::dynamic_pointer_cast<DHTPingMessage>(message);
+        if (ping_message) {
+            // Get the node ID from the message
+            types::NodeID node_id = ping_message->node_id();
+
+            // Create a node and add it to the routing table
+            types::DHTNode node(node_id, sender_endpoint);
+            routing_table_->add_node(node);
+        }
     }
 
     // Check if this is a response to an active lookup
@@ -275,15 +326,126 @@ void DHTSession::handle_ping(const std::shared_ptr<DHTMessage>& message, const t
 }
 
 void DHTSession::handle_find_node(const std::shared_ptr<DHTMessage>& message, const types::Endpoint& sender_endpoint) {
-    // TODO: Implement find_node handling
+    // Cast to DHTFindNodeMessage
+    auto find_node_message = std::dynamic_pointer_cast<DHTFindNodeMessage>(message);
+    if (!find_node_message) {
+        return;
+    }
+
+    // Extract the node ID from the message and add it to the routing table
+    types::DHTNode node(find_node_message->node_id(), sender_endpoint);
+    routing_table_->add_node(node);
+
+    // Get the target ID
+    types::NodeID target_id = find_node_message->target_id();
+
+    // Find nodes close to the target ID
+    auto nodes = routing_table_->get_closest_nodes(target_id, 8);
+
+    // Create a find_node response
+    auto response = message_factory_->create_find_node_response(
+        find_node_message->transaction_id(),
+        node_id_,
+        nodes
+    );
+
+    // Encode the response
+    auto data = response->encode();
+
+    // Send the response
+    network::Address address(sender_endpoint.address(), sender_endpoint.port());
+    socket_->send_to(data.data(), data.size(), address);
 }
 
 void DHTSession::handle_get_peers(const std::shared_ptr<DHTMessage>& message, const types::Endpoint& sender_endpoint) {
-    // TODO: Implement get_peers handling
+    // Cast to DHTGetPeersMessage
+    auto get_peers_message = std::dynamic_pointer_cast<DHTGetPeersMessage>(message);
+    if (!get_peers_message) {
+        return;
+    }
+
+    // Get the infohash
+    const auto& info_hash = get_peers_message->info_hash();
+
+    // Check if we have peers for this infohash
+    std::vector<types::Endpoint> peers;
+    {
+        std::lock_guard<std::mutex> lock(peers_mutex_);
+        auto it = peers_.find(info_hash);
+        if (it != peers_.end()) {
+            peers = it->second;
+        }
+    }
+
+    // Create a token for this sender
+    // In a real implementation, we would generate a token based on the sender's IP and a secret
+    // For now, just use a random token
+    types::DHTToken token = types::DHTToken::random();
+
+    // Find nodes close to the infohash
+    types::NodeID target_id(std::vector<uint8_t>(info_hash.bytes().begin(), info_hash.bytes().end()));
+    auto nodes = routing_table_->get_closest_nodes(target_id, 8);
+
+    // Create a get_peers response
+    auto response = message_factory_->create_get_peers_response(
+        get_peers_message->transaction_id(),
+        node_id_,
+        token,
+        nodes,
+        peers
+    );
+
+    // Encode the response
+    auto data = response->encode();
+
+    // Send the response
+    network::Address address(sender_endpoint.address(), sender_endpoint.port());
+    socket_->send_to(data.data(), data.size(), address);
 }
 
 void DHTSession::handle_announce_peer(const std::shared_ptr<DHTMessage>& message, const types::Endpoint& sender_endpoint) {
-    // TODO: Implement announce_peer handling
+    // Cast to DHTAnnouncePeerMessage
+    auto announce_peer_message = std::dynamic_pointer_cast<DHTAnnouncePeerMessage>(message);
+    if (!announce_peer_message) {
+        return;
+    }
+
+    // Extract the node ID from the message and add it to the routing table
+    types::DHTNode node(announce_peer_message->node_id(), sender_endpoint);
+    routing_table_->add_node(node);
+
+    // Verify the token
+    // In a real implementation, we would verify the token against the sender's IP
+    // For now, just accept any token
+
+    // Get the infohash and port
+    types::InfoHash info_hash = announce_peer_message->info_hash();
+    uint16_t port = announce_peer_message->port();
+
+    // If implied_port is set, use the sender's port instead
+    if (announce_peer_message->implied_port()) {
+        port = sender_endpoint.port();
+    }
+
+    // Add the peer to our list
+    types::Endpoint peer_endpoint(sender_endpoint.address(), port);
+    {
+        std::lock_guard<std::mutex> lock(peers_mutex_);
+        peers_[info_hash].push_back(peer_endpoint);
+    }
+
+    // Create an announce_peer response
+    auto response = message_factory_->create_announce_peer_response(
+        announce_peer_message->transaction_id(),
+        node_id_
+    );
+
+    // Encode the response
+    auto data = response->encode();
+
+    // Send the response
+    network::Address address(sender_endpoint.address(), sender_endpoint.port());
+    socket_->send_to(data.data(), data.size(), address);
 }
 
 } // namespace bitscrape::dht

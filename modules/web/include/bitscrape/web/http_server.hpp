@@ -41,7 +41,7 @@ struct HTTPResponse {
 
 /**
  * @brief HTTP server class
- * 
+ *
  * This class provides an HTTP server implementation using the TCP listener.
  * It supports routing requests to different handlers based on the path.
  */
@@ -49,7 +49,7 @@ class HTTPServer {
 public:
     /**
      * @brief Construct a new HTTPServer object
-     * 
+     *
      * @param port The port to listen on
      * @param web_controller The web controller to use
      */
@@ -62,35 +62,35 @@ public:
 
     /**
      * @brief Start the server
-     * 
+     *
      * @return true if successful, false otherwise
      */
     bool start();
 
     /**
      * @brief Stop the server
-     * 
+     *
      * @return true if successful, false otherwise
      */
     bool stop();
 
     /**
      * @brief Check if the server is running
-     * 
+     *
      * @return true if running, false otherwise
      */
     bool is_running() const;
 
     /**
      * @brief Get the port the server is listening on
-     * 
+     *
      * @return The port
      */
     uint16_t port() const;
 
     /**
      * @brief Get the router
-     * 
+     *
      * @return The router
      */
     HTTPRouter& router();
@@ -100,6 +100,7 @@ private:
     void handle_connection(std::unique_ptr<network::TCPSocket> socket, const network::Address& address);
     HTTPRequest parse_request(const network::Buffer& buffer);
     network::Buffer generate_response(const HTTPResponse& response);
+    std::string url_decode(const std::string& encoded);
     std::map<std::string, std::string> parse_query_params(const std::string& query_string);
 
     uint16_t port_;

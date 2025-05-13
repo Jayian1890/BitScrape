@@ -85,3 +85,4 @@ bitscrape.log
 /data/bitscrape.db
 bin/
 public
+/default.profraw

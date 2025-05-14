@@ -15,15 +15,18 @@ namespace bitscrape::core {
 class Configuration::Impl {
 public:
     Impl(const std::string& config_path)
-        : config_path_(config_path.empty() ? "bitscrape.json" : config_path) {
+        : config_path_(config_path.empty() ? "bitscrape.json" : config_path)
+    {
     }
 
-    bool load() {
+    bool load()
+    {
         std::unique_lock lock(mutex_);
 
         try {
             // Check if file exists
-            if (!std::filesystem::exists(config_path_)) {
+            if (!std::filesystem::exists(config_path_))
+            {
                 lock.unlock();
                 // Create default configuration
                 create_default_configuration();
@@ -46,36 +49,42 @@ public:
             config_.clear();
 
             // Parse JSON
-            if (content.empty()) {
+            if (content.empty())
+            {
                 std::cerr << "Empty configuration file" << std::endl;
                 return false;
             }
 
             // Find the opening brace
             size_t pos = content.find('{');
-            if (pos == std::string::npos) {
+            if (pos == std::string::npos)
+            {
                 std::cerr << "Invalid JSON format: missing opening brace" << std::endl;
                 return false;
             }
 
             // Parse JSON object
             pos++; // Move past the opening brace
-            while (pos < content.size()) {
+            while (pos < content.size())
+            {
                 // Skip whitespace
                 pos = content.find_first_not_of(" \t\n\r", pos);
-                if (pos == std::string::npos || content[pos] == '}') {
+                if (pos == std::string::npos || content[pos] == '}')
+                {
                     break; // End of object
                 }
 
                 // Find key (must be in quotes)
-                if (content[pos] != '"') {
+                if (content[pos] != '"')
+                {
                     std::cerr << "Invalid JSON format: expected key" << std::endl;
                     return false;
                 }
 
                 size_t key_start = pos + 1;
                 size_t key_end = content.find('"', key_start);
-                if (key_end == std::string::npos) {
+                if (key_end == std::string::npos)
+                {
                     std::cerr << "Invalid JSON format: unterminated key string" << std::endl;
                     return false;
                 }
@@ -85,7 +94,8 @@ public:
 
                 // Find colon
                 pos = content.find(':', pos);
-                if (pos == std::string::npos) {
+                if (pos == std::string::npos)
+                {
                     std::cerr << "Invalid JSON format: missing colon after key" << std::endl;
                     return false;
                 }
@@ -93,31 +103,40 @@ public:
 
                 // Skip whitespace
                 pos = content.find_first_not_of(" \t\n\r", pos);
-                if (pos == std::string::npos) {
+                if (pos == std::string::npos)
+                {
                     std::cerr << "Invalid JSON format: unexpected end of file" << std::endl;
                     return false;
                 }
 
                 // Parse value based on its type
-                if (content[pos] == '"') {
+                if (content[pos] == '"')
+                {
                     // String value
                     size_t value_start = pos + 1;
                     size_t value_end = pos + 1;
 
                     // Find the closing quote, handling escaped quotes
                     bool escaped = false;
-                    while (value_end < content.size()) {
-                        if (content[value_end] == '\\') {
+                    while (value_end < content.size())
+                    {
+                        if (content[value_end] == '\\')
+                        {
                             escaped = !escaped;
-                        } else if (content[value_end] == '"' && !escaped) {
+                        }
+                        else if (content[value_end] == '"' && !escaped)
+                        {
                             break;
-                        } else {
+                        }
+                        else
+                        {
                             escaped = false;
                         }
                         value_end++;
                     }
 
-                    if (value_end >= content.size()) {
+                    if (value_end >= content.size())
+                    {
                         std::cerr << "Invalid JSON format: unterminated string value" << std::endl;
                         return false;
                     }
@@ -125,23 +144,30 @@ public:
                     std::string value = content.substr(value_start, value_end - value_start);
                     config_[key] = value;
                     pos = value_end + 1;
-                } else if (content[pos] == '[') {
+                }
+                else if (content[pos] == '[')
+                {
                     // Array value
                     size_t array_start = pos + 1;
                     size_t array_end = pos + 1;
                     int bracket_depth = 1;
 
                     // Find the closing bracket, handling nested arrays
-                    while (array_end < content.size() && bracket_depth > 0) {
-                        if (content[array_end] == '[') {
+                    while (array_end < content.size() && bracket_depth > 0)
+                    {
+                        if (content[array_end] == '[')
+                        {
                             bracket_depth++;
-                        } else if (content[array_end] == ']') {
+                        }
+                        else if (content[array_end] == ']')
+                        {
                             bracket_depth--;
                         }
                         array_end++;
                     }
 
-                    if (bracket_depth != 0) {
+                    if (bracket_depth != 0)
+                    {
                         std::cerr << "Invalid JSON format: unterminated array" << std::endl;
                         return false;
                     }
@@ -153,32 +179,42 @@ public:
                     std::vector<std::string> elements;
                     size_t elem_pos = 0;
 
-                    while (elem_pos < array_content.size()) {
+                    while (elem_pos < array_content.size())
+                    {
                         // Skip whitespace
                         elem_pos = array_content.find_first_not_of(" \t\n\r,", elem_pos);
-                        if (elem_pos == std::string::npos) {
+                        if (elem_pos == std::string::npos)
+                        {
                             break;
                         }
 
-                        if (array_content[elem_pos] == '"') {
+                        if (array_content[elem_pos] == '"')
+                        {
                             // String element
                             size_t elem_start = elem_pos + 1;
                             size_t elem_end = elem_start;
 
                             // Find the closing quote, handling escaped quotes
                             bool escaped = false;
-                            while (elem_end < array_content.size()) {
-                                if (array_content[elem_end] == '\\') {
+                            while (elem_end < array_content.size())
+                            {
+                                if (array_content[elem_end] == '\\')
+                                {
                                     escaped = !escaped;
-                                } else if (array_content[elem_end] == '"' && !escaped) {
+                                }
+                                else if (array_content[elem_end] == '"' && !escaped)
+                                {
                                     break;
-                                } else {
+                                }
+                                else
+                                {
                                     escaped = false;
                                 }
                                 elem_end++;
                             }
 
-                            if (elem_end >= array_content.size()) {
+                            if (elem_end >= array_content.size())
+                            {
                                 std::cerr << "Invalid JSON format: unterminated string in array" << std::endl;
                                 return false;
                             }
@@ -186,21 +222,27 @@ public:
                             std::string element = array_content.substr(elem_start, elem_end - elem_start);
                             elements.push_back(element);
                             elem_pos = elem_end + 1;
-                        } else if (isdigit(array_content[elem_pos]) || array_content[elem_pos] == '-') {
+                        }
+                        else if (isdigit(array_content[elem_pos]) || array_content[elem_pos] == '-')
+                        {
                             // Number element
                             size_t elem_start = elem_pos;
                             size_t elem_end = array_content.find_first_of(",]\t\n\r ", elem_pos);
-                            if (elem_end == std::string::npos) {
+                            if (elem_end == std::string::npos)
+                            {
                                 elem_end = array_content.size();
                             }
 
                             std::string element = array_content.substr(elem_start, elem_end - elem_start);
                             elements.push_back(element);
                             elem_pos = elem_end;
-                        } else {
+                        }
+                        else
+                        {
                             // Skip invalid elements
                             elem_pos = array_content.find(',', elem_pos);
-                            if (elem_pos == std::string::npos) {
+                            if (elem_pos == std::string::npos)
+                            {
                                 break;
                             }
                             elem_pos++;
@@ -209,8 +251,10 @@ public:
 
                     // Store array as comma-separated string
                     std::string list_str;
-                    for (size_t i = 0; i < elements.size(); ++i) {
-                        if (i > 0) {
+                    for (size_t i = 0; i < elements.size(); ++i)
+                    {
+                        if (i > 0)
+                        {
                             list_str += ",";
                         }
                         list_str += elements[i];
@@ -218,11 +262,14 @@ public:
 
                     config_[key] = list_str;
                     pos = array_end + 1;
-                } else if (isdigit(content[pos]) || content[pos] == '-') {
+                }
+                else if (isdigit(content[pos]) || content[pos] == '-')
+                {
                     // Number value
                     size_t value_start = pos;
                     size_t value_end = content.find_first_of(",}\t\n\r ", pos);
-                    if (value_end == std::string::npos) {
+                    if (value_end == std::string::npos)
+                    {
                         std::cerr << "Invalid JSON format: unterminated number" << std::endl;
                         return false;
                     }
@@ -230,15 +277,21 @@ public:
                     std::string value = content.substr(value_start, value_end - value_start);
                     config_[key] = value;
                     pos = value_end;
-                } else if (content.substr(pos, 4) == "true") {
+                }
+                else if (content.substr(pos, 4) == "true")
+                {
                     // Boolean true
                     config_[key] = "1";
                     pos += 4;
-                } else if (content.substr(pos, 5) == "false") {
+                }
+                else if (content.substr(pos, 5) == "false")
+                {
                     // Boolean false
                     config_[key] = "0";
                     pos += 5;
-                } else if (content.substr(pos, 4) == "null") {
+                }
+                else if (content.substr(pos, 4) == "null")
+                {
                     // Null value
                     config_[key] = "";
                     pos += 4;
@@ -254,9 +307,12 @@ public:
                     return false;
                 }
 
-                if (content[pos] == ',') {
+                if (content[pos] == ',')
+                {
                     pos++; // Move past the comma
-                } else if (content[pos] == '}') {
+                }
+                else if (content[pos] == '}')
+                {
                     break; // End of object
                 } else {
                     std::cerr << "Invalid JSON format: expected comma or closing brace" << std::endl;
@@ -265,14 +321,17 @@ public:
             }
 
             return true;
-        } catch (const std::exception& e) {
+        } catch (const std::exception& e)
+        {
             std::cerr << "Failed to load configuration: " << e.what() << std::endl;
             return false;
         }
     }
 
-    std::future<bool> load_async() {
-        return std::async(std::launch::async, [this]() {
+    std::future<bool> load_async()
+    {
+        return std::async(std::launch::async, [this]()
+        {
             return load();
         });
     }
@@ -280,14 +339,16 @@ public:
     bool save() {
         std::lock_guard<std::mutex> lock(mutex_);
 
-        try {
+        try
+        {
             // Create JSON string
             std::string json = "{\
 ";
 
             bool first = true;
             for (const auto& [key, value] : config_) {
-                if (!first) {
+                if (!first)
+                {
                     json += ",\
 ";
                 }
@@ -296,26 +357,31 @@ public:
                 json += "  \"" + key + "\": ";
 
                 // Check if value is a list (comma-separated string)
-                if (value.find(',') != std::string::npos && !value.empty()) {
+                if (value.find(',') != std::string::npos && !value.empty())
+                {
                     // Parse list
                     std::vector<std::string> items;
                     std::stringstream ss(value);
                     std::string item;
 
-                    while (std::getline(ss, item, ',')) {
+                    while (std::getline(ss, item, ','))
+                    {
                         items.push_back(item);
                     }
 
                     // Create JSON array
                     json += "[";
 
-                    for (size_t i = 0; i < items.size(); ++i) {
-                        if (i > 0) {
+                    for (size_t i = 0; i < items.size(); ++i)
+                    {
+                        if (i > 0)
+                        {
                             json += ", ";
                         }
 
                         // Try to parse as integer
-                        try {
+                        try
+                        {
                             int int_value = std::stoi(items[i]);
                             json += items[i]; // Add as number
                         } catch (const std::exception&) {

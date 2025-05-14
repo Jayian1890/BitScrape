@@ -86,3 +86,4 @@ bitscrape.log
 bin/
 public
 /default.profraw
+/bitscrape.json

@@ -12,7 +12,7 @@ class ConfigurationTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // Create a temporary configuration file
-        config_path_ = "config_test.conf";
+        config_path_ = "config_test.json";
 
         // Remove any existing test file
         std::filesystem::remove(config_path_);
@@ -29,7 +29,7 @@ protected:
 TEST_F(ConfigurationTest, ConstructorTest) {
     // Test default constructor
     Configuration config;
-    EXPECT_EQ("bitscrape.conf", config.get_config_path());
+    EXPECT_EQ("bitscrape.json", config.get_config_path());
 
     // Test constructor with config path
     Configuration config_with_path(config_path_);

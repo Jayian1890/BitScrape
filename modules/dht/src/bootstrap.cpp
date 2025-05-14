@@ -116,7 +116,6 @@ bool Bootstrap::wait_for_completion(int timeout_ms) {
 
         return completed;
     } else {
-        // Use a default timeout of 10 seconds instead of waiting indefinitely
         bool completed = cv_.wait_for(lock, std::chrono::seconds(10), [this]() {
             return complete_.load();
         });

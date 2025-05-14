@@ -20,6 +20,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/dht/include
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/event/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/lock/include
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/network/include
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/storage/include
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/tracker/include
@@ -50,6 +51,7 @@ add_subdirectory(modules/bencode)
 add_subdirectory(modules/dht)
 add_subdirectory(modules/bittorrent)
 add_subdirectory(modules/tracker)
+add_subdirectory(modules/lock)
 add_subdirectory(modules/core)
 add_subdirectory(modules/web)
 
@@ -61,9 +63,13 @@ install(TARGETS bitscrape_cli
         RUNTIME DESTINATION bin
 )
 
-# Install configuration file
-install(FILES bitscrape.conf
+# Create a default configuration file template
+file(WRITE ${CMAKE_BINARY_DIR}/bitscrape.json.template "{}")
+
+# Install configuration file template
+install(FILES ${CMAKE_BINARY_DIR}/bitscrape.json.template
         DESTINATION etc
+        RENAME bitscrape.json
 )
 
 # Create a target for running the CLI application

@@ -78,7 +78,7 @@ public:
      * @param timeout_ms Timeout in milliseconds, or 0 for no timeout
      * @return true if the bootstrap process completed, false if it timed out
      */
-    bool wait_for_completion(int timeout_ms = 0);
+    bool wait_for_completion(int timeout_ms = 5000);
 
 private:
     /**

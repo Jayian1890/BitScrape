@@ -31,12 +31,8 @@ target_compile_options(${APP_NAME} PRIVATE
     $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
 )
 
-# Copy configuration file to build directory
-configure_file(
-    ${CMAKE_SOURCE_DIR}/bitscrape.conf
-    ${CMAKE_BINARY_DIR}/bitscrape.conf
-    COPYONLY
-)
+# Create an empty configuration file template in the build directory
+file(WRITE ${CMAKE_BINARY_DIR}/bitscrape.json.template "{}")
 
 # Create public directory for web interface
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/public)

@@ -550,7 +550,7 @@ int main(int argc, char *argv[])
     using enum bitscrape::types::BeaconSeverity;
 
     // Parse command line arguments
-    std::string config_path = "bitscrape.conf";
+    std::string config_path = "bitscrape.json";
     std::string db_path;
     bool start_crawling = false;
     bool disable_web = false;

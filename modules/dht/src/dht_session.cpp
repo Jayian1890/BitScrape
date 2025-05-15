@@ -3,19 +3,23 @@
 #include <random>
 #include <chrono>
 #include <future>
+#include <sstream>
 
 namespace bitscrape::dht {
 
-DHTSession::DHTSession()
+DHTSession::DHTSession(std::shared_ptr<lock::LockManager> lock_manager)
     : node_id_(types::NodeID()),
       port_(6881),
       event_bus_(nullptr),
-      running_(false) {
+      running_(false),
+      lock_manager_(lock_manager),
+      peers_resource_id_(lock_manager->register_resource(get_peers_resource_name(), lock::LockManager::LockPriority::NORMAL)),
+      lookups_resource_id_(lock_manager->register_resource(get_lookups_resource_name(), lock::LockManager::LockPriority::NORMAL)) {
     // Create the socket
     socket_ = std::make_unique<network::UDPSocket>();
 
     // Create the routing table
-    routing_table_ = std::make_unique<RoutingTable>(node_id_);
+    routing_table_ = std::make_unique<RoutingTable>(node_id_, lock_manager);
 
     // Create the message factory
     message_factory_ = std::make_unique<DHTMessageFactory>();
@@ -24,16 +28,31 @@ DHTSession::DHTSession()
     token_manager_ = std::make_unique<TokenManager>();
 }
 
-DHTSession::DHTSession(const types::NodeID& node_id)
+std::string DHTSession::get_peers_resource_name() const {
+    std::stringstream ss;
+    ss << "dht.session.peers." << node_id_.to_hex().substr(0, 8);
+    return ss.str();
+}
+
+std::string DHTSession::get_lookups_resource_name() const {
+    std::stringstream ss;
+    ss << "dht.session.lookups." << node_id_.to_hex().substr(0, 8);
+    return ss.str();
+}
+
+DHTSession::DHTSession(const types::NodeID& node_id, std::shared_ptr<lock::LockManager> lock_manager)
     : node_id_(node_id),
       port_(6881),
       event_bus_(nullptr),
-      running_(false) {
+      running_(false),
+      lock_manager_(lock_manager),
+      peers_resource_id_(lock_manager->register_resource(get_peers_resource_name(), lock::LockManager::LockPriority::NORMAL)),
+      lookups_resource_id_(lock_manager->register_resource(get_lookups_resource_name(), lock::LockManager::LockPriority::NORMAL)) {
     // Create the socket
     socket_ = std::make_unique<network::UDPSocket>();
 
     // Create the routing table
-    routing_table_ = std::make_unique<RoutingTable>(node_id_);
+    routing_table_ = std::make_unique<RoutingTable>(node_id_, lock_manager);
 
     // Create the message factory
     message_factory_ = std::make_unique<DHTMessageFactory>();
@@ -42,16 +61,19 @@ DHTSession::DHTSession(const types::NodeID& node_id)
     token_manager_ = std::make_unique<TokenManager>();
 }
 
-DHTSession::DHTSession(const types::NodeID& node_id, uint16_t port, event::EventBus& event_bus)
+DHTSession::DHTSession(const types::NodeID& node_id, uint16_t port, event::EventBus& event_bus, std::shared_ptr<lock::LockManager> lock_manager)
     : node_id_(node_id),
       port_(port),
       event_bus_(&event_bus),
-      running_(false) {
+      running_(false),
+      lock_manager_(lock_manager),
+      peers_resource_id_(lock_manager->register_resource(get_peers_resource_name(), lock::LockManager::LockPriority::NORMAL)),
+      lookups_resource_id_(lock_manager->register_resource(get_lookups_resource_name(), lock::LockManager::LockPriority::NORMAL)) {
     // Create the socket
     socket_ = std::make_unique<network::UDPSocket>();
 
     // Create the routing table
-    routing_table_ = std::make_unique<RoutingTable>(node_id_);
+    routing_table_ = std::make_unique<RoutingTable>(node_id_, lock_manager);
 
     // Create the message factory
     message_factory_ = std::make_unique<DHTMessageFactory>();
@@ -140,7 +162,7 @@ std::future<std::vector<types::DHTNode>> DHTSession::find_nodes_async(const type
 std::vector<types::Endpoint> DHTSession::find_peers(const types::InfoHash& infohash) {
     // Check if we already have peers for this infohash
     {
-        std::lock_guard<std::mutex> lock(peers_mutex_);
+        auto guard = lock_manager_->get_lock_guard(peers_resource_id_, lock::LockManager::LockType::SHARED);
         auto it = peers_.find(infohash);
         if (it != peers_.end() && !it->second.empty()) {
             return it->second;
@@ -172,7 +194,7 @@ std::vector<types::Endpoint> DHTSession::find_peers(const types::InfoHash& infoh
     }
 
     // Return the peers
-    std::lock_guard<std::mutex> lock(peers_mutex_);
+    auto guard = lock_manager_->get_lock_guard(peers_resource_id_, lock::LockManager::LockType::SHARED);
     return peers_[infohash];
 }
 
@@ -267,7 +289,7 @@ void DHTSession::process_message(const std::vector<uint8_t>& data, const types::
         message->type() == DHTMessage::Type::FIND_NODE_RESPONSE ||
         message->type() == DHTMessage::Type::GET_PEERS_RESPONSE ||
         message->type() == DHTMessage::Type::ANNOUNCE_PEER_RESPONSE) {
-        std::lock_guard<std::mutex> lock(lookups_mutex_);
+        auto guard = lock_manager_->get_lock_guard(lookups_resource_id_, lock::LockManager::LockType::SHARED);
 
         // Find the lookup with the matching transaction ID
         auto it = lookups_.find(message->transaction_id());
@@ -382,7 +404,7 @@ void DHTSession::handle_get_peers(const std::shared_ptr<DHTMessage>& message, co
     // Check if we have peers for this infohash
     std::vector<types::Endpoint> peers;
     {
-        std::lock_guard<std::mutex> lock(peers_mutex_);
+        auto guard = lock_manager_->get_lock_guard(peers_resource_id_, lock::LockManager::LockType::SHARED);
         auto it = peers_.find(info_hash);
         if (it != peers_.end()) {
             peers = it->second;
@@ -442,7 +464,7 @@ void DHTSession::handle_announce_peer(const std::shared_ptr<DHTMessage>& message
     // Add the peer to our list
     types::Endpoint peer_endpoint(sender_endpoint.address(), port);
     {
-        std::lock_guard<std::mutex> lock(peers_mutex_);
+        auto guard = lock_manager_->get_lock_guard(peers_resource_id_, lock::LockManager::LockType::EXCLUSIVE);
         peers_[info_hash].push_back(peer_endpoint);
     }
 

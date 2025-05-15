@@ -2,13 +2,14 @@
 
 #include <cstdint>
 #include <vector>
-#include <mutex>
 #include <chrono>
 #include <future>
 #include <optional>
 
 #include "bitscrape/types/node_id.hpp"
 #include "bitscrape/types/dht_node.hpp"
+#include "bitscrape/lock/lock_manager.hpp"
+#include "bitscrape/lock/lock_guard.hpp"
 
 namespace bitscrape::dht {
 
@@ -27,8 +28,17 @@ public:
      * @brief Create a k-bucket with the specified prefix length
      *
      * @param prefix_length Number of bits in the common prefix for this bucket
+     * @param lock_manager Reference to the lock manager
      */
-    explicit KBucket(uint8_t prefix_length);
+    KBucket(uint8_t prefix_length, lock::LockManager& lock_manager);
+
+    /**
+     * @brief Create a k-bucket with the specified prefix length
+     *
+     * @param prefix_length Number of bits in the common prefix for this bucket
+     * @param lock_manager Pointer to the lock manager
+     */
+    KBucket(uint8_t prefix_length, std::shared_ptr<lock::LockManager> lock_manager);
 
     /**
      * @brief Add a node to the bucket
@@ -165,10 +175,18 @@ public:
     void update_last_updated();
 
 private:
+    /**
+     * @brief Get a resource name for this bucket
+     *
+     * @return Resource name string
+     */
+    std::string get_resource_name() const;
+
     uint8_t prefix_length_;                                  ///< Prefix length in bits
     std::vector<types::DHTNode> nodes_;                      ///< Nodes in the bucket
     std::chrono::system_clock::time_point last_updated_;     ///< Last updated time
-    mutable std::shared_ptr<std::mutex> mutex_;              ///< Mutex for thread safety
+    lock::LockManager& lock_manager_;                        ///< Reference to the lock manager
+    uint64_t resource_id_;                                   ///< Resource ID for the lock manager
 };
 
 } // namespace bitscrape::dht

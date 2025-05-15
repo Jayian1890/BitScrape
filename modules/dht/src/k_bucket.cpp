@@ -2,17 +2,36 @@
 
 #include <algorithm>
 #include <future>
+#include <sstream>
 
 namespace bitscrape::dht {
 
-KBucket::KBucket(uint8_t prefix_length)
-    : prefix_length_(prefix_length), last_updated_(std::chrono::system_clock::now()), mutex_(std::make_shared<std::mutex>()) {
+KBucket::KBucket(uint8_t prefix_length, lock::LockManager& lock_manager)
+    : prefix_length_(prefix_length),
+      last_updated_(std::chrono::system_clock::now()),
+      lock_manager_(lock_manager),
+      resource_id_(lock_manager.register_resource(get_resource_name(), lock::LockManager::LockPriority::NORMAL)) {
     // Reserve space for k nodes
     nodes_.reserve(K);
 }
 
+KBucket::KBucket(uint8_t prefix_length, std::shared_ptr<lock::LockManager> lock_manager)
+    : prefix_length_(prefix_length),
+      last_updated_(std::chrono::system_clock::now()),
+      lock_manager_(*lock_manager),
+      resource_id_(lock_manager->register_resource(get_resource_name(), lock::LockManager::LockPriority::NORMAL)) {
+    // Reserve space for k nodes
+    nodes_.reserve(K);
+}
+
+std::string KBucket::get_resource_name() const {
+    std::stringstream ss;
+    ss << "dht.k_bucket." << static_cast<int>(prefix_length_);
+    return ss.str();
+}
+
 bool KBucket::add_node(const types::DHTNode& node) {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Check if the bucket is full
     if (is_full()) {
@@ -38,7 +57,7 @@ std::future<bool> KBucket::add_node_async(const types::DHTNode& node) {
 }
 
 bool KBucket::remove_node(const types::NodeID& node_id) {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Find the node
     auto it = std::find_if(nodes_.begin(), nodes_.end(), [&node_id](const types::DHTNode& node) {
@@ -62,7 +81,7 @@ std::future<bool> KBucket::remove_node_async(const types::NodeID& node_id) {
 }
 
 bool KBucket::update_node(const types::DHTNode& node) {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Find the node
     auto it = std::find_if(nodes_.begin(), nodes_.end(), [&node](const types::DHTNode& n) {
@@ -86,7 +105,7 @@ std::future<bool> KBucket::update_node_async(const types::DHTNode& node) {
 }
 
 std::optional<types::DHTNode> KBucket::get_node(const types::NodeID& node_id) const {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     // Find the node
     auto it = std::find_if(nodes_.begin(), nodes_.end(), [&node_id](const types::DHTNode& node) {
@@ -108,7 +127,7 @@ std::future<std::optional<types::DHTNode>> KBucket::get_node_async(const types::
 }
 
 bool KBucket::contains_node(const types::NodeID& node_id) const {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     // Find the node
     auto it = std::find_if(nodes_.begin(), nodes_.end(), [&node_id](const types::DHTNode& node) {
@@ -125,7 +144,7 @@ std::future<bool> KBucket::contains_node_async(const types::NodeID& node_id) con
 }
 
 std::vector<types::DHTNode> KBucket::get_nodes() const {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     return nodes_;
 }
@@ -137,19 +156,19 @@ std::future<std::vector<types::DHTNode>> KBucket::get_nodes_async() const {
 }
 
 size_t KBucket::size() const {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     return nodes_.size();
 }
 
 bool KBucket::is_empty() const {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     return nodes_.empty();
 }
 
 bool KBucket::is_full() const {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     return nodes_.size() >= K;
 }
@@ -159,13 +178,13 @@ uint8_t KBucket::prefix_length() const {
 }
 
 std::chrono::system_clock::time_point KBucket::last_updated() const {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     return last_updated_;
 }
 
 void KBucket::update_last_updated() {
-    std::lock_guard<std::mutex> lock(*mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     last_updated_ = std::chrono::system_clock::now();
 }

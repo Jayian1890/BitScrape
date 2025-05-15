@@ -25,6 +25,10 @@
 // DHT module
 #include <bitscrape/dht/dht_session.hpp>
 
+// Lock module
+#include <bitscrape/lock/lock_manager_singleton.hpp>
+#include <bitscrape/lock/lock_guard.hpp>
+
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -32,7 +36,6 @@
 #include <random>
 #include <mutex>
 #include <condition_variable>
-#include <atomic>
 #include <filesystem>
 #include <random>
 
@@ -47,6 +50,10 @@ public:
           beacon_(std::make_shared<beacon::Beacon>()),
           is_running_(false),
           is_crawling_(false) {
+
+        // Register resources with the LockManager
+        auto lock_manager = lock::LockManagerSingleton::instance(beacon_);
+        controller_state_resource_id_ = lock_manager->register_resource("controller_state", lock::LockManager::LockPriority::HIGH);
 
         // Add beacon sinks
         beacon_->add_sink(std::make_unique<beacon::ConsoleSink>());
@@ -80,7 +87,10 @@ public:
     }
 
     ~Impl() {
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(controller_state_resource_id_, lock::LockManager::LockType::SHARED);
         if (is_running_) {
+            lock_guard.reset(); // Release the lock before calling stop()
             stop();
         }
     }
@@ -136,6 +146,8 @@ public:
     }
 
     bool start() {
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(controller_state_resource_id_);
         if (is_running_) {
             beacon_->warning("Controller is already running");
             return true;
@@ -211,6 +223,8 @@ public:
     }
 
     bool stop() {
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(controller_state_resource_id_);
         if (!is_running_) {
             beacon_->warning("Controller is not running");
             return true;
@@ -219,7 +233,9 @@ public:
         try {
             // Stop crawling if active
             if (is_crawling_) {
+                lock_guard.reset(); // Release the lock before calling stop_crawling()
                 stop_crawling();
+                lock_guard = lock_manager->get_lock_guard(controller_state_resource_id_); // Re-acquire the lock
             }
 
             // Stop components
@@ -287,8 +303,9 @@ public:
                 node_id = types::NodeID(node_id_str);
             }
 
-            // Create the DHT session
-            dht_session_ = std::make_unique<dht::DHTSession>(node_id, dht_port, *event_bus_);
+            // Create the DHT session with the lock manager
+            auto lock_manager = lock::LockManagerSingleton::instance();
+            dht_session_ = std::make_unique<dht::DHTSession>(node_id, dht_port, *event_bus_, lock_manager);
 
             // Get bootstrap nodes from configuration
             std::string bootstrap_nodes_str = config_->get_string("dht.bootstrap_nodes",
@@ -355,6 +372,8 @@ public:
     }
 
     bool start_crawling() {
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(controller_state_resource_id_);
         if (!is_running_) {
             beacon_->error("Controller is not running");
             return false;
@@ -515,6 +534,8 @@ public:
     }
 
     bool stop_crawling() {
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(controller_state_resource_id_);
         if (!is_running_) {
             beacon_->error("Controller is not running");
             return false;
@@ -603,6 +624,8 @@ public:
         stats.insert(storage_stats.begin(), storage_stats.end());
 
         // Add controller statistics
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(controller_state_resource_id_, lock::LockManager::LockType::SHARED);
         stats["controller.running"] = is_running_ ? "true" : "false";
         stats["controller.crawling"] = is_crawling_ ? "true" : "false";
 
@@ -1142,8 +1165,9 @@ public:
     std::unique_ptr<event::EventBus> event_bus_;
     std::unique_ptr<event::EventProcessor> event_processor_;
     std::shared_ptr<beacon::Beacon> beacon_;
-    std::atomic<bool> is_running_;
-    std::atomic<bool> is_crawling_;
+    bool is_running_;
+    bool is_crawling_;
+    uint64_t controller_state_resource_id_; // Resource ID for the controller state
 
     // BitTorrent components
     std::unique_ptr<bittorrent::BitTorrentEventProcessor> bt_event_processor_;

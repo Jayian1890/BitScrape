@@ -87,3 +87,4 @@ bin/
 public
 /default.profraw
 /bitscrape.json
+/build_debug/

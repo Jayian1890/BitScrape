@@ -3,10 +3,11 @@
 #include <bitscrape/bencode/bencode_value.hpp>
 #include <bitscrape/bencode/bencode_encoder.hpp>
 #include <bitscrape/bencode/bencode_decoder.hpp>
+#include <bitscrape/lock/lock_manager_singleton.hpp>
+#include <bitscrape/lock/lock_guard.hpp>
 
 #include <fstream>
 #include <sstream>
-#include <mutex>
 #include <filesystem>
 #include <iostream>
 
@@ -17,17 +18,23 @@ public:
     Impl(const std::string& config_path)
         : config_path_(config_path.empty() ? "bitscrape.json" : config_path)
     {
+        // Register the configuration resource with the LockManager
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        config_resource_id_ = lock_manager->register_resource("configuration", lock::LockManager::LockPriority::HIGH);
     }
 
     bool load()
     {
-        std::unique_lock lock(mutex_);
+        // Acquire a lock on the configuration resource
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
 
         try {
             // Check if file exists
             if (!std::filesystem::exists(config_path_))
             {
-                lock.unlock();
+                // Release the lock before calling create_default_configuration
+                lock_guard.reset();
                 // Create default configuration
                 create_default_configuration();
                 return true;
@@ -337,7 +344,9 @@ public:
     }
 
     bool save() {
-        std::lock_guard<std::mutex> lock(mutex_);
+        // Acquire a lock on the configuration resource
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
 
         try
         {
@@ -438,33 +447,39 @@ public:
     }
 
     void set_config_path(const std::string& path) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
         config_path_ = path;
     }
 
     std::string get_config_path() const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_, lock::LockManager::LockType::SHARED);
         return config_path_;
     }
 
     void set_string(const std::string& key, const std::string& value) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
         config_[key] = value;
     }
 
     std::string get_string(const std::string& key, const std::string& default_value) const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_, lock::LockManager::LockType::SHARED);
         auto it = config_.find(key);
         return (it != config_.end()) ? it->second : default_value;
     }
 
     void set_int(const std::string& key, int value) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
         config_[key] = std::to_string(value);
     }
 
     int get_int(const std::string& key, int default_value) const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_, lock::LockManager::LockType::SHARED);
         auto it = config_.find(key);
         if (it != config_.end()) {
             try {
@@ -477,12 +492,14 @@ public:
     }
 
     void set_bool(const std::string& key, bool value) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
         config_[key] = value ? "1" : "0";
     }
 
     bool get_bool(const std::string& key, bool default_value) const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_, lock::LockManager::LockType::SHARED);
         auto it = config_.find(key);
         if (it != config_.end()) {
             return (it->second == "1" || it->second == "true" || it->second == "yes");
@@ -491,7 +508,8 @@ public:
     }
 
     void set_string_list(const std::string& key, const std::vector<std::string>& values) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
         std::string list_str;
         for (size_t i = 0; i < values.size(); ++i) {
             if (i > 0) {
@@ -503,7 +521,8 @@ public:
     }
 
     std::vector<std::string> get_string_list(const std::string& key) const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_, lock::LockManager::LockType::SHARED);
         std::vector<std::string> result;
         auto it = config_.find(key);
         if (it != config_.end()) {
@@ -517,17 +536,23 @@ public:
     }
 
     void set_endpoint_list(const std::string& key, const std::vector<types::Endpoint>& endpoints) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
         std::vector<std::string> endpoint_strings;
         for (const auto& endpoint : endpoints) {
             endpoint_strings.push_back(endpoint.to_string());
         }
+        // Release the lock before calling set_string_list which will acquire its own lock
+        lock_guard.reset();
         set_string_list(key, endpoint_strings);
     }
 
     std::vector<types::Endpoint> get_endpoint_list(const std::string& key) const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_, lock::LockManager::LockType::SHARED);
         std::vector<types::Endpoint> result;
+        // Release the lock before calling get_string_list which will acquire its own lock
+        lock_guard.reset();
         auto strings = get_string_list(key);
         for (const auto& str : strings) {
             try {
@@ -546,12 +571,14 @@ public:
     }
 
     bool has_key(const std::string& key) const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_, lock::LockManager::LockType::SHARED);
         return config_.find(key) != config_.end();
     }
 
     bool remove_key(const std::string& key) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
         auto it = config_.find(key);
         if (it != config_.end()) {
             config_.erase(it);
@@ -561,12 +588,14 @@ public:
     }
 
     void clear() {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
         config_.clear();
     }
 
     std::vector<std::string> get_keys() const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_, lock::LockManager::LockType::SHARED);
         std::vector<std::string> keys;
         for (const auto& [key, _] : config_) {
             keys.push_back(key);
@@ -575,7 +604,8 @@ public:
     }
 
     std::unordered_map<std::string, std::string> get_all() const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_, lock::LockManager::LockType::SHARED);
         return config_;
     }
 
@@ -606,7 +636,7 @@ private:
 
     std::string config_path_;
     std::unordered_map<std::string, std::string> config_;
-    mutable std::mutex mutex_;
+    uint64_t config_resource_id_; // Resource ID for the configuration
 };
 
 // Configuration implementation

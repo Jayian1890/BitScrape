@@ -6,17 +6,32 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include "bitscrape/lock/lock_manager_singleton.hpp"
 
 namespace bitscrape::dht {
 
-TokenManager::TokenManager()
-    : last_rotation_(std::chrono::system_clock::now()) {
+TokenManager::TokenManager(lock::LockManager& lock_manager)
+    : last_rotation_(std::chrono::system_clock::now()),
+      lock_manager_(lock_manager),
+      resource_id_(lock_manager.register_resource(get_resource_name(), lock::LockManager::LockPriority::NORMAL)) {
     // Generate initial secrets
     rotate_secret();
 }
 
+TokenManager::TokenManager(std::shared_ptr<lock::LockManager> lock_manager)
+    : last_rotation_(std::chrono::system_clock::now()),
+      lock_manager_(*lock_manager),
+      resource_id_(lock_manager->register_resource(get_resource_name(), lock::LockManager::LockPriority::NORMAL)) {
+    // Generate initial secrets
+    rotate_secret();
+}
+
+std::string TokenManager::get_resource_name() const {
+    return "dht.token_manager";
+}
+
 types::DHTToken TokenManager::generate_token(const types::Endpoint& endpoint) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Check if we need to rotate the secret
     auto now = std::chrono::system_clock::now();
@@ -36,7 +51,7 @@ std::future<types::DHTToken> TokenManager::generate_token_async(const types::End
 }
 
 bool TokenManager::verify_token(const types::DHTToken& token, const types::Endpoint& endpoint) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     // Generate tokens with both secrets and compare
     auto current_token = generate_token_with_secret(endpoint, current_secret_);

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <vector>
-#include <mutex>
 #include <thread>
 #include <future>
 #include <atomic>
@@ -25,6 +24,8 @@
 #include "bitscrape/dht/token_manager.hpp"
 #include "bitscrape/network/udp_socket.hpp"
 #include "bitscrape/event/event_bus.hpp"
+#include "bitscrape/lock/lock_manager.hpp"
+#include "bitscrape/lock/lock_guard.hpp"
 
 namespace bitscrape::dht {
 
@@ -38,15 +39,18 @@ class DHTSession {
 public:
     /**
      * @brief Create a DHT session with a random node ID
+     *
+     * @param lock_manager Pointer to the lock manager
      */
-    DHTSession();
+    explicit DHTSession(std::shared_ptr<lock::LockManager> lock_manager);
 
     /**
      * @brief Create a DHT session with the specified node ID
      *
      * @param node_id Node ID to use
+     * @param lock_manager Pointer to the lock manager
      */
-    explicit DHTSession(const types::NodeID& node_id);
+    DHTSession(const types::NodeID& node_id, std::shared_ptr<lock::LockManager> lock_manager);
 
     /**
      * @brief Create a DHT session with the specified parameters
@@ -54,8 +58,9 @@ public:
      * @param node_id Node ID to use
      * @param port UDP port to listen on
      * @param event_bus Event bus for event-driven communication
+     * @param lock_manager Pointer to the lock manager
      */
-    DHTSession(const types::NodeID& node_id, uint16_t port, event::EventBus& event_bus);
+    DHTSession(const types::NodeID& node_id, uint16_t port, event::EventBus& event_bus, std::shared_ptr<lock::LockManager> lock_manager);
 
     /**
      * @brief Destructor
@@ -212,11 +217,26 @@ private:
     std::atomic<bool> running_;                              ///< Whether the session is running
     std::thread receive_thread_;                             ///< Thread for receiving messages
 
-    std::unordered_map<types::InfoHash, std::vector<types::Endpoint>> peers_; ///< Map of infohashes to peers
-    mutable std::mutex peers_mutex_;                         ///< Mutex for thread-safe access to peers
+    /**
+     * @brief Get a resource name for the peers map
+     *
+     * @return Resource name string
+     */
+    std::string get_peers_resource_name() const;
 
+    /**
+     * @brief Get a resource name for the lookups map
+     *
+     * @return Resource name string
+     */
+    std::string get_lookups_resource_name() const;
+
+    std::unordered_map<types::InfoHash, std::vector<types::Endpoint>> peers_; ///< Map of infohashes to peers
     std::unordered_map<std::string, std::shared_ptr<NodeLookup>> lookups_; ///< Active node lookups
-    mutable std::mutex lookups_mutex_;                       ///< Mutex for thread-safe access to lookups
+
+    std::shared_ptr<lock::LockManager> lock_manager_;         ///< Pointer to the lock manager
+    uint64_t peers_resource_id_;                             ///< Resource ID for the peers map
+    uint64_t lookups_resource_id_;                           ///< Resource ID for the lookups map
 
     std::unique_ptr<Bootstrap> bootstrap_;                    ///< Bootstrap object for joining the DHT network
 };

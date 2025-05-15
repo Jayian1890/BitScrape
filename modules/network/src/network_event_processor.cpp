@@ -3,7 +3,6 @@
 #include "bitscrape/event/event_bus.hpp"
 #include "bitscrape/types/event_types.hpp"
 
-#include <atomic>
 #include <future>
 #include <map>
 #include <memory>
@@ -152,9 +151,16 @@ NetworkEventProcessor::NetworkEventProcessor()
     : running_(false), event_bus_(nullptr), token_(0),
       udp_socket_(std::make_unique<UDPSocket>()),
       tcp_socket_(std::make_unique<TCPSocket>()),
-      http_client_(std::make_unique<HTTPClient>()) {}
+      http_client_(std::make_unique<HTTPClient>()) {
+  // Register resources with the LockManager
+  auto lock_manager = lock::LockManagerSingleton::instance();
+  processor_state_resource_id_ = lock_manager->register_resource("network_processor_state", lock::LockManager::LockPriority::NORMAL);
+}
 
 void NetworkEventProcessor::start(event::EventBus &event_bus) {
+  auto lock_manager = lock::LockManagerSingleton::instance();
+  auto lock_guard = lock_manager->get_lock_guard(processor_state_resource_id_);
+
   if (running_) {
     return;
   }
@@ -168,6 +174,9 @@ void NetworkEventProcessor::start(event::EventBus &event_bus) {
 }
 
 void NetworkEventProcessor::stop() {
+  auto lock_manager = lock::LockManagerSingleton::instance();
+  auto lock_guard = lock_manager->get_lock_guard(processor_state_resource_id_);
+
   if (!running_) {
     return;
   }
@@ -180,9 +189,16 @@ void NetworkEventProcessor::stop() {
   }
 }
 
-bool NetworkEventProcessor::is_running() const { return running_; }
+bool NetworkEventProcessor::is_running() const {
+  auto lock_manager = lock::LockManagerSingleton::instance();
+  auto lock_guard = lock_manager->get_lock_guard(processor_state_resource_id_, lock::LockManager::LockType::SHARED);
+  return running_;
+}
 
 void NetworkEventProcessor::process(const types::Event &event) {
+  auto lock_manager = lock::LockManagerSingleton::instance();
+  auto lock_guard = lock_manager->get_lock_guard(processor_state_resource_id_, lock::LockManager::LockType::SHARED);
+
   if (!running_) {
     return;
   }
@@ -196,11 +212,24 @@ void NetworkEventProcessor::process(const types::Event &event) {
 
 std::future<void>
 NetworkEventProcessor::process_async(const types::Event &event) {
+  auto lock_manager = lock::LockManagerSingleton::instance();
+  auto lock_guard = lock_manager->get_lock_guard(processor_state_resource_id_, lock::LockManager::LockType::SHARED);
+
+  if (!running_) {
+    // Return a future that's already satisfied
+    std::promise<void> promise;
+    promise.set_value();
+    return promise.get_future();
+  }
+
   return std::async(std::launch::async,
                     [this, event = event.clone()]() { this->process(*event); });
 }
 
 bool NetworkEventProcessor::process_event(const types::Event &event) {
+  auto lock_manager = lock::LockManagerSingleton::instance();
+  auto lock_guard = lock_manager->get_lock_guard(processor_state_resource_id_, lock::LockManager::LockType::SHARED);
+
   // Check if the event is a NetworkEvent
   if (event.type() != types::Event::Type::USER_DEFINED) {
     return false;

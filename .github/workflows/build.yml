@@ -1,0 +1,108 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            name: "Windows Latest MSVC",
+            os: windows-latest,
+            build_type: "Debug",
+            cc: "cl",
+            cxx: "cl",
+            environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          }
+          - {
+            name: "Ubuntu Latest GCC",
+            os: ubuntu-latest,
+            build_type: "Debug",
+            cc: "gcc",
+            cxx: "g++"
+          }
+          - {
+            name: "macOS Latest Clang",
+            os: macos-latest,
+            build_type: "Debug",
+            cc: "clang",
+            cxx: "clang++"
+          }
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.config.os }}-${{ matrix.config.cc }}
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.config.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+          # Install GCC 13 for C++23 support
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y gcc-13 g++-13
+          echo "CC=gcc-13" >> $GITHUB_ENV
+          echo "CXX=g++-13" >> $GITHUB_ENV
+
+      - name: Install dependencies (macOS)
+        if: matrix.config.os == 'macos-latest'
+        run: |
+          brew install cmake ninja llvm
+          echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
+          echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
+          # Add LLVM to PATH for C++23 support
+          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies (Windows)
+        if: matrix.config.os == 'windows-latest'
+        run: |
+          choco install cmake ninja
+
+      - name: Setup Visual Studio Environment
+        if: matrix.config.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          toolset: 14.3
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          mkdir -p build
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_STANDARD=23
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build --config ${{ matrix.config.build_type }} --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+
+      - name: Test
+        shell: bash
+        working-directory: build
+        run: |
+          ctest -C ${{ matrix.config.build_type }} --output-on-failure
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: bitscrape-${{ matrix.config.os }}
+          path: |
+            build/apps/cli/bitscrape_cli*
+            build/apps/cli/Debug/bitscrape_cli*
+          if-no-files-found: ignore

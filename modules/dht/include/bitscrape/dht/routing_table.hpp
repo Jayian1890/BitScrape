@@ -2,13 +2,14 @@
 
 #include <cstdint>
 #include <vector>
-#include <mutex>
 #include <future>
 #include <optional>
 
 #include "bitscrape/types/node_id.hpp"
 #include "bitscrape/types/dht_node.hpp"
 #include "bitscrape/dht/k_bucket.hpp"
+#include "bitscrape/lock/lock_manager.hpp"
+#include "bitscrape/lock/lock_guard.hpp"
 
 namespace bitscrape::dht {
 
@@ -24,8 +25,9 @@ public:
      * @brief Create a routing table with the specified local node ID
      *
      * @param local_id Local node ID
+     * @param lock_manager Pointer to the lock manager
      */
-    explicit RoutingTable(const types::NodeID& local_id);
+    RoutingTable(const types::NodeID& local_id, std::shared_ptr<lock::LockManager> lock_manager);
 
     /**
      * @brief Add a node to the routing table
@@ -178,9 +180,17 @@ private:
      */
     std::vector<types::DHTNode> get_all_nodes_internal() const;
 
+    /**
+     * @brief Get a resource name for this routing table
+     *
+     * @return Resource name string
+     */
+    std::string get_resource_name() const;
+
     types::NodeID local_id_;                 ///< Local node ID
     std::vector<KBucket> buckets_;           ///< Buckets for storing nodes
-    mutable std::mutex mutex_;               ///< Mutex for thread safety
+    std::shared_ptr<lock::LockManager> lock_manager_; ///< Pointer to the lock manager
+    uint64_t resource_id_;                   ///< Resource ID for the lock manager
 };
 
 } // namespace bitscrape::dht

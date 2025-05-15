@@ -8,7 +8,7 @@
 #include <set>
 #include <queue>
 #include <iomanip>
-#include <format>
+#include <iostream>
 
 namespace bitscrape::lock {
 
@@ -43,7 +43,7 @@ LockManager::~LockManager() {
             if (beacon_) {
                 beacon_->warning(ss.str(), types::BeaconCategory::SYSTEM);
             } else {
-                std::cerr << ss.str() << std::endl;
+                std::cout << ss.str() << std::endl;
             }
         }
     }
@@ -63,7 +63,17 @@ uint64_t LockManager::register_resource(const std::string& resource_name, LockPr
     resource.shared_count = 0;
 
     // Add the resource to the map
-    resources_.emplace(resource_id, std::move(resource));
+    // We can't use operator= because std::shared_mutex is not copyable or movable
+    // Create a new resource in-place
+    auto result = resources_.try_emplace(resource_id);
+    if (result.second) {
+        // If insertion was successful, initialize the resource
+        auto& new_resource = result.first->second;
+        new_resource.name = resource.name;
+        new_resource.priority = resource.priority;
+        new_resource.locked_exclusive.store(resource.locked_exclusive.load());
+        new_resource.shared_count.store(resource.shared_count.load());
+    }
 
     return resource_id;
 }
@@ -127,16 +137,49 @@ LockManager::AcquireResult LockManager::acquire_lock(uint64_t resource_id, LockT
 
         switch (lock_type) {
             case LockType::EXCLUSIVE:
-                acquired = resource->mutex.try_lock_until(deadline);
+                // Try to acquire the lock with a timeout
+                {
+
+                    while (std::chrono::steady_clock::now() < deadline) {
+                        if (resource->mutex.try_lock()) {
+                            acquired = true;
+                            break;
+                        }
+                        // Sleep for a short time to avoid busy waiting
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    }
+                }
                 break;
 
             case LockType::SHARED:
-                acquired = resource->mutex.try_lock_shared_until(deadline);
+                // Try to acquire the shared lock with a timeout
+                {
+
+                    while (std::chrono::steady_clock::now() < deadline) {
+                        if (resource->mutex.try_lock_shared()) {
+                            acquired = true;
+                            break;
+                        }
+                        // Sleep for a short time to avoid busy waiting
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    }
+                }
                 break;
 
             case LockType::UPGRADABLE:
                 // Upgradable locks are implemented as shared locks for now
-                acquired = resource->mutex.try_lock_shared_until(deadline);
+                // Try to acquire the shared lock with a timeout
+                {
+
+                    while (std::chrono::steady_clock::now() < deadline) {
+                        if (resource->mutex.try_lock_shared()) {
+                            acquired = true;
+                            break;
+                        }
+                        // Sleep for a short time to avoid busy waiting
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    }
+                }
                 break;
         }
     }
@@ -286,7 +329,16 @@ LockManager::AcquireResult LockManager::upgrade_lock(uint64_t resource_id, uint6
     } else {
         // With timeout, try to acquire the lock with a timeout
         auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
-        acquired = resource->mutex.try_lock_until(deadline);
+        // Try to acquire the lock with a timeout
+
+        while (std::chrono::steady_clock::now() < deadline) {
+            if (resource->mutex.try_lock()) {
+                acquired = true;
+                break;
+            }
+            // Sleep for a short time to avoid busy waiting
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
     }
 
     // Check if the lock was acquired
@@ -351,7 +403,7 @@ bool LockManager::would_deadlock(uint64_t resource_id) const {
         }
 
         // Check if the owner thread is waiting for a resource that this thread holds
-        const ThreadLockInfo& owner_info = it->second;
+        // const ThreadLockInfo& owner_info = it->second;
 
         // Get the thread lock info for this thread
         auto this_it = thread_locks_.find(std::this_thread::get_id());
@@ -415,7 +467,7 @@ bool LockManager::would_deadlock(uint64_t resource_id) const {
     return false;
 }
 
-std::unique_ptr<LockGuard> LockManager::get_lock_guard(uint64_t resource_id, LockType lock_type, uint64_t timeout_ms) {
+std::unique_ptr<LockGuard> LockManager::get_lock_guard(uint64_t resource_id, LockType lock_type, uint64_t /* timeout_ms */) {
     return std::make_unique<LockGuard>(*this, resource_id, lock_type);
 }
 
@@ -660,7 +712,11 @@ void LockManager::log_lock_acquisition(uint64_t resource_id, LockType lock_type,
             beacon_->error(ss.str(), types::BeaconCategory::SYSTEM);
         }
     } else {
-        std::cout << ss.str() << std::endl;
+        if (beacon_) {
+            beacon_->info(ss.str(), types::BeaconCategory::SYSTEM);
+        } else {
+            std::cout << ss.str() << std::endl;
+        }
     }
 }
 

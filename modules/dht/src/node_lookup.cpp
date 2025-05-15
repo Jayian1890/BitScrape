@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <chrono>
 #include <future>
+#include <sstream>
+#include "bitscrape/lock/lock_manager_singleton.hpp"
 
 namespace bitscrape::dht {
 
@@ -10,14 +12,23 @@ NodeLookup::NodeLookup(const types::NodeID& local_id,
                        const types::NodeID& target_id,
                        const RoutingTable& routing_table,
                        network::UDPSocket& socket,
-                       DHTMessageFactory& message_factory)
+                       DHTMessageFactory& message_factory,
+                       std::shared_ptr<lock::LockManager> lock_manager)
     : local_id_(local_id),
       target_id_(target_id),
       routing_table_(routing_table),
       socket_(socket),
       message_factory_(message_factory),
       active_queries_(0),
-      complete_(false) {
+      complete_(false),
+      lock_manager_(lock_manager),
+      resource_id_(lock_manager->register_resource(get_resource_name(), lock::LockManager::LockPriority::NORMAL)) {
+}
+
+std::string NodeLookup::get_resource_name() const {
+    std::stringstream ss;
+    ss << "dht.node_lookup." << target_id_.to_hex().substr(0, 8);
+    return ss.str();
 }
 
 NodeLookup::~NodeLookup() {
@@ -50,7 +61,7 @@ std::future<std::vector<types::DHTNode>> NodeLookup::start_async() {
 }
 
 void NodeLookup::process_response(const std::shared_ptr<DHTMessage>& response, const types::Endpoint& sender_endpoint) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Find the node that sent the response
     auto it = std::find_if(nodes_.begin(), nodes_.end(), [&sender_endpoint](const NodeEntry& entry) {
@@ -93,7 +104,12 @@ bool NodeLookup::is_complete() const {
 }
 
 bool NodeLookup::wait_for_completion(int timeout_ms) {
-    std::unique_lock<std::mutex> lock(mutex_);
+    // Create a mutex and lock it for the condition variable
+    std::mutex mtx;
+    std::unique_lock<std::mutex> lock(mtx);
+
+    // Also get the lock guard for our resource
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     if (timeout_ms > 0) {
         // Wait with timeout
@@ -110,7 +126,7 @@ bool NodeLookup::wait_for_completion(int timeout_ms) {
 }
 
 void NodeLookup::send_queries() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Get the closest unqueried nodes
     auto nodes_to_query = get_closest_unqueried_nodes(ALPHA - active_queries_);
@@ -155,7 +171,7 @@ bool NodeLookup::send_query(const types::DHTNode& node) {
             // Sleep for the timeout duration
             std::this_thread::sleep_for(std::chrono::milliseconds(TIMEOUT_MS));
 
-            std::lock_guard<std::mutex> lock(mutex_);
+            auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
             // Find the node again (it might have been removed)
             auto it = std::find_if(nodes_.begin(), nodes_.end(), [&node](const NodeEntry& entry) {
@@ -271,7 +287,7 @@ bool NodeLookup::has_converged() const {
 }
 
 std::vector<types::DHTNode> NodeLookup::get_closest_nodes() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     std::vector<types::DHTNode> result;
 

@@ -24,6 +24,7 @@ target_link_libraries(${APP_NAME} PRIVATE
     tracker
     core
     web
+    lock
 )
 
 # Set compile options for debug build

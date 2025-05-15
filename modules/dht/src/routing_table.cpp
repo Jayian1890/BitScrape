@@ -2,13 +2,22 @@
 
 #include <algorithm>
 #include <future>
+#include <sstream>
 
 namespace bitscrape::dht {
 
-RoutingTable::RoutingTable(const types::NodeID& local_id)
-    : local_id_(local_id) {
+RoutingTable::RoutingTable(const types::NodeID& local_id, std::shared_ptr<lock::LockManager> lock_manager)
+    : local_id_(local_id),
+      lock_manager_(lock_manager),
+      resource_id_(lock_manager->register_resource(get_resource_name(), lock::LockManager::LockPriority::HIGH)) {
     // Create the first bucket (covers the entire ID space)
-    buckets_.emplace_back(0);
+    buckets_.emplace_back(0, *lock_manager);
+}
+
+std::string RoutingTable::get_resource_name() const {
+    std::stringstream ss;
+    ss << "dht.routing_table." << local_id_.to_hex().substr(0, 8);
+    return ss.str();
 }
 
 bool RoutingTable::add_node(const types::DHTNode& node) {
@@ -17,7 +26,7 @@ bool RoutingTable::add_node(const types::DHTNode& node) {
         return false;
     }
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Get the appropriate bucket for the node
     KBucket& bucket = get_or_create_bucket(node.id());
@@ -33,7 +42,7 @@ std::future<bool> RoutingTable::add_node_async(const types::DHTNode& node) {
 }
 
 bool RoutingTable::remove_node(const types::NodeID& node_id) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Get the bucket index for the node
     size_t index = get_bucket_index(node_id);
@@ -53,7 +62,7 @@ std::future<bool> RoutingTable::remove_node_async(const types::NodeID& node_id) 
 }
 
 bool RoutingTable::update_node(const types::DHTNode& node) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Get the bucket index for the node
     size_t index = get_bucket_index(node.id());
@@ -73,7 +82,7 @@ std::future<bool> RoutingTable::update_node_async(const types::DHTNode& node) {
 }
 
 std::optional<types::DHTNode> RoutingTable::get_node(const types::NodeID& node_id) const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     // Get the bucket index for the node
     size_t index = get_bucket_index(node_id);
@@ -93,7 +102,7 @@ std::future<std::optional<types::DHTNode>> RoutingTable::get_node_async(const ty
 }
 
 bool RoutingTable::contains_node(const types::NodeID& node_id) const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     // Get the bucket index for the node
     size_t index = get_bucket_index(node_id);
@@ -116,7 +125,7 @@ std::vector<types::DHTNode> RoutingTable::get_closest_nodes(const types::NodeID&
     // First get all nodes with the lock held
     std::vector<types::DHTNode> all_nodes;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
         all_nodes = get_all_nodes_internal();
     }
 
@@ -140,7 +149,7 @@ std::future<std::vector<types::DHTNode>> RoutingTable::get_closest_nodes_async(c
 }
 
 std::vector<types::DHTNode> RoutingTable::get_all_nodes() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
     return get_all_nodes_internal();
 }
 
@@ -172,7 +181,7 @@ std::future<std::vector<types::DHTNode>> RoutingTable::get_all_nodes_async() con
 }
 
 size_t RoutingTable::size() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::SHARED);
 
     size_t total_size = 0;
     for (const auto& bucket : buckets_) {
@@ -210,7 +219,7 @@ KBucket& RoutingTable::get_or_create_bucket(const types::NodeID& node_id) {
 
     // If the bucket doesn't exist, create it and all buckets before it
     while (index >= buckets_.size()) {
-        buckets_.emplace_back(buckets_.size());
+        buckets_.emplace_back(buckets_.size(), *lock_manager_);
     }
 
     return buckets_[index];

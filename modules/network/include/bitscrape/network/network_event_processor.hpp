@@ -7,6 +7,8 @@
 #include "bitscrape/network/tcp_socket.hpp"
 #include "bitscrape/network/udp_socket.hpp"
 #include "bitscrape/types/event_types.hpp"
+#include "bitscrape/lock/lock_manager_singleton.hpp"
+#include "bitscrape/lock/lock_guard.hpp"
 
 #include <future>
 #include <memory>
@@ -500,7 +502,8 @@ public:
   bool process_event(const types::Event &event);
 
 private:
-  std::atomic<bool> running_;
+  bool running_;
+  uint64_t processor_state_resource_id_; // Resource ID for the processor state
   event::EventBus *event_bus_;
   types::SubscriptionToken token_;
   std::unique_ptr<UDPSocket> udp_socket_;

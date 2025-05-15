@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <vector>
 #include <queue>
-#include <mutex>
 #include <future>
 #include <functional>
 #include <memory>
@@ -17,6 +16,9 @@
 #include "bitscrape/dht/dht_message_factory.hpp"
 #include "bitscrape/dht/dht_find_node_message.hpp"
 #include "bitscrape/network/udp_socket.hpp"
+#include "bitscrape/lock/lock_manager.hpp"
+#include "bitscrape/lock/lock_guard.hpp"
+#include "bitscrape/lock/lock_manager_singleton.hpp"
 
 namespace bitscrape::dht {
 
@@ -53,7 +55,8 @@ public:
                const types::NodeID& target_id,
                const RoutingTable& routing_table,
                network::UDPSocket& socket,
-               DHTMessageFactory& message_factory);
+               DHTMessageFactory& message_factory,
+               std::shared_ptr<lock::LockManager> lock_manager = lock::LockManagerSingleton::instance());
 
     /**
      * @brief Destructor
@@ -187,6 +190,13 @@ private:
      */
     std::vector<types::DHTNode> get_closest_nodes() const;
 
+    /**
+     * @brief Get a resource name for this node lookup
+     *
+     * @return Resource name string
+     */
+    std::string get_resource_name() const;
+
     types::NodeID local_id_;                      ///< Local node ID
     types::NodeID target_id_;                     ///< Target ID to look up
     const RoutingTable& routing_table_;           ///< Routing table for initial nodes
@@ -197,7 +207,8 @@ private:
     std::atomic<size_t> active_queries_;          ///< Number of active queries
     std::atomic<bool> complete_;                  ///< Whether the lookup is complete
 
-    mutable std::mutex mutex_;                    ///< Mutex for thread safety
+    std::shared_ptr<lock::LockManager> lock_manager_; ///< Pointer to the lock manager
+    uint64_t resource_id_;                        ///< Resource ID for the lock manager
     std::condition_variable cv_;                  ///< Condition variable for waiting for completion
 };
 

@@ -62,6 +62,32 @@ Key architectural principles:
 
 ## Building
 
+### Makefile build
+
+The project now includes a simple Makefile-based build system. Basic usage:
+
+```bash
+# Build everything (modules + apps)
+make
+
+# Build with debug flags (adds -g -O0)
+make DEBUG=1
+
+# Build a single module
+make -C modules/<module>
+
+# Build the CLI app only
+make -C apps/cli
+
+# Clean
+make clean
+
+# Install
+make install PREFIX=/usr/local
+```
+
+Note: Unit tests require GoogleTest to be available; see `BUILD.md` for more details.
+
 ### Installing Dependencies
 
 #### macOS

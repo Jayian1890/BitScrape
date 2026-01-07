@@ -1,6 +1,17 @@
 # BitScrape Build System
 
-This document describes how to build the BitScrape project using CMake.
+This document describes how to build the BitScrape project. The repository now includes Makefiles to build the project (recommended). CMake-based instructions are preserved below for reference.
+
+## Makefile build (recommended)
+
+- Build everything: `make` (runs modules and apps builds)
+- Build with debug flags: `make DEBUG=1`
+- Clean: `make clean`
+- Install: `make install PREFIX=/usr/local`
+- Build a single module: `make -C modules/<module>`
+- Build CLI only: `make -C apps/cli`
+- Tests: unit test targets are module-scoped and require GoogleTest to be available; see the "Testing" section below for options.
+
 
 ## Prerequisites
 
@@ -53,12 +64,27 @@ cd build_debug
 
 ## Testing
 
-Tests are built automatically if they exist. To run the tests:
+- Makefile-based tests (preferred): Install GoogleTest and run tests with the new Makefiles. For macOS: `brew install googletest`.
 
-```bash
-cd build_debug
-ctest
-```
+  - Run all module tests from the repo root:
+
+    ```bash
+    make test
+    ```
+
+  - Run a single module's tests:
+
+    ```bash
+    make -C modules/<module> test
+    ```
+
+  - If GoogleTest is installed in a non-standard location, pass include/lib flags to make:
+
+    ```bash
+    make test GTEST_INCLUDES="-I/opt/homebrew/include" GTEST_LIBS="-L/opt/homebrew/lib -lgtest -lgtest_main -pthread"
+    ```
+
+- CMake-based tests (legacy): The previous CMake flow is still available; build with CMake and run `ctest` as shown below.
 
 ## Configuration
 

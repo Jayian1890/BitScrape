@@ -24,11 +24,11 @@
 #include <filesystem>
 
 // Global variables for signal handling
-std::atomic running = true;
+std::atomic<bool> running{true};
 std::shared_ptr<bitscrape::core::Controller> controller;
 
 // Global variables for CLI state
-std::atomic<bool> interactive_mode = true;
+std::atomic<bool> interactive_mode{true};
 std::mutex console_mutex;
 
 // Global variables for web interface
@@ -168,8 +168,9 @@ bool start_web_interface(uint16_t web_port,
     // Resolve static directory path
     std::filesystem::path static_path(static_dir);
     if (!static_path.is_absolute()) {
-        // If relative, make it relative to the executable directory
+        // If relative, make it relative to the current working directory
         static_path = std::filesystem::current_path() / static_path;
+        static_path = static_path.lexically_normal();
     }
 
     // Register static file routes

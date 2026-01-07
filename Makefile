@@ -24,10 +24,10 @@ all: modules apps
 modules: $(MODULES:%=lib/%)
 
 lib/%:
-	$(MAKE) -C modules/$* TOP=$(TOP) BUILD_DIR=$(BUILD_DIR) LIB_DIR=$(LIB_DIR) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"
+	$(MAKE) -C modules/$* TOP=$(TOP) BUILD_DIR=$(TOP)/$(BUILD_DIR) LIB_DIR=$(TOP)/$(LIB_DIR) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"
 
 apps:
-	$(MAKE) -C apps/cli TOP=$(TOP) BUILD_DIR=$(BUILD_DIR) LIB_DIR=$(LIB_DIR) BIN_DIR=$(BIN_DIR) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" MODULES="$(MODULES)"
+	$(MAKE) -C apps/cli TOP=$(TOP) BUILD_DIR=$(TOP)/$(BUILD_DIR) LIB_DIR=$(TOP)/$(LIB_DIR) BIN_DIR=$(TOP)/$(BIN_DIR) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" MODULES="$(MODULES)"
 
 clean:
 	rm -rf $(BUILD_DIR)/* || true

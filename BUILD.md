@@ -1,8 +1,8 @@
 # BitScrape Build System
 
-This document describes how to build the BitScrape project. The repository now includes Makefiles to build the project (recommended). CMake-based instructions are preserved below for reference.
+This document describes how to build the BitScrape project. The repository now uses Makefiles exclusively for building and testing.
 
-## Makefile build (recommended)
+## Makefile build
 
 - Build everything: `make` (runs modules and apps builds)
 - Build with debug flags: `make DEBUG=1`
@@ -10,40 +10,30 @@ This document describes how to build the BitScrape project. The repository now i
 - Install: `make install PREFIX=/usr/local`
 - Build a single module: `make -C modules/<module>`
 - Build CLI only: `make -C apps/cli`
-- Tests: unit test targets are module-scoped and require GoogleTest to be available; see the "Testing" section below for options.
+- Tests: `make test` for all modules or `make -C modules/<module> test` for one module.
 
 
 ## Prerequisites
 
-- CMake 3.14 or higher
 - C++23 compatible compiler
+- make
 - Git (for fetching dependencies)
 
 ## Building the Project
 
 ### Debug Build (CLI Only)
 
-To build the project in debug mode targeting only the CLI application:
-
 ```bash
-# Using the provided script
-./build_debug.sh
-
-# Or manually
-mkdir -p build_debug
-cd build_debug
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake --build .
+make DEBUG=1 -C modules
+make DEBUG=1 -C apps/cli
 ```
 
-The executable will be located at `build_debug/apps/cli/bitscrape_cli`.
+The executable will be located at `build/bin/bitscrape_cli`.
 
 ### Running the Application
 
 ```bash
-# From the build directory
-cd build_debug
-./apps/cli/bitscrape_cli
+./build/bin/bitscrape_cli
 ```
 
 ## Project Structure
@@ -64,36 +54,29 @@ cd build_debug
 
 ## Testing
 
-- Makefile-based tests (preferred): Install GoogleTest and run tests with the new Makefiles. For macOS: `brew install googletest`.
+- Tests are built with the vendored doctest header; no external GoogleTest/GMock installation is required.
+- Run all module tests from the repo root:
 
-  - Run all module tests from the repo root:
+  ```bash
+  make test
+  ```
 
-    ```bash
-    make test
-    ```
+- Run a single module's tests:
 
-  - Run a single module's tests:
-
-    ```bash
-    make -C modules/<module> test
-    ```
-
-  - Tests are built with the vendored doctest header; no external GoogleTest installation is required.
-
-- CMake-based tests (legacy): The previous CMake flow is still available; build with CMake and run `ctest` as shown below.
+  ```bash
+  make -C modules/<module> test
+  ```
 
 ## Configuration
 
-The application uses a configuration file `bitscrape.conf` which is copied to the build directory during the build process.
+The Make build produces a `build/bitscrape.json.template` file plus `build/public` and `build/data` directories that mirror the previous CMake-generated assets. Copy or edit the template as needed for runtime configuration.
 
 ## Customizing the Build
 
-You can customize the build by modifying the CMake options:
+Override standard Make variables as needed:
 
 ```bash
-# Example: Build with different compiler
-cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug ..
-
-# Example: Build with additional compiler flags
-cmake -DCMAKE_CXX_FLAGS="-fsanitize=address" -DCMAKE_BUILD_TYPE=Debug ..
+make CXX=clang++ CXXFLAGS="-std=c++23 -O2 -Wall" 
+make DEBUG=1
+make PREFIX=/opt/bitscrape install
 ```

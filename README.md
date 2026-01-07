@@ -57,14 +57,11 @@ Key architectural principles:
 ## Requirements
 
 - C++23 compatible compiler (GCC 11+, Clang 14+, or MSVC 19.29+)
-- CMake 3.20 or higher
-- Ninja build tool (optional, but recommended)
+- make
 
-## Building
+## Building (Make-only)
 
-### Makefile build
-
-The project now includes a simple Makefile-based build system. Basic usage:
+The repository ships Makefiles for modules and the CLI. Common tasks:
 
 ```bash
 # Build everything (modules + apps)
@@ -84,67 +81,15 @@ make clean
 
 # Install
 make install PREFIX=/usr/local
+
+# Run all module tests
+make test
+
+# Run tests for one module
+make -C modules/<module> test
 ```
 
-Note: Unit tests require GoogleTest to be available; see `BUILD.md` for more details.
-
-### Installing Dependencies
-
-#### macOS
-```bash
-brew install cmake ninja
-```
-
-#### Ubuntu/Debian
-```bash
-sudo apt install cmake ninja-build
-```
-
-#### Windows
-```bash
-# Using Chocolatey
-choco install cmake ninja
-```
-
-### Building the Project
-
-```bash
-# Configure and build
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
-
-# Run tests
-cd build && ctest --output-on-failure
-
-# Install
-cmake --install build
-```
-
-### Building with Options
-
-```bash
-# Configure with options
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_ASAN=OFF -DBUILD_TESTS=ON
-
-# Build specific target
-cmake --build build --target bitscrape_cli
-```
-
-### Using the Build Script
-
-```bash
-# Build with default options (Debug mode with tests)
-./build-cmake.sh
-
-# Build in release mode
-./build-cmake.sh --release
-
-# Build with AddressSanitizer
-./build-cmake.sh --asan
-
-# Build without tests
-./build-cmake.sh --no-tests
-```
+Tests use the vendored doctest header; no external GoogleTest/GMock or CMake toolchain is required.
 
 ## Usage
 
@@ -191,8 +136,7 @@ bitscrape/
 ├── tests/                    # Integration tests
 ├── docs/                     # Documentation
 ├── scripts/                  # Utility scripts
-├── CMakeLists.txt           # Main build file
-└── cmake/                   # CMake modules and configuration
+└── Makefile                 # Top-level Make entry point
 ```
 
 ## Module Overview

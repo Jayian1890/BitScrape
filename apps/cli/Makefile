@@ -14,9 +14,12 @@ OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
 INCLUDES := -Iinclude $(shell for d in $(TOP)/modules/*/include; do if [ -d $$d ]; then printf " -I%s" $$d; fi; done)
 LIBS := $(patsubst %,$(LIB_DIR)/lib%.a,$(MODULES))
 
-.PHONY: all clean install
+TEMPLATE := $(BUILD_DIR)/bitscrape.json.template
+PUBLIC_DIR := $(BUILD_DIR)/public
+DATA_DIR := $(BUILD_DIR)/data
 
-all: $(BIN_DIR)/$(APP)
+.PHONY: all clean install
+all: $(TEMPLATE) $(PUBLIC_DIR) $(DATA_DIR) $(BIN_DIR)/$(APP)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
@@ -25,6 +28,16 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 $(BIN_DIR)/$(APP): $(OBJS) $(LIBS)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(LIBS)
+
+$(TEMPLATE):
+	@mkdir -p $(dir $@)
+	@if [ ! -f $@ ]; then echo "{}" > $@; fi
+
+$(PUBLIC_DIR):
+	@mkdir -p $@
+
+$(DATA_DIR):
+	@mkdir -p $@
 
 clean:
 	rm -rf $(OBJDIR) $(BIN_DIR)/$(APP)

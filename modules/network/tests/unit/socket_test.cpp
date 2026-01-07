@@ -1,6 +1,6 @@
 #include "bitscrape/network/socket.hpp"
 
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 namespace bitscrape::network::test {
 

@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/beacon/beacon_sink.hpp"
 #include <memory>

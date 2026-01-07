@@ -1,20 +1,22 @@
 # Shared module make fragment. Intended to be included by modules/*/Makefile
 
-TOP ?= $(abspath $(TOP))
-BUILD_DIR ?= build
+TOP ?= $(abspath $(CURDIR)/../..)
+BUILD_DIR ?= $(TOP)/build
 LIB_DIR ?= $(BUILD_DIR)/lib
 CXX ?= g++
 CXXFLAGS ?= -std=c++23 -Wall -Wextra -Wpedantic
+DOCTEST_DIR ?= $(TOP)/third_party
 
 SRCDIR := src
 OBJDIR := $(BUILD_DIR)/modules/$(MODULE)
 SRCS := $(shell find $(SRCDIR) -name '*.cpp')
 OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
-INCLUDES := -Iinclude $(shell for d in $(TOP)/modules/*/include; do if [ -d $$d ]; then printf " -I%s" $$d; fi; done)
+INCLUDES := -Iinclude -I$(TOP)/include $(shell for d in $(TOP)/modules/*/include; do if [ -d $$d ]; then printf " -I%s" $$d; fi; done)
+TEST_INCLUDES := $(INCLUDES) -I$(DOCTEST_DIR)
 
 .PHONY: all clean test
 
-all: $(LIB_DIR)/lib$(MODULE).a
+all: clean test $(LIB_DIR)/lib$(MODULE).a
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
@@ -25,25 +27,30 @@ $(LIB_DIR)/lib$(MODULE).a: $(OBJS)
 	ar rcs $@ $^
 
 # Unit test support (optional)
-# Configure GTEST_INCLUDES and GTEST_LIBS if tests require non-system locations
-GTEST_INCLUDES ?= -I/usr/local/include
-GTEST_LIBS ?= -lgtest -lgtest_main -pthread
 TEST_SRCDIR := tests/unit
 TEST_BIN_DIR := $(BUILD_DIR)/tests/$(MODULE)
 TEST_SRCS := $(shell if [ -d $(TEST_SRCDIR) ]; then find $(TEST_SRCDIR) -name '*.cpp'; fi)
 TEST_OBJS := $(patsubst $(TEST_SRCDIR)/%.cpp,$(TEST_BIN_DIR)/%.o,$(TEST_SRCS))
+TEST_MAIN_OBJ := $(BUILD_DIR)/tests/doctest_main.o
+ALL_LIBS := $(wildcard $(LIB_DIR)/lib*.a)
+TEST_LIBS ?= $(LIB_DIR)/lib$(MODULE).a $(filter-out $(LIB_DIR)/lib$(MODULE).a,$(ALL_LIBS))
 
 test: $(TEST_SRCS)
 	@if [ -z "$(TEST_SRCS)" ]; then echo "No unit tests for $(MODULE)"; exit 0; fi
-	$(MAKE) -f $(lastword $(MAKEFILE_LIST)) $(TEST_BIN_DIR)/run_tests BUILD_DIR=$(BUILD_DIR) LIB_DIR=$(LIB_DIR)
+	$(MAKE) $(TEST_BIN_DIR)/run_tests
 
 $(TEST_BIN_DIR)/%.o: $(TEST_SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(GTEST_INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) -c $< -o $@
 
-$(TEST_BIN_DIR)/run_tests: $(TEST_OBJS) $(LIB_DIR)/lib$(MODULE).a
+
+$(TEST_MAIN_OBJ): $(TOP)/tests/doctest_main.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -o $@ $(TEST_OBJS) $(LIB_DIR)/lib$(MODULE).a $(GTEST_LIBS)
+	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) -c $< -o $@
+
+$(TEST_BIN_DIR)/run_tests: $(TEST_OBJS) $(TEST_MAIN_OBJ) $(TEST_LIBS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -o $@ $(TEST_OBJS) $(TEST_MAIN_OBJ) $(TEST_LIBS)
 
 clean:
-	rm -rf $(OBJDIR) $(LIB_DIR)/lib$(MODULE).a $(TEST_BIN_DIR)
+	rm -rf $(OBJDIR) $(LIB_DIR)/lib$(MODULE).a $(TEST_BIN_DIR) $(TEST_MAIN_OBJ)

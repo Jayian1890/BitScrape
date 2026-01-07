@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/bittorrent/peer_manager.hpp"
 #include "bitscrape/types/info_hash.hpp"

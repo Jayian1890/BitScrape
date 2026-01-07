@@ -78,11 +78,7 @@ cd build_debug
     make -C modules/<module> test
     ```
 
-  - If GoogleTest is installed in a non-standard location, pass include/lib flags to make:
-
-    ```bash
-    make test GTEST_INCLUDES="-I/opt/homebrew/include" GTEST_LIBS="-L/opt/homebrew/lib -lgtest -lgtest_main -pthread"
-    ```
+  - Tests are built with the vendored doctest header; no external GoogleTest installation is required.
 
 - CMake-based tests (legacy): The previous CMake flow is still available; build with CMake and run `ctest` as shown below.
 

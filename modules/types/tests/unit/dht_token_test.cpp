@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 #include <thread>
 
 #include "bitscrape/types/dht_token.hpp"

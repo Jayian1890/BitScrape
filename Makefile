@@ -13,8 +13,8 @@ CXXFLAGS += -O2
 endif
 PREFIX ?= /usr/local
 
-# Discover modules by the presence of CMakeLists.txt (keep parity with original layout)
-MODULE_DIRS := $(shell for d in modules/*; do if [ -d $$d ] && [ -f $$d/CMakeLists.txt ]; then basename $$d; fi; done)
+# Discover modules by the presence of a module Makefile (Make-only flow)
+MODULE_DIRS := $(shell for d in modules/*; do if [ -d $$d ] && [ -f $$d/Makefile ]; then basename $$d; fi; done)
 MODULES := $(MODULE_DIRS)
 
 .PHONY: all modules apps clean install test help
@@ -26,7 +26,7 @@ modules: $(MODULES:%=lib/%)
 lib/%:
 	$(MAKE) -C modules/$* TOP=$(TOP) BUILD_DIR=$(TOP)/$(BUILD_DIR) LIB_DIR=$(TOP)/$(LIB_DIR) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"
 
-apps:
+apps: modules
 	$(MAKE) -C apps/cli TOP=$(TOP) BUILD_DIR=$(TOP)/$(BUILD_DIR) LIB_DIR=$(TOP)/$(LIB_DIR) BIN_DIR=$(TOP)/$(BIN_DIR) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" MODULES="$(MODULES)"
 
 clean:

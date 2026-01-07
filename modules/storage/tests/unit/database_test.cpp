@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 #include <bitscrape/storage/database.hpp>
 #include <bitscrape/storage/detail/key_value_store.hpp>
 

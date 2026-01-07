@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 #include <bitscrape/core/controller.hpp>
 #include <bitscrape/core/configuration.hpp>
 #include <bitscrape/event/event_bus.hpp>

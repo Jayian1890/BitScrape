@@ -1,5 +1,5 @@
 #include "bitscrape/tracker/tracker_request.hpp"
-#include "gtest/gtest.h"
+#include <bitscrape/testing.hpp>
 
 namespace bitscrape::tracker::test {
 

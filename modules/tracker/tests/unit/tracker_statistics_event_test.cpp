@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/tracker/tracker_statistics_event.hpp"
 #include "bitscrape/types/info_hash.hpp"

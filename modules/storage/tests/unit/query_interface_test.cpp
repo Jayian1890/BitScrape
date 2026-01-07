@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 #include <bitscrape/storage/query_interface.hpp>
 #include <bitscrape/storage/database.hpp>
 #include <bitscrape/storage/data_models.hpp>

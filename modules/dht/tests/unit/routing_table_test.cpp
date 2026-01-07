@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/dht/routing_table.hpp"
 #include "bitscrape/lock/lock_manager_singleton.hpp"

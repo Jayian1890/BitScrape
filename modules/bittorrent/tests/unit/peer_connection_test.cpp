@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/bittorrent/peer_connection.hpp"
 #include "bitscrape/bittorrent/peer_message.hpp"

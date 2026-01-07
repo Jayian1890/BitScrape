@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/bittorrent/metadata_exchange.hpp"
 #include "bitscrape/bittorrent/peer_wire_protocol.hpp"

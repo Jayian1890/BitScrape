@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/bencode/bencode_validation_event.hpp"
 #include "bitscrape/bencode/bencode_value.hpp"
@@ -38,10 +38,11 @@ TEST(BencodeValidationEventTest, BencodeValidationResponseEventConstruction) {
 
 TEST(BencodeValidationEventTest, BencodeSchemaValidationRequestEventConstruction) {
     BencodeValue value(std::string("test"));
-    BencodeValue schema;
-    schema.as_dictionary()["type"] = BencodeValue(std::string("string"));
-    schema.as_dictionary()["minLength"] = BencodeValue(static_cast<int64_t>(1));
-    schema.as_dictionary()["maxLength"] = BencodeValue(static_cast<int64_t>(10));
+        std::map<std::string, BencodeValue> schema_dict{
+            {"type", BencodeValue(std::string("string"))},
+            {"minLength", BencodeValue(static_cast<int64_t>(1))},
+            {"maxLength", BencodeValue(static_cast<int64_t>(10))}};
+        BencodeValue schema(schema_dict);
     
     BencodeSchemaValidationRequestEvent event(42, value, schema);
     
@@ -51,13 +52,13 @@ TEST(BencodeValidationEventTest, BencodeSchemaValidationRequestEventConstruction
     EXPECT_EQ(event.request_id(), 42);
     EXPECT_TRUE(event.value().is_string());
     EXPECT_EQ(event.value().as_string(), "test");
-    EXPECT_TRUE(event.schema().is_dictionary());
-    EXPECT_TRUE(event.schema().as_dictionary().at("type").is_string());
-    EXPECT_EQ(event.schema().as_dictionary().at("type").as_string(), "string");
-    EXPECT_TRUE(event.schema().as_dictionary().at("minLength").is_integer());
-    EXPECT_EQ(event.schema().as_dictionary().at("minLength").as_integer(), 1);
-    EXPECT_TRUE(event.schema().as_dictionary().at("maxLength").is_integer());
-    EXPECT_EQ(event.schema().as_dictionary().at("maxLength").as_integer(), 10);
+    EXPECT_TRUE(event.schema().is_dict());
+    EXPECT_TRUE(event.schema().as_dict().at("type").is_string());
+    EXPECT_EQ(event.schema().as_dict().at("type").as_string(), "string");
+    EXPECT_TRUE(event.schema().as_dict().at("minLength").is_integer());
+    EXPECT_EQ(event.schema().as_dict().at("minLength").as_integer(), 1);
+    EXPECT_TRUE(event.schema().as_dict().at("maxLength").is_integer());
+    EXPECT_EQ(event.schema().as_dict().at("maxLength").as_integer(), 10);
 }
 
 TEST(BencodeValidationEventTest, BencodeValidationRequestEventClone) {

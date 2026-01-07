@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 #include <bitscrape/storage/storage_manager.hpp>
 #include <bitscrape/storage/query_interface.hpp>
 #include <bitscrape/storage/database.hpp>
@@ -943,8 +943,3 @@ TEST_F(StorageManagerTest, TransactionRollback) {
     // EXPECT_FALSE(infohash.has_value());
 }
 */
-
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

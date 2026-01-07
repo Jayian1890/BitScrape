@@ -1,6 +1,6 @@
 #include "bitscrape/network/buffer.hpp"
 
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 namespace bitscrape::network::test {
 

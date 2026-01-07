@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/dht/dht_message.hpp"
 #include "bitscrape/bencode/bencode_decoder.hpp"

@@ -1,7 +1,8 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/beacon/beacon_adapter.hpp"
 #include "bitscrape/event/event_bus.hpp"
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <condition_variable>

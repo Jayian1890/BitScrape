@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/event/event_filter.hpp"
 #include "bitscrape/types/event_types.hpp"

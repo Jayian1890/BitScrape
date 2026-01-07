@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 #include <bitscrape/web/http_router.hpp>
 #include <bitscrape/web/http_server.hpp>
 #include <bitscrape/web/web_controller.hpp>

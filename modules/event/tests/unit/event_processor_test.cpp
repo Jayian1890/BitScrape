@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/event/event_bus.hpp"
 #include "bitscrape/event/event_processor.hpp"

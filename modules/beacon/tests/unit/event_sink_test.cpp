@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <bitscrape/testing.hpp>
 
 #include "bitscrape/beacon/event_sink.hpp"
 #include "bitscrape/event/event_bus.hpp"

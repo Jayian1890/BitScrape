@@ -48,7 +48,10 @@ test:
 
 coverage:
 	@echo "Rebuilding with coverage instrumentation and running tests..."
-	$(MAKE) clean
+	@echo "Cleaning previous coverage artifacts..."
+	@find $(TOP) -name '*.gcda' -o -name '*.gcno' -exec rm -f {} + || true
+	@rm -f $(TOP)/lcov.info || true
+	@rm -rf $(TOP)/coverage || true
 	$(MAKE) COVERAGE=1 RUN_TESTS=1 test
 	@command -v gcovr >/dev/null 2>&1 || { echo "gcovr is required to export coverage (install with 'pip install gcovr')."; exit 1; }
 	@gcovr --root $(TOP) --filter $(TOP)/modules --filter $(TOP)/apps --exclude $(TOP)/third_party --lcov --output $(TOP)/lcov.info

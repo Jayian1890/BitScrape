@@ -5,6 +5,7 @@
 #include <bitscrape/bencode/bencode_decoder.hpp>
 #include <bitscrape/lock/lock_manager_singleton.hpp>
 #include <bitscrape/lock/lock_guard.hpp>
+#include <bitscrape/lock/lock_exceptions.hpp>
 
 #include <fstream>
 #include <sstream>
@@ -29,7 +30,30 @@ public:
     {
         // Acquire a lock on the configuration resource
         auto lock_manager = lock::LockManagerSingleton::instance();
-        auto lock_guard = lock_manager->get_lock_guard(config_resource_id_);
+
+        // Debug: print current lock stack for this thread
+        auto current_stack = lock_manager->get_lock_stack();
+        if (!current_stack.empty()) {
+            std::cerr << "Thread holds locks before loading configuration: ";
+            for (auto id : current_stack) {
+                try {
+                    std::cerr << lock_manager->get_resource_name(id) << "(" << id << ") ";
+                } catch (...) {
+                    std::cerr << id << " ";
+                }
+            }
+            std::cerr << std::endl;
+            std::cerr << lock_manager->dump_lock_state() << std::endl;
+        }
+
+        std::unique_ptr<lock::LockGuard> lock_guard;
+        try {
+            lock_guard = lock_manager->get_lock_guard(config_resource_id_);
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to acquire configuration lock: " << e.what() << std::endl;
+            std::cerr << lock_manager->dump_lock_state() << std::endl;
+            throw;
+        }
 
         try {
             // Check if file exists
@@ -330,12 +354,35 @@ public:
             }
 
             apply_missing_defaults();
+            // Release the lock before calling save to avoid acquiring the same lock twice in this thread
+            lock_guard.reset();
             // Always rewrite on load so the file is pretty-printed and complete
-            save();
+            if (!save()) {
+                std::cerr << "Failed to save configuration after loading defaults" << std::endl;
+                return false;
+            }
             return true;
-        } catch (const std::exception& e)
-        {
+        } catch (const lock::LockOperationException& e) {
+            std::cerr << "Failed to load configuration (lock): " << e.what() << std::endl;
+            std::cerr << lock_manager->dump_lock_state() << std::endl;
+            return false;
+        } catch (const std::exception& e) {
             std::cerr << "Failed to load configuration: " << e.what() << std::endl;
+            std::cerr << lock_manager->dump_lock_state() << std::endl;
+
+            auto stack = lock_manager->get_lock_stack();
+            if (!stack.empty()) {
+                std::cerr << "Thread lock stack at failure: ";
+                for (auto id : stack) {
+                    try {
+                        std::cerr << lock_manager->get_resource_name(id) << "(" << id << ") ";
+                    } catch (...) {
+                        std::cerr << id << " ";
+                    }
+                }
+                std::cerr << std::endl;
+            }
+
             return false;
         }
     }

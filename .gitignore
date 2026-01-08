@@ -84,7 +84,6 @@ bitscrape.log
 /.ninja_deps
 /data/bitscrape.db
 bin/
-public
 /default.profraw
 /bitscrape.json
 /build_debug/

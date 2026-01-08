@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BitScrape Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b1021;
+      --card: #12182b;
+      --text: #e7ecf7;
+      --muted: #9aa5c0;
+      --accent: #5ce1e6;
+      --accent-2: #ffb347;
+      --border: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(92,225,230,0.12), transparent 30%),
+                  radial-gradient(circle at 80% 10%, rgba(255,179,71,0.14), transparent 26%),
+                  var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+    .shell {
+      width: min(1100px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.02em;
+    }
+    .tag {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    }
+    .muted { color: var(--muted); font-size: 13px; }
+    .value { font-size: 26px; font-weight: 600; margin: 6px 0 2px; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0b1021;
+      background: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pill.off {
+      background: #ff8a80;
+      color: #0b0b0b;
+    }
+    button {
+      background: var(--accent);
+      color: #0b1021;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.08s ease, box-shadow 0.12s ease;
+    }
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(92,225,230,0.15); }
+    button:active { transform: translateY(0); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    pre {
+      margin: 0;
+      padding: 12px;
+      background: #0c1427;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      overflow-x: auto;
+    }
+    .error { color: #ff8a80; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <h1>BitScrape Web</h1>
+        <div class="muted">Status dashboard for the running BitScrape node.</div>
+      </div>
+      <div class="tag">Serving static assets from <strong>public/</strong></div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div class="row" style="justify-content: space-between; margin-bottom: 8px;">
+          <div class="muted">Controller</div>
+          <span id="controller-pill" class="pill off">offline</span>
+        </div>
+        <div class="muted">Crawling</div>
+        <div id="crawling-pill" class="pill off" style="margin-top:6px; width:max-content;">stopped</div>
+        <div class="actions" style="margin-top:12px;">
+          <button id="start-btn">Start crawling</button>
+          <button id="stop-btn" class="secondary">Stop crawling</button>
+          <button id="refresh-btn" class="secondary">Refresh</button>
+        </div>
+        <div id="error" class="error" style="margin-top:10px; display:none;"></div>
+      </div>
+
+      <div class="card">
+        <div class="muted" style="margin-bottom:8px;">Quick stats</div>
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap:10px;">
+          <div>
+            <div class="muted">Nodes</div>
+            <div class="value" id="nodes-count">–</div>
+          </div>
+          <div>
+            <div class="muted">Infohashes</div>
+            <div class="value" id="infohash-count">–</div>
+          </div>
+          <div>
+            <div class="muted">Metadata</div>
+            <div class="value" id="metadata-count">–</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="muted" style="margin-bottom:8px;">Recent status JSON</div>
+        <pre id="status-json">Waiting for data…</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const controllerPill = document.getElementById('controller-pill');
+    const crawlingPill = document.getElementById('crawling-pill');
+    const nodesCount = document.getElementById('nodes-count');
+    const infohashCount = document.getElementById('infohash-count');
+    const metadataCount = document.getElementById('metadata-count');
+    const statusJson = document.getElementById('status-json');
+    const errorBox = document.getElementById('error');
+
+    async function getJson(url, opts = {}) {
+      const res = await fetch(url, opts);
+      if (!res.ok) throw new Error(`${url} -> ${res.status}`);
+      return res.json();
+    }
+
+    function setPill(el, on, onLabel, offLabel) {
+      el.textContent = on ? onLabel : offLabel;
+      el.classList.toggle('off', !on);
+    }
+
+    async function refresh() {
+      errorBox.style.display = 'none';
+      try {
+        const [status, stats] = await Promise.all([
+          getJson('/api/status'),
+          getJson('/api/statistics')
+        ]);
+
+        setPill(controllerPill, status.running, status.running ? 'online' : 'offline');
+        setPill(crawlingPill, status.crawling, status.crawling ? 'crawling' : 'stopped');
+
+        nodesCount.textContent = stats['storage.node_count'] ?? '–';
+        infohashCount.textContent = stats['storage.infohash_count'] ?? '–';
+        metadataCount.textContent = stats['storage.metadata_count'] ?? '–';
+
+        statusJson.textContent = JSON.stringify({ status, stats }, null, 2);
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = 'block';
+      }
+    }
+
+    async function post(url) {
+      const res = await fetch(url, { method: 'POST' });
+      if (!res.ok) throw new Error(`${url} -> ${res.status}`);
+      return res.json();
+    }
+
+    document.getElementById('start-btn').onclick = async () => {
+      try { await post('/api/crawling/start'); await refresh(); }
+      catch (err) { errorBox.textContent = err.message; errorBox.style.display = 'block'; }
+    };
+    document.getElementById('stop-btn').onclick = async () => {
+      try { await post('/api/crawling/stop'); await refresh(); }
+      catch (err) { errorBox.textContent = err.message; errorBox.style.display = 'block'; }
+    };
+    document.getElementById('refresh-btn').onclick = refresh;
+
+    refresh();
+  </script>
+</body>
+</html>

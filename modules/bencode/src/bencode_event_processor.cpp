@@ -93,8 +93,10 @@ public:
    * @brief Constructor
    */
   BencodeEventProcessorImpl()
-      : running_(false), next_request_id_(1), token_(0),
-        encoder_(create_bencode_encoder()), decoder_(create_bencode_decoder()) {
+      : running_(false), event_bus_(nullptr), token_(0),
+        next_request_id_(1), mutex_(), encode_promises_(), decode_promises_(),
+        encoder_(create_bencode_encoder()),
+        decoder_(create_bencode_decoder()) {
   }
 
   /**

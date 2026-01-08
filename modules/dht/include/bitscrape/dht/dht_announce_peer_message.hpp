@@ -137,7 +137,7 @@ private:
     uint16_t port_;                             ///< Port to announce (query only)
     types::DHTToken token_;                     ///< Token received from a previous get_peers response (query only)
     bool implied_port_;                         ///< Whether to use the sender's port instead of the specified port (query only)
-    bool is_response_;                          ///< Whether this is a response message
+    [[maybe_unused]] bool is_response_;        ///< Whether this is a response message
 };
 
 } // namespace bitscrape::dht

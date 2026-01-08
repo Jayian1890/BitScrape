@@ -14,7 +14,7 @@ KeyValueStore::KeyValueStore(const std::string& path, bool persistent)
     : path_(path.empty() ? "data/default.db" : path),
       initialized_(false),
       in_transaction_(false),
-      is_persistent_(true) {
+    is_persistent_(persistent) {
     // Always use disk-based storage
 
     // If original path was empty, we're using the default path

@@ -127,6 +127,7 @@ void HTTPServer::accept_connections() {
 }
 
 void HTTPServer::handle_connection(std::unique_ptr<network::TCPSocket> socket, const network::Address& address) {
+    (void)address;
     try {
         // Set a timeout for the socket (30 seconds)
         socket->set_receive_timeout(30000);

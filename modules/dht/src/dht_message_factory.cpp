@@ -456,6 +456,7 @@ std::shared_ptr<DHTMessage> DHTMessageFactory::parse_error(const bencode::Bencod
 
     // Get the error code and message
     int error_code = e_list[0].as_integer();
+    (void)error_code;
     std::string error_message = e_list[1].as_string();
 
     // For now, just return a ping message as a placeholder

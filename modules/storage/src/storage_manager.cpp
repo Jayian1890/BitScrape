@@ -14,7 +14,8 @@ public:
     friend class StorageManager;
     Impl(const std::string& db_path, bool persistent)
         : db_path_(db_path.empty() ? "data/default.db" : db_path),
-          database_(std::make_shared<Database>(db_path.empty() ? "data/default.db" : db_path, true)),
+                    database_(std::make_shared<Database>(
+                            db_path.empty() ? "data/default.db" : db_path, persistent)),
           query_interface_(std::make_shared<QueryInterface>(database_)),
           initialized_(false) {
         // If original path was empty, we're using the default path
@@ -385,6 +386,8 @@ public:
 
     bool store_metadata(const types::InfoHash& info_hash, const types::MetadataInfo& metadata) {
         std::lock_guard<std::mutex> lock(mutex_);
+
+        (void)metadata;
 
         if (!initialized_) {
             std::cerr << "Storage manager not initialized" << std::endl;
@@ -1020,7 +1023,7 @@ std::future<bool> StorageManager::increment_tracker_scrape_count_async(const typ
 
 
 std::shared_ptr<StorageManager> create_storage_manager(const std::string& db_path, bool persistent) {
-    return std::make_shared<StorageManager>(db_path, true); // Always use disk-based storage
+    return std::make_shared<StorageManager>(db_path, persistent);
 }
 
 } // namespace bitscrape::storage

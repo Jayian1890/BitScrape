@@ -207,7 +207,8 @@ private:
 
     types::NodeID node_id_;                                  ///< Local node ID
     uint16_t port_;                                          ///< UDP port to listen on
-    event::EventBus* event_bus_;                             ///< Event bus for event-driven communication
+    [[maybe_unused]] event::EventBus*
+        event_bus_;                                          ///< Event bus for event-driven communication
 
     std::unique_ptr<network::UDPSocket> socket_;             ///< UDP socket for sending and receiving messages
     std::unique_ptr<RoutingTable> routing_table_;            ///< Routing table for storing nodes

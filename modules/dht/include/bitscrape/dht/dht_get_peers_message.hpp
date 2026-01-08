@@ -135,7 +135,7 @@ private:
     types::DHTToken token_;                     ///< Token for future announce_peer (response only)
     std::vector<types::DHTNode> nodes_;         ///< List of nodes close to the target (response only)
     std::vector<types::Endpoint> values_;       ///< List of peer endpoints (response only)
-    bool is_response_;                          ///< Whether this is a response message
+    [[maybe_unused]] bool is_response_;         ///< Whether this is a response message
 };
 
 } // namespace bitscrape::dht

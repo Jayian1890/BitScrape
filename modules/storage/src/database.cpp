@@ -340,7 +340,9 @@ class Database::Impl {
 public:
     Impl(const std::string& path, bool persistent)
         : path_(path.empty() ? "data/default.db" : path),
-          store_(std::make_unique<detail::KeyValueStore>(path.empty() ? "data/default.db" : path, true)),
+          store_(
+              std::make_unique<detail::KeyValueStore>(
+                  path.empty() ? "data/default.db" : path, persistent)),
           initialized_(false) {
         // If original path was empty, we're using the default path
         if (path.empty()) {
@@ -660,8 +662,8 @@ public:
                         value.erase(value.find_last_not_of(" \t\n\r") + 1);
 
                         // Remove quotes
-                        if (value.front() == '\'' && value.back() == '\'' ||
-                            value.front() == '"' && value.back() == '"') {
+                        if ((value.front() == '\'' && value.back() == '\'') ||
+                            (value.front() == '"' && value.back() == '"')) {
                             value = value.substr(1, value.length() - 2);
                         }
 
@@ -757,8 +759,8 @@ public:
                     value.erase(value.find_last_not_of(" \t\n\r") + 1);
 
                     // Remove quotes
-                    if (value.front() == '\'' && value.back() == '\'' ||
-                        value.front() == '"' && value.back() == '"') {
+                    if ((value.front() == '\'' && value.back() == '\'') ||
+                        (value.front() == '"' && value.back() == '"')) {
                         value = value.substr(1, value.length() - 2);
                     }
 

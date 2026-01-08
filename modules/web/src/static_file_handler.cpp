@@ -46,6 +46,7 @@ void StaticFileHandler::register_routes(HTTPRouter& router, const std::string& s
 }
 
 HTTPResponse StaticFileHandler::handle_static_file(const HTTPRequest& request, std::shared_ptr<WebController> controller) {
+    (void)controller;
     // Get path from request
     std::string path = request.path;
     
@@ -80,6 +81,8 @@ HTTPResponse StaticFileHandler::handle_static_file(const HTTPRequest& request, s
 }
 
 HTTPResponse StaticFileHandler::handle_index(const HTTPRequest& request, std::shared_ptr<WebController> controller) {
+    (void)request;
+    (void)controller;
     // Serve index.html
     std::string file_path = static_dir_ + "/index.html";
     

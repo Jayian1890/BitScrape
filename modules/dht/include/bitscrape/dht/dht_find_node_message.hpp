@@ -100,7 +100,7 @@ private:
     types::NodeID node_id_;                     ///< Node ID
     types::NodeID target_id_;                   ///< Target ID (query only)
     std::vector<types::DHTNode> nodes_;         ///< List of nodes close to the target (response only)
-    bool is_response_;                          ///< Whether this is a response message
+    [[maybe_unused]] bool is_response_;         ///< Whether this is a response message
 };
 
 } // namespace bitscrape::dht

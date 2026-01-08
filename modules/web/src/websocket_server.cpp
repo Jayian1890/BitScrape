@@ -285,6 +285,8 @@ std::string WebSocketServer::decode_frame(const std::vector<uint8_t>& frame) {
     // Check FIN bit and opcode
     bool fin = (frame[0] & 0x80) != 0;
     uint8_t opcode = frame[0] & 0x0f;
+    (void)fin;
+    (void)opcode;
 
     // Check if masked
     bool masked = (frame[1] & 0x80) != 0;

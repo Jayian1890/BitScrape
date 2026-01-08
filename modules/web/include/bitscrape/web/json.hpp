@@ -237,6 +237,7 @@ public:
      * @brief Parse a JSON string
      */
     static JSON parse(const std::string& json_str) {
+        (void)json_str;
         // Simple JSON parsing implementation
         // This is a placeholder - in a real implementation, you would parse the JSON string
         // For now, we'll just create an empty object to make the code compile

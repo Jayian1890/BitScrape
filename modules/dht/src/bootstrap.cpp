@@ -75,6 +75,7 @@ void Bootstrap::process_message(const std::shared_ptr<DHTMessage>& message, cons
         // Create a node and add it to the routing table
         types::DHTNode node(node_id, sender_endpoint);
         bool added = routing_table_.add_node(node);
+        (void)added;
 
         // Decrement the active lookups counter
         if (active_lookups_ > 0) {

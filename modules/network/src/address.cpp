@@ -194,7 +194,6 @@ Address Address::get_local_address(const std::string &interface_name,
   }
 
   std::string address;
-  AddressFamily family;
   bool found = false;
 
   for (struct ifaddrs *ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
@@ -210,7 +209,6 @@ Address Address::get_local_address(const std::string &interface_name,
             reinterpret_cast<struct sockaddr_in *>(ifa->ifa_addr);
         inet_ntop(AF_INET, &(addr->sin_addr), ip_str, INET_ADDRSTRLEN);
         address = ip_str;
-        family = AddressFamily::IPv4;
         found = true;
         break;
       } else if (ifa->ifa_addr->sa_family == AF_INET6) {
@@ -220,7 +218,6 @@ Address Address::get_local_address(const std::string &interface_name,
             reinterpret_cast<struct sockaddr_in6 *>(ifa->ifa_addr);
         inet_ntop(AF_INET6, &(addr->sin6_addr), ip_str, INET6_ADDRSTRLEN);
         address = ip_str;
-        family = AddressFamily::IPv6;
         found = true;
         break;
       }

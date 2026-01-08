@@ -44,8 +44,8 @@ public:
     /**
      * @brief UDPTracker is movable
      */
-    UDPTracker(UDPTracker&&) noexcept = default;
-    UDPTracker& operator=(UDPTracker&&) noexcept = default;
+    UDPTracker(UDPTracker&&) noexcept = delete;
+    UDPTracker& operator=(UDPTracker&&) noexcept = delete;
     
     /**
      * @brief Get the tracker URL

@@ -391,7 +391,7 @@ public:
                         // Try to parse as integer
                         try
                         {
-                            int int_value = std::stoi(items[i]);
+                            (void)std::stoi(items[i]);
                             json += items[i]; // Add as number
                         } catch (const std::exception&) {
                             // Not an integer, add as string
@@ -403,7 +403,7 @@ public:
                 } else {
                     // Try to parse as integer
                     try {
-                        int int_value = std::stoi(value);
+                        (void)std::stoi(value);
                         json += value; // Add as number
                     } catch (const std::exception&) {
                         // Check if it's a boolean

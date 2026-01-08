@@ -699,6 +699,7 @@ public:
     }
 
     void handle_dht_node_discovered(const types::Event& event) {
+        (void)event;
         try {
             // For DHT_NODE_FOUND events, we expect the event to contain node information
             // in its data field, which we need to extract
@@ -734,6 +735,7 @@ public:
     }
 
     void handle_dht_infohash_discovered(const types::Event& event) {
+        (void)event;
         try {
             // For DHT_INFOHASH_FOUND events, we expect the event to contain infohash information
             // in its data field, which we need to extract

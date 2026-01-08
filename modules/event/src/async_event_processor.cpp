@@ -324,6 +324,7 @@ private:
    * @param event Event to process
    */
   void process_event(const types::Event &event) {
+    (void)event;
     // This is a base implementation that doesn't do anything with the event
     // Derived classes can override this method to process events
   }

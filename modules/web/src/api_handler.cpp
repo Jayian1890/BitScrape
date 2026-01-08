@@ -31,6 +31,7 @@ void APIHandler::register_routes(HTTPRouter& router) {
 }
 
 HTTPResponse APIHandler::handle_status(const HTTPRequest& request, std::shared_ptr<WebController> controller) {
+    (void)request;
     JSON json = JSON::object();
 
     // Get statistics
@@ -44,6 +45,7 @@ HTTPResponse APIHandler::handle_status(const HTTPRequest& request, std::shared_p
 }
 
 HTTPResponse APIHandler::handle_statistics(const HTTPRequest& request, std::shared_ptr<WebController> controller) {
+    (void)request;
     JSON json = JSON::object();
 
     // Get statistics
@@ -58,6 +60,7 @@ HTTPResponse APIHandler::handle_statistics(const HTTPRequest& request, std::shar
 }
 
 HTTPResponse APIHandler::handle_start_crawling(const HTTPRequest& request, std::shared_ptr<WebController> controller) {
+    (void)request;
     JSON json = JSON::object();
 
     // Start crawling
@@ -70,6 +73,7 @@ HTTPResponse APIHandler::handle_start_crawling(const HTTPRequest& request, std::
 }
 
 HTTPResponse APIHandler::handle_stop_crawling(const HTTPRequest& request, std::shared_ptr<WebController> controller) {
+    (void)request;
     JSON json = JSON::object();
 
     // Stop crawling

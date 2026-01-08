@@ -54,8 +54,8 @@ public:
     /**
      * @brief TrackerManager is movable
      */
-    TrackerManager(TrackerManager&&) noexcept = default;
-    TrackerManager& operator=(TrackerManager&&) noexcept = default;
+    TrackerManager(TrackerManager&&) noexcept = delete;
+    TrackerManager& operator=(TrackerManager&&) noexcept = delete;
     
     /**
      * @brief Add a tracker

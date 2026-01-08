@@ -31,20 +31,6 @@ public:
         // Acquire a lock on the configuration resource
         auto lock_manager = lock::LockManagerSingleton::instance();
 
-        // Debug: print current lock stack for this thread
-        auto current_stack = lock_manager->get_lock_stack();
-        if (!current_stack.empty()) {
-            std::cerr << "Thread holds locks before loading configuration: ";
-            for (auto id : current_stack) {
-                try {
-                    std::cerr << lock_manager->get_resource_name(id) << "(" << id << ") ";
-                } catch (...) {
-                    std::cerr << id << " ";
-                }
-            }
-            std::cerr << std::endl;
-            std::cerr << lock_manager->dump_lock_state() << std::endl;
-        }
 
         std::unique_ptr<lock::LockGuard> lock_guard;
         try {

@@ -22,6 +22,26 @@
             },
             "group": "build",
             "problemMatcher": "$gcc"
+        },
+        {
+            "label": "run bitscrape_cli",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/bin/bitscrape_cli",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ensure bitscrape_cli built",
+            "type": "shell",
+            "command": "bash",
+            "args": ["-c", "if [ -x \"${workspaceFolder}/build/bin/bitscrape_cli\" ]; then exit 0; else make DEBUG=1 RUN_TESTS=0 apps; fi"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "problemMatcher": "$gcc"
         }
     ]
 }

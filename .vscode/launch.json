@@ -14,7 +14,7 @@
             ],
             "externalConsole": false,
             "MIMode": "lldb",
-            "preLaunchTask": "make apps"
+            "preLaunchTask": "ensure bitscrape_cli built"
         }
     ]
 }

@@ -38,6 +38,7 @@
 #include <condition_variable>
 #include <filesystem>
 #include <random>
+#include <unordered_set>
 
 namespace bitscrape::core {
 
@@ -311,6 +312,10 @@ public:
             std::string bootstrap_nodes_str = config_->get_string("dht.bootstrap_nodes",
                 "router.bittorrent.com:6881,dht.transmissionbt.com:6881,router.utorrent.com:6881");
 
+            // Optionally derive bootstrap peers from a tracker announce for a known infohash
+            std::string bootstrap_infohash = config_->get_string("dht.bootstrap_infohash", "");
+            std::string bootstrap_trackers = config_->get_string("dht.bootstrap_trackers", "");
+
             // Parse bootstrap nodes
             std::vector<types::Endpoint> bootstrap_nodes;
             std::stringstream ss(bootstrap_nodes_str);
@@ -332,6 +337,60 @@ public:
                                          types::BeaconCategory::DHT);
                         // Continue with other bootstrap nodes even if one fails
                     }
+                }
+            }
+
+            // If no static nodes provided, try seeding via tracker peers for a known infohash
+            if (bootstrap_nodes.empty() && !bootstrap_infohash.empty() && !bootstrap_trackers.empty()) {
+                try {
+                    auto info_hash = types::InfoHash::from_hex(bootstrap_infohash);
+                    tracker::TrackerManager tm(info_hash);
+
+                    std::stringstream tss(bootstrap_trackers);
+                    std::string tracker_url;
+                    while (std::getline(tss, tracker_url, ',')) {
+                        if (!tracker_url.empty()) {
+                            tm.add_tracker(tracker_url);
+                        }
+                    }
+
+                    // Build a simple random 20-byte peer ID
+                    std::array<uint8_t, 20> peer_id_bytes{};
+                    std::uniform_int_distribution<int> dist(0, 255);
+                    std::random_device rd;
+                    std::mt19937 gen(rd());
+                    for (auto& b : peer_id_bytes) {
+                        b = static_cast<uint8_t>(dist(gen));
+                    }
+                    std::string peer_id(peer_id_bytes.begin(), peer_id_bytes.end());
+
+                    auto responses = tm.announce(peer_id, dht_port, 0, 0, 0, "started");
+                    std::unordered_set<std::string> seen;
+                    for (const auto& [url, resp] : responses) {
+                        (void)url;
+                        for (const auto& peer_addr : resp.peers()) {
+                            if (!peer_addr.is_valid()) {
+                                continue;
+                            }
+                            auto endpoint_key = peer_addr.to_string();
+                            if (seen.insert(endpoint_key).second) {
+                                try {
+                                    bootstrap_nodes.emplace_back(peer_addr.to_string(), peer_addr.port(),
+                                        types::Endpoint::AddressType::IPv4);
+                                } catch (const std::exception&) {
+                                    // Ignore peers that fail resolution
+                                }
+                            }
+                        }
+                    }
+
+                    if (!bootstrap_nodes.empty()) {
+                        beacon_->info("Derived DHT bootstrap peers from tracker announce",
+                                      types::BeaconCategory::DHT);
+                    }
+                } catch (const std::exception& e) {
+                    beacon_->warning("Tracker-derived bootstrap failed: " + std::string(e.what()),
+                                     types::BeaconCategory::DHT);
                 }
             }
 

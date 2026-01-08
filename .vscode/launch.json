@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch CLI (lldb)",
+            "name": "Launch CLI",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/bitscrape_cli",

@@ -618,6 +618,8 @@ private:
         config_["dht.node_id"] = ""; // Will be generated randomly if empty
         config_["dht.max_nodes"] = "1000";
         config_["dht.ping_interval"] = "300"; // 5 minutes
+        config_["dht.bootstrap_infohash"] = ""; // Optional infohash to derive bootstrap peers via tracker
+        config_["dht.bootstrap_trackers"] = "udp://tracker.opentrackr.org:1337/announce,udp://tracker.openbittorrent.com:6969/announce";
         config_["bittorrent.max_connections"] = "50";
         config_["bittorrent.connection_timeout"] = "10"; // 10 seconds
         config_["bittorrent.download_timeout"] = "30"; // 30 seconds

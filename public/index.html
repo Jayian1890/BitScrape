@@ -3,76 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BitScrape Web</title>
+  <title>BitScrape Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b1021;
-      --card: #12182b;
-      --text: #e7ecf7;
-      --muted: #9aa5c0;
-      --accent: #5ce1e6;
-      --accent-2: #ffb347;
-      --border: rgba(255,255,255,0.08);
+      --bg: #050505;          /* primary: black */
+      --panel: #0b0b0f;
+      --card: #0f0f15;
+      --text: #f7f2f0;
+      --muted: #c7bebb;
+      --accent: #fa8072;      /* secondary: salmon pink */
+      --accent-2: #ffc7bc;
+      --border: rgba(255, 255, 255, 0.08);
+      --shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
     }
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
       font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 20% 20%, rgba(92,225,230,0.12), transparent 30%),
-                  radial-gradient(circle at 80% 10%, rgba(255,179,71,0.14), transparent 26%),
-                  var(--bg);
+      background: radial-gradient(55% 55% at 22% 24%, rgba(250, 128, 114, 0.2), transparent 48%),
+          radial-gradient(50% 50% at 78% 18%, rgba(0, 0, 0, 0.55), transparent 55%),
+          var(--bg);
       color: var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 16px;
+      padding: 28px 18px 42px;
     }
-    .shell {
-      width: min(1100px, 100%);
-      display: grid;
-      gap: 18px;
-    }
+
+    .shell { max-width: 1220px; margin: 0 auto; display: grid; gap: 18px; }
+
     header {
       display: flex;
       flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 12px;
       align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 18px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
     }
-    h1 {
-      margin: 0;
-      font-size: 28px;
-      letter-spacing: -0.02em;
-    }
+
+    h1 { margin: 0; font-size: 30px; letter-spacing: -0.02em; }
+    .subtitle { color: var(--muted); font-size: 14px; }
     .tag {
-      padding: 6px 10px;
+      padding: 7px 12px;
       border: 1px solid var(--border);
       border-radius: 999px;
       font-size: 13px;
       color: var(--muted);
-      background: rgba(255,255,255,0.03);
+      background: rgba(255, 255, 255, 0.03);
     }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 14px;
+
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    button {
+      background: var(--accent);
+      color: #0b1021;
+      border: none;
+      border-radius: 11px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.08s ease, box-shadow 0.14s ease;
     }
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(250, 128, 114, 0.3); }
+    button:active { transform: translateY(0); }
+
+    .grid { display: grid; gap: 14px; }
+    .grid.stats { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .grid.split { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 16px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+      box-shadow: var(--shadow);
+      min-height: 120px;
     }
+    .card h3 { margin: 0 0 6px; font-size: 16px; letter-spacing: -0.01em; }
     .muted { color: var(--muted); font-size: 13px; }
-    .value { font-size: 26px; font-weight: 600; margin: 6px 0 2px; }
+    .value { font-size: 28px; font-weight: 600; margin: 6px 0 2px; }
     .row { display: flex; gap: 8px; align-items: center; }
     .pill {
-      padding: 6px 10px;
+      padding: 6px 11px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 600;
@@ -81,91 +104,171 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      text-transform: lowercase;
     }
-    .pill.off {
-      background: #ff8a80;
-      color: #0b0b0b;
-    }
-    button {
-      background: var(--accent);
-      color: #0b1021;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 14px;
+    .pill.off { background: #ff8a80; color: #0b0b0b; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 6px; text-align: left; font-size: 13px; }
+    th { color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+    tr + tr td { border-top: 1px solid var(--border); }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .flex-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .error { color: #ff8a80; font-weight: 600; margin-top: 8px; display: none; }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 12px;
       font-weight: 600;
-      cursor: pointer;
-      font-size: 14px;
-      transition: transform 0.08s ease, box-shadow 0.12s ease;
+      background: rgba(92, 225, 230, 0.14);
+      color: var(--accent);
     }
-    button.secondary {
+    .badge.dim { background: rgba(255, 255, 255, 0.06); color: var(--muted); }
+
+    .search-row { display: flex; gap: 8px; }
+    .search-row input {
+      flex: 1;
+      background: #0c1427;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .log-wrap { position: relative; margin-top: 6px; }
+    .log-toggle {
+      position: absolute;
+      top: 12px;
+      right: 12px;
       background: transparent;
       color: var(--text);
       border: 1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 9px;
+      font-size: 12px;
     }
-    button:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(92,225,230,0.15); }
-    button:active { transform: translateY(0); }
-    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
-    pre {
-      margin: 0;
-      padding: 12px;
-      background: #0c1427;
-      border-radius: 10px;
+    .log-box {
+      max-height: 320px;
+      overflow-y: auto;
+      font-family: "SFMono-Regular", "JetBrains Mono", ui-monospace, monospace;
+      font-size: 12px;
+      background: #0c0c12;
       border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
       color: var(--muted);
-      font-size: 13px;
-      overflow-x: auto;
+      margin-top: 8px;
     }
-    .error { color: #ff8a80; font-weight: 600; }
+    .log-entry { margin: 0 0 6px; line-height: 1.5; }
+    .log-entry .time { color: var(--accent-2); margin-right: 8px; }
+    .log-entry.error { color: #ff8a80; }
+
+    @media (max-width: 720px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .actions { width: 100%; }
+      .search-row { flex-direction: column; }
+      .search-row button { width: 100%; }
+    }
   </style>
 </head>
 <body>
   <div class="shell">
     <header>
       <div>
-        <h1>BitScrape Web</h1>
-        <div class="muted">Status dashboard for the running BitScrape node.</div>
+        <h1>BitScrape Dashboard</h1>
+        <div class="subtitle">Live view of the crawler, nodes, and metadata.</div>
       </div>
-      <div class="tag">Serving static assets from <strong>public/</strong></div>
+      <div class="actions">
+        <span class="tag">Static: <strong>public/</strong></span>
+        <button id="start-btn">Start crawling</button>
+        <button id="stop-btn" class="secondary">Stop</button>
+        <button id="refresh-btn" class="secondary">Refresh</button>
+      </div>
     </header>
 
-    <div class="grid">
+    <div class="grid stats">
       <div class="card">
-        <div class="row" style="justify-content: space-between; margin-bottom: 8px;">
+        <div class="flex-between" style="margin-bottom:6px;">
           <div class="muted">Controller</div>
           <span id="controller-pill" class="pill off">offline</span>
         </div>
-        <div class="muted">Crawling</div>
+        <div class="muted">Crawling state</div>
         <div id="crawling-pill" class="pill off" style="margin-top:6px; width:max-content;">stopped</div>
-        <div class="actions" style="margin-top:12px;">
-          <button id="start-btn">Start crawling</button>
-          <button id="stop-btn" class="secondary">Stop crawling</button>
-          <button id="refresh-btn" class="secondary">Refresh</button>
-        </div>
-        <div id="error" class="error" style="margin-top:10px; display:none;"></div>
+        <div id="status-error" class="error"></div>
       </div>
 
       <div class="card">
-        <div class="muted" style="margin-bottom:8px;">Quick stats</div>
-        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap:10px;">
-          <div>
-            <div class="muted">Nodes</div>
-            <div class="value" id="nodes-count">–</div>
-          </div>
-          <div>
-            <div class="muted">Infohashes</div>
-            <div class="value" id="infohash-count">–</div>
-          </div>
-          <div>
-            <div class="muted">Metadata</div>
-            <div class="value" id="metadata-count">–</div>
-          </div>
-        </div>
+        <div class="muted">Nodes</div>
+        <div class="value" id="nodes-count">–</div>
+        <div class="muted">Active nodes discovered</div>
       </div>
 
       <div class="card">
-        <div class="muted" style="margin-bottom:8px;">Recent status JSON</div>
-        <pre id="status-json">Waiting for data…</pre>
+        <div class="muted">Infohashes</div>
+        <div class="value" id="infohash-count">–</div>
+        <div class="muted">Seen across the network</div>
       </div>
+
+      <div class="card">
+        <div class="muted">Metadata</div>
+        <div class="value" id="metadata-count">–</div>
+        <div class="muted">Stored torrent metadata</div>
+      </div>
+    </div>
+
+    <div class="grid split">
+      <div class="card">
+        <div class="flex-between">
+          <h3>Recent infohashes</h3>
+          <span class="badge" id="infohash-badge">latest</span>
+        </div>
+        <table id="infohash-table">
+          <thead>
+            <tr><th>Infohash</th><th>Peers</th><th>First seen</th><th>Last seen</th><th>Metadata</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="flex-between">
+          <h3>Metadata catalog</h3>
+          <span class="badge" id="metadata-badge">latest</span>
+        </div>
+        <div class="search-row" style="margin:6px 0 10px;">
+          <input id="search-input" type="text" placeholder="Search metadata by name" />
+          <button id="search-btn" class="secondary">Search</button>
+        </div>
+        <table id="metadata-table">
+          <thead>
+            <tr><th>Name</th><th>Size</th><th>Files</th><th>Downloaded</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="search-error" class="error"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:6px;">
+        <h3>Recent nodes</h3>
+        <span class="badge dim" id="nodes-badge">last seen</span>
+      </div>
+      <table id="nodes-table">
+        <thead>
+          <tr><th>Address</th><th>Port</th><th>Last seen</th><th>Ping</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card log-wrap">
+      <h3 style="margin:0 0 8px;">Activity log</h3>
+      <button id="log-toggle" class="log-toggle">Collapse</button>
+      <div id="log-box" class="log-box"></div>
     </div>
   </div>
 
@@ -175,8 +278,68 @@
     const nodesCount = document.getElementById('nodes-count');
     const infohashCount = document.getElementById('infohash-count');
     const metadataCount = document.getElementById('metadata-count');
-    const statusJson = document.getElementById('status-json');
-    const errorBox = document.getElementById('error');
+    const statusError = document.getElementById('status-error');
+    const infohashTableBody = document.querySelector('#infohash-table tbody');
+    const metadataTableBody = document.querySelector('#metadata-table tbody');
+    const nodesTableBody = document.querySelector('#nodes-table tbody');
+    const searchInput = document.getElementById('search-input');
+    const searchError = document.getElementById('search-error');
+    const logBox = document.getElementById('log-box');
+    const logToggle = document.getElementById('log-toggle');
+
+    const API = {
+      status: '/api/status',
+      stats: '/api/statistics',
+      nodes: (limit = 10) => `/api/nodes?limit=${limit}`,
+      infohashes: (limit = 10) => `/api/infohashes?limit=${limit}`,
+      metadata: (limit = 10) => `/api/metadata?limit=${limit}`,
+      search: (q, limit = 10) => `/api/search?query=${encodeURIComponent(q)}&limit=${limit}`,
+      start: '/api/crawling/start',
+      stop: '/api/crawling/stop'
+    };
+
+    function setPill(el, on, onLabel, offLabel) {
+      el.textContent = on ? onLabel : offLabel;
+      el.classList.toggle('off', !on);
+    }
+
+    const logBuffer = [];
+    const logLimit = 200;
+    function addLog(message, isError = false) {
+      const ts = new Date().toLocaleTimeString();
+      logBuffer.push({ ts, message, isError });
+      if (logBuffer.length > logLimit) logBuffer.shift();
+      renderLogs();
+    }
+
+    function renderLogs() {
+      logBox.innerHTML = '';
+      logBuffer.slice(-logLimit).forEach(entry => {
+        const div = document.createElement('div');
+        div.className = `log-entry${entry.isError ? ' error' : ''}`;
+        div.innerHTML = `<span class="time">${entry.ts}</span>${entry.message}`;
+        logBox.appendChild(div);
+      });
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function formatDate(ts) {
+      if (!ts && ts !== 0) return '–';
+      const d = new Date(ts * 1000);
+      return d.toLocaleString();
+    }
+
+    function formatSize(bytes) {
+      if (!bytes && bytes !== 0) return '–';
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let size = bytes;
+      let idx = 0;
+      while (size >= 1024 && idx < units.length - 1) {
+        size /= 1024;
+        idx++;
+      }
+      return `${size.toFixed(1)} ${units[idx]}`;
+    }
 
     async function getJson(url, opts = {}) {
       const res = await fetch(url, opts);
@@ -184,17 +347,12 @@
       return res.json();
     }
 
-    function setPill(el, on, onLabel, offLabel) {
-      el.textContent = on ? onLabel : offLabel;
-      el.classList.toggle('off', !on);
-    }
-
-    async function refresh() {
-      errorBox.style.display = 'none';
+    async function loadStatus() {
+      statusError.style.display = 'none';
       try {
         const [status, stats] = await Promise.all([
-          getJson('/api/status'),
-          getJson('/api/statistics')
+          getJson(API.status),
+          getJson(API.stats)
         ]);
 
         setPill(controllerPill, status.running, status.running ? 'online' : 'offline');
@@ -203,11 +361,91 @@
         nodesCount.textContent = stats['storage.node_count'] ?? '–';
         infohashCount.textContent = stats['storage.infohash_count'] ?? '–';
         metadataCount.textContent = stats['storage.metadata_count'] ?? '–';
-
-        statusJson.textContent = JSON.stringify({ status, stats }, null, 2);
       } catch (err) {
-        errorBox.textContent = err.message;
-        errorBox.style.display = 'block';
+        statusError.textContent = err.message;
+        statusError.style.display = 'block';
+      }
+    }
+
+    async function loadInfohashes() {
+      infohashTableBody.innerHTML = '<tr><td colspan="5" class="muted">Loading…</td></tr>';
+      try {
+        const list = await getJson(API.infohashes());
+        if (!list.length) {
+          infohashTableBody.innerHTML = '<tr><td colspan="5" class="muted">No infohashes yet.</td></tr>';
+          return;
+        }
+        infohashTableBody.innerHTML = '';
+        list.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><code>${item.info_hash}</code></td>
+            <td>${item.peer_count ?? '–'}</td>
+            <td>${formatDate(item.first_seen)}</td>
+            <td>${formatDate(item.last_seen)}</td>
+            <td>${item.has_metadata ? 'yes' : 'no'}</td>
+          `;
+          infohashTableBody.appendChild(tr);
+        });
+        addLog(`Loaded ${list.length} infohashes`);
+      } catch (err) {
+        infohashTableBody.innerHTML = `<tr><td colspan="5" class="muted">${err.message}</td></tr>`;
+        addLog(`Infohash error: ${err.message}`, true);
+      }
+    }
+
+    async function loadMetadata(endpoint = API.metadata()) {
+      metadataTableBody.innerHTML = '<tr><td colspan="4" class="muted">Loading…</td></tr>';
+      searchError.style.display = 'none';
+      try {
+        const list = await getJson(endpoint);
+        if (!list.length) {
+          metadataTableBody.innerHTML = '<tr><td colspan="4" class="muted">No metadata yet.</td></tr>';
+          return;
+        }
+        metadataTableBody.innerHTML = '';
+        list.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.name || '(unnamed)'}</td>
+            <td>${formatSize(item.total_size)}</td>
+            <td>${item.file_count ?? '–'}</td>
+            <td>${formatDate(item.download_time)}</td>
+          `;
+          metadataTableBody.appendChild(tr);
+        });
+        addLog(`Loaded ${list.length} metadata rows`);
+      } catch (err) {
+        searchError.textContent = err.message;
+        searchError.style.display = 'block';
+        metadataTableBody.innerHTML = `<tr><td colspan="4" class="muted">${err.message}</td></tr>`;
+        addLog(`Metadata error: ${err.message}`, true);
+      }
+    }
+
+    async function loadNodes() {
+      nodesTableBody.innerHTML = '<tr><td colspan="4" class="muted">Loading…</td></tr>';
+      try {
+        const list = await getJson(API.nodes());
+        if (!list.length) {
+          nodesTableBody.innerHTML = '<tr><td colspan="4" class="muted">No nodes yet.</td></tr>';
+          return;
+        }
+        nodesTableBody.innerHTML = '';
+        list.forEach(node => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${node.ip || ''}</td>
+            <td>${node.port ?? ''}</td>
+            <td>${formatDate(node.last_seen)}</td>
+            <td>${node.ping_count ?? '–'}</td>
+          `;
+          nodesTableBody.appendChild(tr);
+        });
+        addLog(`Loaded ${list.length} nodes`);
+      } catch (err) {
+        nodesTableBody.innerHTML = `<tr><td colspan="4" class="muted">${err.message}</td></tr>`;
+        addLog(`Nodes error: ${err.message}`, true);
       }
     }
 
@@ -218,16 +456,44 @@
     }
 
     document.getElementById('start-btn').onclick = async () => {
-      try { await post('/api/crawling/start'); await refresh(); }
-      catch (err) { errorBox.textContent = err.message; errorBox.style.display = 'block'; }
+      try { await post(API.start); addLog('Crawling started'); await loadStatus(); }
+      catch (err) { statusError.textContent = err.message; statusError.style.display = 'block'; addLog(`Start error: ${err.message}`, true); }
     };
     document.getElementById('stop-btn').onclick = async () => {
-      try { await post('/api/crawling/stop'); await refresh(); }
-      catch (err) { errorBox.textContent = err.message; errorBox.style.display = 'block'; }
+      try { await post(API.stop); addLog('Crawling stopped'); await loadStatus(); }
+      catch (err) { statusError.textContent = err.message; statusError.style.display = 'block'; addLog(`Stop error: ${err.message}`, true); }
     };
-    document.getElementById('refresh-btn').onclick = refresh;
+    document.getElementById('refresh-btn').onclick = () => { refreshAll(); };
 
-    refresh();
+    document.getElementById('search-btn').onclick = () => {
+      const q = searchInput.value.trim();
+      if (!q) { loadMetadata(); addLog('Cleared search filter'); return; }
+      addLog(`Searching metadata: ${q}`);
+      loadMetadata(API.search(q));
+    };
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('search-btn').click();
+      }
+    });
+
+    function refreshAll() {
+      loadStatus();
+      loadInfohashes();
+      loadMetadata();
+      loadNodes();
+    }
+
+    refreshAll();
+
+    let expanded = true;
+    logToggle.onclick = () => {
+      expanded = !expanded;
+      logBox.style.display = expanded ? 'block' : 'none';
+      logToggle.textContent = expanded ? 'Collapse' : 'Expand';
+    };
+
+    setInterval(refreshAll, 5000);
   </script>
 </body>
 </html>

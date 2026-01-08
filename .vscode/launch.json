@@ -14,7 +14,7 @@
             ],
             "externalConsole": false,
             "MIMode": "lldb",
-            "preLaunchTask": "make DEBUG=1 RUN_TESTS=0 apps"
+            "preLaunchTask": "make apps"
         }
     ]
 }

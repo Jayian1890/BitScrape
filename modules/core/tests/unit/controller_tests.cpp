@@ -2,11 +2,11 @@
 #include <random>
 #include <string>
 
+#include "doctest/doctest.h"
+
 #include <bitscrape/bittorrent/bittorrent_event_processor.hpp>
 #include <bitscrape/core/configuration.hpp>
 #include <bitscrape/core/controller.hpp>
-
-#include "doctest/doctest.h"
 
 using namespace bitscrape::core;
 namespace types = bitscrape::types;

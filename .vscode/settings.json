@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/Users/jaredterrance/Projects/bitscrape/build/bin",
+            "binaryPath": "/Users/jaredterrance/Projects/bitscrape/build/bin/bitscrape_cli",
+            "binaryArgs": []
+        }
+    ]
+}

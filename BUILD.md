@@ -67,6 +67,17 @@ The executable will be located at `build/bin/bitscrape_cli`.
   make -C modules/<module> test
   ```
 
+### Coverage
+
+- Install `gcovr` once (Python package): `pip install gcovr`
+- Generate coverage and an `lcov.info` file (used by VS Code Coverage Gutters):
+
+  ```bash
+  make coverage
+  ```
+
+The coverage target rebuilds everything with instrumentation, runs all module tests, and writes `lcov.info` in the repo root.
+
 ## Configuration
 
 The Make build produces a `build/bitscrape.json.template` file plus `build/public` and `build/data` directories that mirror the previous CMake-generated assets. Copy or edit the template as needed for runtime configuration.

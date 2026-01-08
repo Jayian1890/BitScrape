@@ -5,6 +5,12 @@ BUILD_DIR ?= $(TOP)/build
 LIB_DIR ?= $(BUILD_DIR)/lib
 CXX ?= g++
 CXXFLAGS ?= -std=c++23 -Wall -Wextra -Wpedantic
+LDFLAGS ?=
+COVERAGE ?= 0
+ifeq ($(COVERAGE),1)
+CXXFLAGS += --coverage -O0
+LDFLAGS += --coverage
+endif
 DOCTEST_DIR ?= $(TOP)/third_party
 RUN_TESTS ?= 1
 
@@ -61,7 +67,7 @@ $(TEST_MAIN_OBJ): $(TOP)/tests/doctest_main.cpp
 
 $(TEST_BIN_DIR)/run_tests: $(TEST_OBJS) $(TEST_MAIN_OBJ) $(TEST_LIBS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -o $@ $(TEST_OBJS) $(TEST_MAIN_OBJ) $(TEST_LIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(TEST_OBJS) $(TEST_MAIN_OBJ) $(TEST_LIBS)
 
 clean:
 	rm -rf $(OBJDIR) $(LIB_DIR)/lib$(MODULE).a $(TEST_BIN_DIR) $(TEST_MAIN_OBJ)

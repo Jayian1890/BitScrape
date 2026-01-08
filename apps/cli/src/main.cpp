@@ -593,6 +593,22 @@ int main(int argc, char *argv[])
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 
+    // Create a default configuration file if it does not exist yet
+    std::filesystem::path cfg_path(config_path);
+    if (!std::filesystem::exists(cfg_path)) {
+        if (!cfg_path.parent_path().empty() && !std::filesystem::exists(cfg_path.parent_path())) {
+            std::filesystem::create_directories(cfg_path.parent_path());
+        }
+
+        bitscrape::core::Configuration bootstrap_config(cfg_path.string());
+        if (bootstrap_config.load()) {
+            std::cout << "Generated default configuration at " << cfg_path << std::endl;
+        } else {
+            std::cerr << "Failed to generate default configuration at " << cfg_path << std::endl;
+            return 1;
+        }
+    }
+
     // Create controller
     controller = std::make_shared<bitscrape::core::Controller>(config_path);
 

@@ -10,6 +10,8 @@
 #include <sstream>
 #include <filesystem>
 #include <iostream>
+#include <unordered_set>
+#include <algorithm>
 
 namespace bitscrape::core {
 
@@ -327,6 +329,9 @@ public:
                 }
             }
 
+            apply_missing_defaults();
+            // Always rewrite on load so the file is pretty-printed and complete
+            save();
             return true;
         } catch (const std::exception& e)
         {
@@ -350,88 +355,124 @@ public:
 
         try
         {
-            // Create JSON string
-            std::string json = "{\
-";
+            auto format_scalar = [](const std::string& value) {
+                // Try integer
+                try {
+                    (void)std::stoi(value);
+                    return value;
+                } catch (const std::exception&) {
+                    // Booleans
+                    if (value == "1" || value == "true" || value == "yes") {
+                        return std::string("true");
+                    }
+                    if (value == "0" || value == "false" || value == "no") {
+                        return std::string("false");
+                    }
+                    if (value.empty()) {
+                        return std::string("null");
+                    }
+                    // String
+                    return std::string("\"") + value + "\"";
+                }
+            };
 
+            auto format_array = [&](const std::string& value, const std::string& indent) {
+                std::vector<std::string> items;
+                std::stringstream ss(value);
+                std::string item;
+                while (std::getline(ss, item, ',')) {
+                    items.push_back(item);
+                }
+
+                std::string out = "[\n";
+                for (size_t i = 0; i < items.size(); ++i) {
+                    out += indent + "  " + format_scalar(items[i]);
+                    if (i + 1 < items.size()) {
+                        out += ",";
+                    }
+                    out += "\n";
+                }
+                out += indent + "]";
+                return out;
+            };
+
+            std::vector<std::string> key_order = {
+                "database.path",
+                "dht.bootstrap_nodes",
+                "dht.bootstrap_infohash",
+                "dht.bootstrap_trackers",
+                "dht.port",
+                "dht.node_id",
+                "dht.max_nodes",
+                "dht.ping_interval",
+                "bittorrent.max_connections",
+                "bittorrent.connection_timeout",
+                "bittorrent.download_timeout",
+                "tracker.announce_interval",
+                "tracker.max_trackers",
+                "log.level",
+                "log.file",
+                "log.max_size",
+                "log.max_files",
+                "web.auto_start",
+                "web.port",
+                "web.static_dir"
+            };
+
+            std::unordered_set<std::string> emitted;
+
+            auto emit_keys = [&](std::ostream& os, const std::vector<std::string>& keys, bool& first) {
+                for (const auto& key : keys) {
+                    auto it = config_.find(key);
+                    if (it == config_.end()) {
+                        continue;
+                    }
+                    const auto& value = it->second;
+                    if (!first) {
+                        os << ",\n";
+                    }
+                    first = false;
+
+                    os << "  \"" << key << "\": ";
+
+                    if (value.find(',') != std::string::npos && !value.empty()) {
+                        os << format_array(value, "  ");
+                    } else {
+                        os << format_scalar(value);
+                    }
+
+                    emitted.insert(key);
+                }
+            };
+
+            std::ostringstream out;
+            out << "{\n";
             bool first = true;
-            for (const auto& [key, value] : config_) {
-                if (!first)
-                {
-                    json += ",\
-";
-                }
-                first = false;
 
-                json += "  \"" + key + "\": ";
+            emit_keys(out, key_order, first);
 
-                // Check if value is a list (comma-separated string)
-                if (value.find(',') != std::string::npos && !value.empty())
-                {
-                    // Parse list
-                    std::vector<std::string> items;
-                    std::stringstream ss(value);
-                    std::string item;
-
-                    while (std::getline(ss, item, ','))
-                    {
-                        items.push_back(item);
-                    }
-
-                    // Create JSON array
-                    json += "[";
-
-                    for (size_t i = 0; i < items.size(); ++i)
-                    {
-                        if (i > 0)
-                        {
-                            json += ", ";
-                        }
-
-                        // Try to parse as integer
-                        try
-                        {
-                            (void)std::stoi(items[i]);
-                            json += items[i]; // Add as number
-                        } catch (const std::exception&) {
-                            // Not an integer, add as string
-                            json += "\"" + items[i] + "\"";
-                        }
-                    }
-
-                    json += "]";
-                } else {
-                    // Try to parse as integer
-                    try {
-                        (void)std::stoi(value);
-                        json += value; // Add as number
-                    } catch (const std::exception&) {
-                        // Check if it's a boolean
-                        if (value == "1" || value == "true" || value == "yes") {
-                            json += "true";
-                        } else if (value == "0" || value == "false" || value == "no") {
-                            json += "false";
-                        } else if (value.empty()) {
-                            json += "null";
-                        } else {
-                            // Not a number or boolean, add as string
-                            json += "\"" + value + "\"";
-                        }
+            // Emit any remaining keys (deterministic order)
+            if (emitted.size() != config_.size()) {
+                std::vector<std::string> rest;
+                rest.reserve(config_.size());
+                for (const auto& [key, _] : config_) {
+                    if (emitted.find(key) == emitted.end()) {
+                        rest.push_back(key);
                     }
                 }
+                std::sort(rest.begin(), rest.end());
+                emit_keys(out, rest, first);
             }
 
-            json += "\
-}";
+            out << "\n}\n";
 
-            // Write to file
             std::ofstream file(config_path_);
             if (!file.is_open()) {
                 std::cerr << "Failed to open configuration file for writing: " << config_path_ << std::endl;
                 return false;
             }
 
-            file << json;
+            file << out.str();
 
             return true;
         } catch (const std::exception& e) {
@@ -610,16 +651,47 @@ public:
     }
 
 private:
+    void apply_missing_defaults() {
+        const std::unordered_map<std::string, std::string> defaults = {
+            {"database.path", "bitscrape.db"},
+            {"dht.bootstrap_nodes", "v4.router.mega.co.nz:6881,dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"},
+            {"dht.port", "6881"},
+            {"dht.node_id", ""},
+            {"dht.max_nodes", "1000"},
+            {"dht.ping_interval", "300"},
+            {"dht.bootstrap_infohash", "d2474e86c95b19b8bcfdb92bc12c9d44667cfa36"},
+            {"dht.bootstrap_trackers", "udp://tracker.opentrackr.org:1337/announce,udp://tracker.torrent.eu.org:451/announce"},
+            {"bittorrent.max_connections", "50"},
+            {"bittorrent.connection_timeout", "10"},
+            {"bittorrent.download_timeout", "30"},
+            {"tracker.announce_interval", "1800"},
+            {"tracker.max_trackers", "20"},
+            {"log.level", "info"},
+            {"log.file", "bitscrape.log"},
+            {"log.max_size", "10485760"},
+            {"log.max_files", "5"},
+            {"web.auto_start", "true"},
+            {"web.port", "8080"},
+            {"web.static_dir", "public"}
+        };
+
+        for (const auto& [key, value] : defaults) {
+            if (config_.find(key) == config_.end()) {
+                config_[key] = value;
+            }
+        }
+    }
+
     void create_default_configuration() {
         // Set default values
         config_["database.path"] = "bitscrape.db";
-        config_["dht.bootstrap_nodes"] = "router.bittorrent.com:6881,dht.transmissionbt.com:6881,router.utorrent.com:6881";
+        config_["dht.bootstrap_nodes"] = "v4.router.mega.co.nz:6881,dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"; // Default public routers
         config_["dht.port"] = "6881";
         config_["dht.node_id"] = ""; // Will be generated randomly if empty
         config_["dht.max_nodes"] = "1000";
         config_["dht.ping_interval"] = "300"; // 5 minutes
-        config_["dht.bootstrap_infohash"] = ""; // Optional infohash to derive bootstrap peers via tracker
-        config_["dht.bootstrap_trackers"] = "udp://tracker.opentrackr.org:1337/announce,udp://tracker.openbittorrent.com:6969/announce";
+        config_["dht.bootstrap_infohash"] = "d2474e86c95b19b8bcfdb92bc12c9d44667cfa36"; // OpenOffice 3.3 swarm
+        config_["dht.bootstrap_trackers"] = "udp://tracker.opentrackr.org:1337/announce,udp://tracker.torrent.eu.org:451/announce";
         config_["bittorrent.max_connections"] = "50";
         config_["bittorrent.connection_timeout"] = "10"; // 10 seconds
         config_["bittorrent.download_timeout"] = "30"; // 30 seconds
@@ -629,7 +701,7 @@ private:
         config_["log.file"] = "bitscrape.log";
         config_["log.max_size"] = "10485760"; // 10 MB
         config_["log.max_files"] = "5";
-        config_["web.auto_start"] = "1"; // Auto-start web interface by default
+        config_["web.auto_start"] = "true"; // Auto-start web interface by default
         config_["web.port"] = "8080"; // Default web interface port
         config_["web.static_dir"] = "public"; // Default static files directory
 

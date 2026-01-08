@@ -168,6 +168,14 @@ public:
      */
     std::vector<types::NodeID> get_nodes(size_t limit = 100, size_t offset = 0) const;
 
+    /**
+     * @brief Receive a raw Event and dispatch it to the appropriate handler.
+     *
+     * This method is primarily provided for testing and integration: it allows
+     * callers to deliver an Event directly to the Controller for processing.
+     */
+    void receive_event(const types::Event& event);
+
 private:
     // Event handlers
     void handle_dht_node_discovered(const types::Event& event);

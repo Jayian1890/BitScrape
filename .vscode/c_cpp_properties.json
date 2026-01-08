@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "compilerPath": "/usr/bin/clang++",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-arm64",
+            "includePath": [
+                "${workspaceFolder}/include",                
+                "${workspaceFolder}/modules/**/include"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/include",                
+                    "${workspaceFolder}/modules/**/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}

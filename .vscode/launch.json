@@ -1,20 +1,20 @@
 {
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "Launch CLI",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/bin/bitscrape_cli",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [
-                { "name": "DEBUG", "value": "1" }
-            ],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "ensure bitscrape_cli built"
-        }
+      {
+        "name": "Launch bitscrape_cli (Debug)",
+        "type": "lldb",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/bin/bitscrape_cli",
+        "args": ["--config=bitscrape.json"],
+        "cwd": "${workspaceFolder}",
+        "preLaunchTask": "make all (debug)",
+      },
+      {
+        "name": "Attach to bitscrape_cli",
+        "type": "lldb",
+        "request": "attach",
+        "processId": "${command:pickProcess}",
+      }
     ]
-}
+  }

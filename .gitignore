@@ -11,10 +11,9 @@ bin/
 # IDE files
 # VS Code
 .vscode/*
-!.vscode/settings.json
+!.vscode/c_cpp_properties.json
 !.vscode/tasks.json
 !.vscode/launch.json
-!.vscode/extensions.json
 
 # CLion
 .idea/
@@ -79,8 +78,7 @@ DartConfiguration.tcl
 install_manifest.txt
 cmake/
 
-# Memory bank
-memory-bank/
+# Custom ignores
 bitscrape.log
 !/apps/cli/src/main.cpp
 !/apps/gui/src/main.cpp

@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "make DEBUG=1 all",
+            "type": "shell",
+            "command": "make",
+            "args": ["DEBUG=1", "all"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "make DEBUG=1 RUN_TESTS=0 apps",
+            "type": "shell",
+            "command": "make",
+            "args": ["DEBUG=1", "RUN_TESTS=0", "apps"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "problemMatcher": "$gcc"
+        }
+    ]
+}

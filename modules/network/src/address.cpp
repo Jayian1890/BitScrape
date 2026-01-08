@@ -111,7 +111,6 @@ Address Address::resolve(const std::string &hostname, uint16_t port) {
   }
 
   std::string address;
-  AddressFamily family;
 
   if (result->ai_family == AF_INET) {
     // IPv4
@@ -120,7 +119,6 @@ Address Address::resolve(const std::string &hostname, uint16_t port) {
         reinterpret_cast<struct sockaddr_in *>(result->ai_addr);
     inet_ntop(AF_INET, &(addr->sin_addr), ip_str, INET_ADDRSTRLEN);
     address = ip_str;
-    family = AddressFamily::IPv4;
   } else {
     // IPv6
     char ip_str[INET6_ADDRSTRLEN];
@@ -128,7 +126,6 @@ Address Address::resolve(const std::string &hostname, uint16_t port) {
         reinterpret_cast<struct sockaddr_in6 *>(result->ai_addr);
     inet_ntop(AF_INET6, &(addr->sin6_addr), ip_str, INET6_ADDRSTRLEN);
     address = ip_str;
-    family = AddressFamily::IPv6;
   }
 
   freeaddrinfo(result);
@@ -160,7 +157,6 @@ Address Address::get_local_address(const std::string &interface_name,
   }
 
   std::string address;
-  AddressFamily family;
 
   for (struct addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
     if (rp->ai_family == AF_INET) {
@@ -170,7 +166,6 @@ Address Address::get_local_address(const std::string &interface_name,
           reinterpret_cast<struct sockaddr_in *>(rp->ai_addr);
       inet_ntop(AF_INET, &(addr->sin_addr), ip_str, INET_ADDRSTRLEN);
       address = ip_str;
-      family = AddressFamily::IPv4;
       break;
     } else if (rp->ai_family == AF_INET6) {
       // IPv6
@@ -179,7 +174,6 @@ Address Address::get_local_address(const std::string &interface_name,
           reinterpret_cast<struct sockaddr_in6 *>(rp->ai_addr);
       inet_ntop(AF_INET6, &(addr->sin6_addr), ip_str, INET6_ADDRSTRLEN);
       address = ip_str;
-      family = AddressFamily::IPv6;
       break;
     }
   }

@@ -35,6 +35,7 @@ public:
                                       const std::string &protocol,
                                       const std::string &description,
                                       int lease_duration) {
+    static_cast<void>(description);
     // Placeholder implementation
     // In a real implementation, this would add a port mapping to the NAT device
     NATTraversalResult result;
@@ -50,6 +51,8 @@ public:
 
   bool delete_port_mapping(uint16_t external_port,
                            const std::string &protocol) {
+    static_cast<void>(external_port);
+    static_cast<void>(protocol);
     // Placeholder implementation
     // In a real implementation, this would delete a port mapping from the NAT
     // device
@@ -64,7 +67,7 @@ public:
   }
 
 private:
-  NATProtocol protocol_;
+  [[maybe_unused]] NATProtocol protocol_;
   bool available_;
 };
 

@@ -6,6 +6,7 @@ LIB_DIR ?= $(BUILD_DIR)/lib
 CXX ?= g++
 CXXFLAGS ?= -std=c++23 -Wall -Wextra -Wpedantic
 DOCTEST_DIR ?= $(TOP)/third_party
+RUN_TESTS ?= 1
 
 SRCDIR := src
 OBJDIR := $(BUILD_DIR)/modules/$(MODULE)
@@ -14,9 +15,9 @@ OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
 INCLUDES := -Iinclude -I$(TOP)/include $(shell for d in $(TOP)/modules/*/include; do if [ -d $$d ]; then printf " -I%s" $$d; fi; done)
 TEST_INCLUDES := $(INCLUDES) -I$(DOCTEST_DIR)
 
-.PHONY: all clean test
+.PHONY: all clean test maybe_test
 
-all: clean test $(LIB_DIR)/lib$(MODULE).a
+all: clean maybe_test $(LIB_DIR)/lib$(MODULE).a
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
@@ -32,12 +33,22 @@ TEST_BIN_DIR := $(BUILD_DIR)/tests/$(MODULE)
 TEST_SRCS := $(shell if [ -d $(TEST_SRCDIR) ]; then find $(TEST_SRCDIR) -name '*.cpp'; fi)
 TEST_OBJS := $(patsubst $(TEST_SRCDIR)/%.cpp,$(TEST_BIN_DIR)/%.o,$(TEST_SRCS))
 TEST_MAIN_OBJ := $(BUILD_DIR)/tests/doctest_main.o
-ALL_LIBS := $(wildcard $(LIB_DIR)/lib*.a)
-TEST_LIBS ?= $(LIB_DIR)/lib$(MODULE).a $(filter-out $(LIB_DIR)/lib$(MODULE).a,$(ALL_LIBS))
+# Default to linking only the module under test; additional libs can override TEST_LIBS if needed.
+TEST_LIBS ?= $(LIB_DIR)/lib$(MODULE).a
 
 test: $(TEST_SRCS)
-	@if [ -z "$(TEST_SRCS)" ]; then echo "No unit tests for $(MODULE)"; exit 0; fi
-	$(MAKE) $(TEST_BIN_DIR)/run_tests
+	@if [ -z "$(TEST_SRCS)" ]; then \
+		echo "No unit tests for $(MODULE)"; \
+	else \
+		$(MAKE) $(TEST_BIN_DIR)/run_tests; \
+	fi
+
+ifeq ($(RUN_TESTS),1)
+maybe_test: test
+else
+maybe_test:
+	@echo "Skipping tests for $(MODULE) (RUN_TESTS=$(RUN_TESTS))"
+endif
 
 $(TEST_BIN_DIR)/%.o: $(TEST_SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)

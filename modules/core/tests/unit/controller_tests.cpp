@@ -28,7 +28,7 @@ static std::filesystem::path make_temp_path(const std::string &suffix = "") {
 
 TEST_SUITE("core::Controller") {
 
-TEST_CASE("basic accessors and default state") {
+TEST_CASE("accessors") {
     auto path = make_temp_path("_basic");
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -61,7 +61,7 @@ TEST_CASE("basic accessors and default state") {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
-TEST_CASE("initialize (sync and async)") {
+TEST_CASE("initialize") {
     auto path = make_temp_path("_init");
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -76,7 +76,7 @@ TEST_CASE("initialize (sync and async)") {
     CHECK(f.get());
 }
 
-TEST_CASE("start/stop idempotency") {
+TEST_CASE("idempotency") {
     auto path = make_temp_path("_start_stop");
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -101,7 +101,7 @@ TEST_CASE("start/stop idempotency") {
     }
 }
 
-TEST_CASE("start_crawling lifecycle") {
+TEST_CASE("lifecycle") {
     auto path = make_temp_path("_crawl");
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -151,7 +151,7 @@ TEST_CASE("start_crawling lifecycle") {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
-TEST_CASE("event handlers store nodes and infohashes") {
+TEST_CASE("handlers") {
     auto path = make_temp_path("_events");
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -210,7 +210,7 @@ TEST_CASE("event handlers store nodes and infohashes") {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
-TEST_CASE("metadata received event stores metadata and torrent") {
+TEST_CASE("metadata") {
     auto path = make_temp_path("_metadata");
     std::error_code ec;
     std::filesystem::remove(path, ec);

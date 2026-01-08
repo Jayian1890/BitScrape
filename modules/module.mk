@@ -52,7 +52,7 @@ endif
 
 $(TEST_BIN_DIR)/%.o: $(TEST_SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) -D__FILE__='"modules/$(MODULE)/tests/unit/$(notdir $<)"' -c $< -o $@
 
 
 $(TEST_MAIN_OBJ): $(TOP)/tests/doctest_main.cpp

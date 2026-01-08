@@ -24,7 +24,7 @@ static std::filesystem::path make_temp_path(const std::string &suffix = "") {
 
 TEST_SUITE("core::Configuration") {
 
-TEST_CASE("set/get primitives and defaults") {
+TEST_CASE("primitives") {
     auto path = make_temp_path("_primitives");
     // Ensure no pre-existing file
     std::error_code ec;
@@ -60,7 +60,7 @@ TEST_CASE("set/get primitives and defaults") {
     CHECK_FALSE(cfg.has_key("a"));
 }
 
-TEST_CASE("string list and endpoint list roundtrip") {
+TEST_CASE("lists") {
     auto path = make_temp_path("_lists");
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -82,7 +82,7 @@ TEST_CASE("string list and endpoint list roundtrip") {
     CHECK(parsed[0].port() == 8080);
 }
 
-TEST_CASE("save and load roundtrip with JSON parsing of arrays, numbers, booleans and null") {
+TEST_CASE("save_load") {
     auto path = make_temp_path("_save_load");
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -110,7 +110,7 @@ TEST_CASE("save and load roundtrip with JSON parsing of arrays, numbers, boolean
     CHECK_EQ(arr2[1], "2");
 }
 
-TEST_CASE("create default configuration when file missing") {
+TEST_CASE("defaults") {
     auto path = make_temp_path("_defaults");
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -124,7 +124,7 @@ TEST_CASE("create default configuration when file missing") {
     CHECK_EQ(cfg.get_string("database.path"), "bitscrape.db");
 }
 
-TEST_CASE("load failure on malformed JSON") {
+TEST_CASE("malformed") {
     auto path = make_temp_path("_malformed");
     // Write malformed content
     {
@@ -136,7 +136,7 @@ TEST_CASE("load failure on malformed JSON") {
     CHECK_FALSE(cfg.load());
 }
 
-TEST_CASE("async load and save futures") {
+TEST_CASE("async") {
     auto path = make_temp_path("_async");
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -155,7 +155,7 @@ TEST_CASE("async load and save futures") {
     CHECK(cfg2.get_bool("async", false));
 }
 
-TEST_CASE("get_keys and get_all consistency") {
+TEST_CASE("keys") {
     auto path = make_temp_path("_all");
     std::error_code ec;
     std::filesystem::remove(path, ec);

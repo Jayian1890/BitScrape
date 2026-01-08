@@ -93,3 +93,4 @@ bin/
 /default.profraw
 /bitscrape.json
 /build_debug/
+bitscrape.db

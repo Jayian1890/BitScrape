@@ -1,4 +1,6 @@
 {
+    "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
+    "makefile.configureOnOpen": true,
     "makefile.launchConfigurations": [
         {
             "cwd": "/Users/jaredterrance/Projects/bitscrape/build/bin",

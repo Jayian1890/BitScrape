@@ -5,7 +5,10 @@
             "label": "make all",
             "type": "shell",
             "command": "make",
-            "args": ["DEBUG=1", "all"],
+            "args": [
+                "DEBUG=1",
+                "all"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -16,7 +19,11 @@
             "label": "make app",
             "type": "shell",
             "command": "make",
-            "args": ["DEBUG=1", "RUN_TESTS=0", "apps"],
+            "args": [
+                "DEBUG=1",
+                "RUN_TESTS=0",
+                "apps"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -36,12 +43,25 @@
             "label": "run tests",
             "type": "shell",
             "command": "make",
-            "args": ["test"],
+            "args": [
+                "test"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             "group": "test",
             "problemMatcher": "$msvc"
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: build",
+            "command": "build",
+            "targets": [
+                "[N/A - Select Kit]"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "CMake template build task"
         }
     ]
 }

@@ -390,6 +390,28 @@ void display_statistics(const std::unordered_map<std::string, std::string>& stat
     print_horizontal_line();
 }
 
+void display_sanity_checks(const std::vector<bitscrape::core::Controller::SanityCheckResult>& checks) {
+    print_horizontal_line();
+    print_centered("Module Sanity Checks", 80);
+    print_horizontal_line();
+
+    std::vector<int> widths = {25, 10, 40};
+    print_table_header({"Module", "Status", "Details"}, widths);
+
+    size_t failures = 0;
+    for (const auto& check : checks) {
+        std::string status = check.ok ? "OK" : "FAIL";
+        if (!check.ok) {
+            failures++;
+        }
+        print_table_row({check.module, status, check.message}, widths);
+    }
+
+    print_horizontal_line();
+    std::cout << "Checks: " << (checks.size() - failures) << "/" << checks.size() << " passing" << std::endl;
+    print_horizontal_line();
+}
+
 void display_nodes_list(const std::vector<bitscrape::storage::NodeModel>& nodes,
                         size_t limit = 10) {
     print_horizontal_line();
@@ -526,6 +548,7 @@ void display_interactive_help() {
     std::cout << "Available commands:" << std::endl;
     std::cout << "  help                   - Show this help message" << std::endl;
     std::cout << "  stats                  - Show statistics" << std::endl;
+    std::cout << "  health                 - Run module sanity checks" << std::endl;
     std::cout << "  nodes [limit]          - List discovered DHT nodes" << std::endl;
     std::cout << "  node <node_id>         - Show details for a specific node" << std::endl;
     std::cout << "  infohashes [limit]     - List discovered infohashes" << std::endl;
@@ -695,6 +718,9 @@ int main(int argc, char *argv[])
             } else if (cmd == "stats") {
                 auto stats = controller->get_statistics();
                 display_statistics(stats);
+            } else if (cmd == "health") {
+                auto checks = controller->run_sanity_checks();
+                display_sanity_checks(checks);
             } else if (cmd == "nodes") {
                 // Parse limit argument
                 size_t limit = 10;

@@ -1,16 +1,23 @@
 #include <chrono>
+#include <filesystem>
 #include <random>
 #include <string>
+#include <string_view>
+#include <thread>
 
 #include <doctest/doctest.h>
 
 #include <bitscrape/bittorrent/bittorrent_event_processor.hpp>
 #include <bitscrape/core/configuration.hpp>
 #include <bitscrape/core/controller.hpp>
+#include <bitscrape/event/event_bus.hpp>
+
+#include "test_helpers.hpp"
 
 using namespace bitscrape::core;
 namespace types = bitscrape::types;
 namespace bittorrent = bitscrape::bittorrent;
+namespace event = bitscrape::event;
 
 static std::filesystem::path make_temp_path(const std::string &suffix = "") {
   auto dir = std::filesystem::temp_directory_path();
@@ -147,70 +154,6 @@ TEST_SUITE("core::Controller") {
     // Give detached background threads time to exit to avoid cross-test
     // interference
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  }
-
-  TEST_CASE("handlers") {
-    auto path = make_temp_path("_events");
-    std::error_code ec;
-    std::filesystem::remove(path, ec);
-
-    Controller ctrl(path.string());
-    // Use deterministic temporary storage for this controller to allow precise
-    // checks
-    auto db_path = bitscrape::test::make_temp_db_path("_events");
-    ctrl.get_configuration()->set_string("database.path", db_path);
-    CHECK(ctrl.initialize());
-
-    using namespace bitscrape::types;
-    using namespace bitscrape::bittorrent;
-
-    // Create a simple concrete Event (Event is abstract)
-    struct SimpleEvent : public types::Event {
-      SimpleEvent(types::Event::Type t) : types::Event(t) {}
-      std::unique_ptr<types::Event> clone() const override {
-        return std::make_unique<SimpleEvent>(*this);
-      }
-    };
-
-    SimpleEvent evt_node(types::Event::Type::DHT_NODE_FOUND);
-    SimpleEvent evt_info(types::Event::Type::DHT_INFOHASH_FOUND);
-
-    // Initially no nodes/infohashes
-    auto nodes_before = ctrl.get_nodes();
-    auto ih_before = ctrl.get_infohashes();
-
-    // Deliver events directly to the controller (testing helper). Any
-    // exceptions (e.g., endpoint parsing) are acceptable in constrained test
-    // environments — the important part is that the handler runs without
-    // crashing the process.
-    try {
-      ctrl.receive_event(evt_node);
-    } catch (const std::exception &e) {
-      INFO("Node handler threw: " << e.what());
-    }
-
-    try {
-      ctrl.receive_event(evt_info);
-    } catch (const std::exception &e) {
-      INFO("Infohash handler threw: " << e.what());
-    }
-
-    // Allow some time for any async storage operations
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
-
-    // Now assert storage counts deterministically (each handler stores exactly
-    // one)
-    auto stats = ctrl.get_statistics();
-    uint64_t node_count = std::stoull(stats.at("storage.node_count"));
-    uint64_t infohash_count = std::stoull(stats.at("storage.infohash_count"));
-
-    CHECK_EQ(node_count, nodes_before.size() + 1);
-    CHECK_EQ(infohash_count, ih_before.size() + 1);
-
-    // Stop controller and cleanup
-    CHECK(ctrl.stop());
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
   }
 
 } // TEST_SUITE

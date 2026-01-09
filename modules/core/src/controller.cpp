@@ -39,6 +39,7 @@
 #include <filesystem>
 #include <random>
 #include <unordered_set>
+#include <sstream>
 
 namespace bitscrape::core {
 
@@ -746,6 +747,110 @@ public:
         return stats;
     }
 
+    std::vector<Controller::SanityCheckResult> run_sanity_checks() {
+        std::vector<Controller::SanityCheckResult> checks;
+        checks.reserve(8);
+
+        auto add = [&](std::string module, bool ok, std::string message) {
+            checks.push_back({std::move(module), ok, std::move(message)});
+        };
+
+        auto lock_manager = lock::LockManagerSingleton::instance();
+        auto lock_guard = lock_manager->get_lock_guard(controller_state_resource_id_, lock::LockManager::LockType::SHARED);
+
+        try {
+            if (!config_) {
+                add("configuration", false, "Configuration not initialized");
+            } else {
+                std::ostringstream msg;
+                const auto path = config_->get_config_path();
+                const bool exists = !path.empty() && std::filesystem::exists(path);
+                msg << "path=" << (path.empty() ? "<unset>" : path);
+
+                if (!exists) {
+                    add("configuration", false, msg.str() + " (missing)");
+                } else {
+                    msg << " db.path=" << config_->get_string("database.path", "data/bitscrape.db");
+                    add("configuration", true, msg.str());
+                }
+            }
+        } catch (const std::exception& e) {
+            add("configuration", false, e.what());
+        }
+
+        try {
+            if (!storage_manager_) {
+                add("storage", false, "Storage manager not created");
+            } else {
+                auto db = storage_manager_->database();
+                if (!db) {
+                    add("storage", false, "Database handle unavailable");
+                } else if (!db->is_initialized()) {
+                    std::ostringstream msg;
+                    msg << "db=" << db->path() << " not initialized";
+                    add("storage", false, msg.str());
+                } else {
+                    const auto result = db->execute("SELECT 1");
+                    const bool has_rows = result.has_rows();
+                    std::ostringstream msg;
+                    msg << "db=" << db->path() << " select1=" << (has_rows ? "ok" : "empty");
+                    add("storage", has_rows, msg.str());
+                }
+            }
+        } catch (const std::exception& e) {
+            add("storage", false, e.what());
+        }
+
+        try {
+            const bool bus_ok = event_bus_ != nullptr;
+            const bool processor_ok = event_processor_ && event_processor_->is_running();
+            std::ostringstream msg;
+            msg << "bus=" << (bus_ok ? "ok" : "null")
+                << " processor=" << (processor_ok ? "running" : "stopped");
+            add("event", bus_ok && processor_ok, msg.str());
+        } catch (const std::exception& e) {
+            add("event", false, e.what());
+        }
+
+        try {
+            if (!bt_event_processor_) {
+                add("bittorrent", false, "Event processor not created");
+            } else {
+                const bool running = bt_event_processor_->is_running();
+                std::ostringstream msg;
+                msg << "running=" << (running ? "yes" : "no")
+                    << " peer_managers=" << peer_managers_.size();
+                add("bittorrent", running, msg.str());
+            }
+        } catch (const std::exception& e) {
+            add("bittorrent", false, e.what());
+        }
+
+        try {
+            std::ostringstream msg;
+            msg << "managers=" << tracker_managers_.size();
+            add("tracker", true, msg.str());
+        } catch (const std::exception& e) {
+            add("tracker", false, e.what());
+        }
+
+        try {
+            if (!dht_session_) {
+                add("dht", false, "DHT session not created");
+            } else {
+                const bool running = dht_session_->is_running();
+                std::ostringstream msg;
+                msg << "running=" << (running ? "yes" : "no")
+                    << " nodes=" << dht_session_->routing_table().size();
+                add("dht", running, msg.str());
+            }
+        } catch (const std::exception& e) {
+            add("dht", false, e.what());
+        }
+
+        return checks;
+    }
+
     std::vector<types::InfoHash> get_infohashes(size_t limit, size_t offset) const {
         auto query = storage_manager_->query_interface();
         storage::QueryInterface::InfoHashQueryOptions options;
@@ -1381,6 +1486,10 @@ void Controller::handle_metadata_downloaded(const types::Event& event) {
 
 void Controller::handle_error(const types::Event& event) {
     impl_->handle_error(event);
+}
+
+std::vector<Controller::SanityCheckResult> Controller::run_sanity_checks() {
+    return impl_->run_sanity_checks();
 }
 
 } // namespace bitscrape::core

@@ -28,6 +28,12 @@ class Configuration;
  */
 class Controller {
 public:
+    struct SanityCheckResult {
+        std::string module;
+        bool ok;
+        std::string message;
+    };
+
     /**
      * @brief Construct a new Controller object
      *
@@ -149,6 +155,13 @@ public:
      * @return std::unordered_map<std::string, std::string> Map of statistics
      */
     std::unordered_map<std::string, std::string> get_statistics() const;
+
+    /**
+     * @brief Run lightweight runtime sanity checks for each module
+     *
+     * @return std::vector<SanityCheckResult> List of module check results
+     */
+    std::vector<SanityCheckResult> run_sanity_checks();
 
     /**
      * @brief Get discovered infohashes

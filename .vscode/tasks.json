@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "make all",
+            "label": "Build All (Debug)",
             "type": "shell",
             "command": "make",
             "args": [
@@ -10,13 +10,28 @@
                 "all"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "env": {}
             },
-            "group": "build",
-            "problemMatcher": "$msvc"
+            "presentation": {
+                "panel": "shared"
+            }
         },
         {
-            "label": "make app",
+            "label": "Build All (Release)",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "all"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build CLI App (Debug)",
             "type": "shell",
             "command": "make",
             "args": [
@@ -25,43 +40,206 @@
                 "apps"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "env": {}
             },
-            "group": "build",
-            "problemMatcher": "$msvc"
+            "presentation": {
+                "panel": "shared"
+            }
         },
         {
-            "label": "run bitscrape_cli",
+            "label": "Build CLI App (Release)",
             "type": "shell",
-            "command": "${workspaceFolder}/build/bin/bitscrape_cli",
+            "command": "make",
+            "args": [
+                "RUN_TESTS=0",
+                "apps"
+            ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "env": {}
             },
-            "problemMatcher": "$msvc"
+            "presentation": {
+                "panel": "shared"
+            }
         },
         {
-            "label": "run tests",
+            "label": "Run BitScrape CLI",
+            "type": "shell",
+            "command": "./build/bin/bitscrape_cli",
+            "args": [],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Run BitScrape CLI --help",
+            "type": "shell",
+            "command": "./build/bin/bitscrape_cli",
+            "args": [
+                "--help"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Run All Tests",
             "type": "shell",
             "command": "make",
             "args": [
                 "test"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "env": {}
             },
-            "group": "test",
-            "problemMatcher": "$msvc"
+            "presentation": {
+                "panel": "shared"
+            }
         },
         {
-            "type": "cmake",
-            "label": "CMake: build",
-            "command": "build",
-            "targets": [
-                "[N/A - Select Kit]"
+            "label": "Run Coverage",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "coverage"
             ],
-            "group": "build",
-            "problemMatcher": [],
-            "detail": "CMake template build task"
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Clean Build",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "clean"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build Core Module",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-C",
+                "modules/core",
+                "DEBUG=1"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build Storage Module",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-C",
+                "modules/storage",
+                "DEBUG=1"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build DHT Module",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-C",
+                "modules/dht",
+                "DEBUG=1"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build BitTorrent Module",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-C",
+                "modules/bittorrent",
+                "DEBUG=1"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build Web Module",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-C",
+                "modules/web",
+                "DEBUG=1"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Test Core Module",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-C",
+                "modules/core",
+                "test"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Test Storage Module",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-C",
+                "modules/storage",
+                "test"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            }
         }
     ]
 }

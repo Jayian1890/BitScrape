@@ -1,6 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
+#include <memory>
+#include <stdexcept>
 #include <string>
 #include <random>
 #include <chrono>

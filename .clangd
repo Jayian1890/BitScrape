@@ -8,3 +8,6 @@ CompileFlags:
 Diagnostics:
   MissingIncludes: Strict
   UnusedIncludes: Strict
+Index:
+  Background: Build
+  StandardLibrary: true

@@ -1,3 +1,6 @@
+#include "bitscrape/beacon/beacon.hpp"
+#include "bitscrape/types/info_hash.hpp"
+#include "bitscrape/types/node_id.hpp"
 #include <bitscrape/types/beacon_types.hpp>
 #include <bitscrape/core/controller.hpp>
 #include <bitscrape/core/configuration.hpp>
@@ -8,7 +11,13 @@
 #include <bitscrape/web/api_handler.hpp>
 #include <bitscrape/web/static_file_handler.hpp>
 
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <ctime>
+#include <exception>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <thread>
 #include <chrono>
@@ -18,10 +27,10 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
-#include <functional>
-#include <map>
 #include <mutex>
 #include <filesystem>
+#include <unordered_map>
+#include <vector>
 
 // Global variables for signal handling
 std::atomic<bool> running{true};

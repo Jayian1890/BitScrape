@@ -1,3 +1,4 @@
+#include "bitscrape/types/beacon_types.hpp"
 #include <bitscrape/core/controller.hpp>
 #include <bitscrape/core/configuration.hpp>
 
@@ -13,6 +14,7 @@
 #include <bitscrape/types/metadata_info.hpp>
 #include <bitscrape/types/torrent_info.hpp>
 #include <bitscrape/storage/query_interface.hpp>
+#include <bitscrape/storage/database.hpp>
 
 // BitTorrent module
 #include <bitscrape/bittorrent/peer_manager.hpp>
@@ -29,13 +31,15 @@
 #include <bitscrape/lock/lock_manager_singleton.hpp>
 #include <bitscrape/lock/lock_guard.hpp>
 
+#include <exception>
+#include <future>
 #include <iostream>
+#include <memory>
+#include <string>
 #include <thread>
 #include <chrono>
 #include <algorithm>
 #include <random>
-#include <mutex>
-#include <condition_variable>
 #include <filesystem>
 #include <random>
 #include <unordered_set>

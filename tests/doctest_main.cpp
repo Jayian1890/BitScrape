@@ -1,9 +1,11 @@
 #define DOCTEST_CONFIG_IMPLEMENT
-#include "doctest/doctest.h"
+
+#include <filesystem>
+
+#include <doctest.h>
 
 #include <bitscrape/core/controller.hpp>
 #include <bitscrape/core/configuration.hpp>
-#include <filesystem>
 
 int main(int argc, char** argv) {
     doctest::Context context;

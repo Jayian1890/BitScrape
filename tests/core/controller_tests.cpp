@@ -5,7 +5,7 @@
 #include <string_view>
 #include <thread>
 
-#include <doctest/doctest.h>
+#include <doctest.h>
 
 #include <bitscrape/bittorrent/bittorrent_event_processor.hpp>
 #include <bitscrape/core/configuration.hpp>

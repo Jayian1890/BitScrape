@@ -4,7 +4,7 @@
 #include <random>
 #include <chrono>
 
-#include "doctest/doctest.h"
+#include <doctest.h>
 
 #include <bitscrape/core/configuration.hpp>
 #include <bitscrape/core/controller.hpp>

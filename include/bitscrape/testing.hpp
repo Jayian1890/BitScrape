@@ -1,61 +1,43 @@
 #pragma once
 
-// Lightweight testing shim: maps a subset of GoogleTest style APIs onto doctest
-// so existing tests can keep their structure without pulling in gtest/gmock.
+#include <doctest.h>
 
-#include <doctest/doctest.h>
+// GoogleTest-like API mapped to doctest macros for convenience
+// This allows test code to use familiar GoogleTest-style assertions while using doctest
 
-namespace testing {
-class Test {
-public:
-    virtual ~Test() = default;
-    virtual void SetUp() {}
-    virtual void TearDown() {}
-};
+// Test definition macros
+#define TEST(suite_name, test_name) TEST_CASE(#suite_name "::" #test_name)
+#define TEST_F(fixture_name, test_name) TEST_CASE(#fixture_name "::" #test_name)
 
-template <typename T>
-struct TestWrapper : public T {
-    TestWrapper() { T::SetUp(); }
-    ~TestWrapper() override { T::TearDown(); }
-};
+// Assertion macros - basic checks
+#define ASSERT_TRUE(condition) REQUIRE(condition)
+#define ASSERT_FALSE(condition) REQUIRE(!(condition))
+#define EXPECT_TRUE(condition) CHECK(condition)
+#define EXPECT_FALSE(condition) CHECK(!(condition))
 
-inline void InitGoogleTest(int*, char**) {}
-inline int RUN_ALL_TESTS() {
-    doctest::Context context;
-    return context.run();
-}
+// Assertion macros - equality
+#define ASSERT_EQ(expected, actual) REQUIRE((actual) == (expected))
+#define ASSERT_NE(expected, actual) REQUIRE((actual) != (expected))
+#define ASSERT_LT(expected, actual) REQUIRE((actual) < (expected))
+#define ASSERT_LE(expected, actual) REQUIRE((actual) <= (expected))
+#define ASSERT_GT(expected, actual) REQUIRE((actual) > (expected))
+#define ASSERT_GE(expected, actual) REQUIRE((actual) >= (expected))
 
-} // namespace testing
+#define EXPECT_EQ(expected, actual) CHECK((actual) == (expected))
+#define EXPECT_NE(expected, actual) CHECK((actual) != (expected))
+#define EXPECT_LT(expected, actual) CHECK((actual) < (expected))
+#define EXPECT_LE(expected, actual) CHECK((actual) <= (expected))
+#define EXPECT_GT(expected, actual) CHECK((actual) > (expected))
+#define EXPECT_GE(expected, actual) CHECK((actual) >= (expected))
 
-#define TEST(test_case_name, test_name) \
-    DOCTEST_TEST_CASE(#test_case_name "." #test_name)
+// String comparison macros
+#define ASSERT_STREQ(expected, actual) REQUIRE(std::string(actual) == std::string(expected))
+#define EXPECT_STREQ(expected, actual) CHECK(std::string(actual) == std::string(expected))
 
-#define TEST_F(fixture, test_name) \
-    DOCTEST_TEST_CASE_FIXTURE(::testing::TestWrapper<fixture>, #fixture "." #test_name)
+// Throw expectation macros
+#define ASSERT_THROW(statement, exception_type) REQUIRE_THROWS_AS(statement, exception_type)
+#define EXPECT_THROW(statement, exception_type) CHECK_THROWS_AS(statement, exception_type)
+#define ASSERT_NO_THROW(statement) REQUIRE_NOTHROW(statement)
+#define EXPECT_NO_THROW(statement) CHECK_NOTHROW(statement)
 
-#define EXPECT_TRUE(condition) DOCTEST_CHECK(condition)
-#define ASSERT_TRUE(condition) DOCTEST_REQUIRE(condition)
-#define EXPECT_FALSE(condition) DOCTEST_CHECK_FALSE(condition)
-#define ASSERT_FALSE(condition) DOCTEST_REQUIRE_FALSE(condition)
-
-#define EXPECT_EQ(val1, val2) DOCTEST_CHECK_EQ(val1, val2)
-#define ASSERT_EQ(val1, val2) DOCTEST_REQUIRE_EQ(val1, val2)
-#define EXPECT_NE(val1, val2) DOCTEST_CHECK_NE(val1, val2)
-#define ASSERT_NE(val1, val2) DOCTEST_REQUIRE_NE(val1, val2)
-#define EXPECT_LT(val1, val2) DOCTEST_CHECK_LT(val1, val2)
-#define ASSERT_LT(val1, val2) DOCTEST_REQUIRE_LT(val1, val2)
-#define EXPECT_GT(val1, val2) DOCTEST_CHECK_GT(val1, val2)
-#define ASSERT_GT(val1, val2) DOCTEST_REQUIRE_GT(val1, val2)
-#define EXPECT_LE(val1, val2) DOCTEST_CHECK_LE(val1, val2)
-#define ASSERT_LE(val1, val2) DOCTEST_REQUIRE_LE(val1, val2)
-#define EXPECT_GE(val1, val2) DOCTEST_CHECK_GE(val1, val2)
-#define ASSERT_GE(val1, val2) DOCTEST_REQUIRE_GE(val1, val2)
-
-#define EXPECT_THROW(statement, exception_type) DOCTEST_CHECK_THROWS_AS(statement, exception_type)
-#define ASSERT_THROW(statement, exception_type) DOCTEST_REQUIRE_THROWS_AS(statement, exception_type)
-#define EXPECT_ANY_THROW(statement) DOCTEST_CHECK_THROWS(statement)
-#define ASSERT_ANY_THROW(statement) DOCTEST_REQUIRE_THROWS(statement)
-#define EXPECT_NO_THROW(statement) DOCTEST_CHECK_NOTHROW(statement)
-#define ASSERT_NO_THROW(statement) DOCTEST_REQUIRE_NOTHROW(statement)
-
-#define SUCCEED() DOCTEST_MESSAGE("SUCCEED")
+// Note: FAIL macro is already defined by doctest.h

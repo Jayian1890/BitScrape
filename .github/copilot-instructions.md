@@ -15,10 +15,11 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
 
 ## Project conventions & patterns an agent should follow
 - C++23 is required; compile flags are set in Makefiles (`-std=c++23 -Wall -Wextra -Wpedantic`). See top-level `Makefile`.
-- Module layout: `modules/<name>/include/bitscrape/...` and `modules/<name>/src/...`. To add a module, add a `Makefile` that includes `modules/module.mk`.
+- **Headers**: All public headers live under `include/bitscrape/<module>/`. For example, `include/bitscrape/core/configuration.hpp`.
+- **Module layout**: `modules/<name>/src/...` for implementation files. To add a module, add a `Makefile` that includes `modules/module.mk`.
 - Static libs: modules build to `build/lib/lib<module>.a`. Apps link with `MODULES := $(MODULES)` to locate the libs.
-- Tests: vendored doctest header under `third_party` and `tests/doctest_main.cpp` provide the test runner. Tests live under `modules/<module>/tests/unit` and compile to `build/tests/<module>/run_tests`.
-- Test helper: include `#include <bitscrape/testing.hpp>` for a GoogleTest-like API mapped to doctest macros.
+- **Tests**: Tests live under `tests/<module>/` (e.g., `tests/core/configuration_tests.cpp`). Test helpers are in `tests/helpers/`. Tests compile to `build/tests/<module>/run_tests`.
+- Test helper: include `#include <bitscrape/testing.hpp>` for a GoogleTest-like API mapped to doctest macros. Include `#include "test_helpers.hpp"` for additional test utilities.
 - Configuration: `bitscrape.json` is the default config file (template created under `build/bitscrape.json.template`). Use `bitscrape::core::Configuration` to read and write keys (e.g., `database.path`, `web.auto_start`, `web.static_dir`). See `modules/core/src/configuration.cpp`.
 - Storage: uses an internal Database wrapper (SQLite-like) under `modules/storage`. Default DB path: `data/default.db` or `database.path` in configuration.
 - Logging/beacon: use `modules/beacon` (`bitscrape::beacon::Beacon`) for structured messages (see `include/bitscrape/types/beacon_types.hpp`).
@@ -35,12 +36,6 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
 - Create workspace `.vscode/tasks.json` to run builds and tests, and `.vscode/launch.json` to debug the compiled binary.
 
 Sample `tasks.json` (add under `.vscode/`):
-
-```json
-.vscode/c_cpp_properties.json .vscode/launch.json .vscode/settings.json .vscode/tasks.json
-```
-
-Sample `launch.json` (add under `.vscode/`):
 
 ```json
 {
@@ -101,20 +96,17 @@ Sample `launch.json` (add under `.vscode/`):
 ## Files an agent should read to understand code paths quickly
 - `README.md` (architecture & usage), `BUILD.md` (detailed build/test/coverage instructions), `Makefile` and `modules/module.mk` (build patterns).
 - `apps/cli/src/main.cpp` (CLI options, configuration usage, web interface bootstrap).
-- `modules/core/*` (especially `controller.hpp/cpp` and `configuration.hpp/cpp`).
+- `modules/core/*` (especially `src/controller.cpp` and `src/configuration.cpp`).
 - `modules/storage/*` (database wrapper, `StorageManager`, `QueryInterface`).
 - `tests/doctest_main.cpp` and `include/bitscrape/testing.hpp` (test runner and test API conventions).
 
 ## Small actionable rules for code changes and PRs
-- Keep changes module-scoped where possible. Add code in `modules/<module>` and export targets via the module Makefile.
-- Add unit tests under `modules/<module>/tests/unit` using the `TEST_CASE` macro (or `TEST`/`ASSERT_*` via `bitscrape/testing.hpp`).
+- Keep changes module-scoped where possible. Add code in `modules/<module>/src/` and export targets via the module Makefile.
+- Add unit tests under `tests/<module>/` using the `TEST_CASE` macro (or `TEST`/`ASSERT_*` via `bitscrape/testing.hpp`).
 - Prefer the existing sync/async helpers in `Configuration`/`Database` rather than adding blocking calls.
-- Avoid introducing additional test mains (there is a single `tests/doctest_main.cpp` used by modules).
-- When adding public headers, place them under `modules/<module>/include/bitscrape/<module>/` so the centralized include scanning picks them up.
+- Avoid introducing additional test mains (there is a single `tests/doctest_main.cpp` used by all modules).
+- When adding public headers, place them under `include/bitscrape/<module>/` so the centralized include scanning picks them up.
 
 ## Integration points & external dependencies
 - No heavy external C++ deps; doctest is vendored. The build assumes only a C++23-capable compiler and `make`.
 - Runtime interacts with network endpoints (DHT bootstrap nodes, trackers) and writes to a local SQLite-backed database (see `database.path` in config).
-
----
-If you'd like I can: (1) merge this into an existing `.github/copilot-instructions.md` if one exists, (2) add short examples for common PR types (fix, feature, test), or (3) expand sections with copyable shell snippets. Which should I do next?

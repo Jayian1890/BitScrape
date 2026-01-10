@@ -118,25 +118,41 @@ bitscrape-web --port=8080
 
 ```
 bitscrape/
-├── modules/                  # Core modules
-│   ├── types/                # Core type definitions
-│   ├── event/                # Event system
-│   ├── network/              # Network abstraction layer
-│   ├── bencode/              # Bencode encoding/decoding
-│   ├── dht/                  # DHT protocol implementation
-│   ├── bittorrent/           # BitTorrent protocol implementation
-│   ├── tracker/              # Tracker communication
-│   ├── storage/              # Storage module
-│   ├── web/                  # Web interface
-│   └── core/                 # Core application components
+├── include/                  # Centralized public headers
+│   └── bitscrape/
+│       ├── beacon/           # Logging headers
+│       ├── bencode/          # Bencode headers
+│       ├── bittorrent/       # BitTorrent headers
+│       ├── core/             # Core headers
+│       ├── dht/              # DHT headers
+│       ├── event/            # Event system headers
+│       ├── lock/             # Lock utility headers
+│       ├── network/          # Network headers
+│       ├── storage/          # Storage headers
+│       ├── tracker/          # Tracker headers
+│       ├── types/            # Type definition headers
+│       └── web/              # Web interface headers
+├── modules/                  # Module implementations
+│   ├── beacon/src/           # Logging implementation
+│   ├── bencode/src/          # Bencode encoding/decoding
+│   ├── bittorrent/src/       # BitTorrent protocol
+│   ├── core/src/             # Core application logic
+│   ├── dht/src/              # DHT protocol
+│   ├── event/src/            # Event system
+│   ├── lock/src/             # Lock utilities
+│   ├── network/src/          # Network abstraction
+│   ├── storage/src/          # Data storage
+│   ├── tracker/src/          # Tracker communication
+│   ├── types/src/            # Type implementations
+│   └── web/src/              # Web interface
 ├── apps/                     # Applications
-│   ├── cli/                  # Command-line interface
-│   ├── gui/                  # Graphical user interface
-│   └── web/                  # Web application
-├── tests/                    # Integration tests
-├── docs/                     # Documentation
+│   └── cli/                  # Command-line interface
+├── tests/                    # Unit tests
+│   ├── helpers/              # Test utilities
+│   ├── core/                 # Core module tests
+│   └── doctest_main.cpp      # Shared test runner
 ├── scripts/                  # Utility scripts
-└── Makefile                 # Top-level Make entry point
+└── Makefile                  # Top-level Make entry point
 ```
 
 ## Module Overview

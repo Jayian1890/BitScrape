@@ -1,6 +1,6 @@
 # BitScrape Build System
 
-This document describes how to build the BitScrape project. The repository now uses Makefiles exclusively for building and testing.
+This document describes how to build the BitScrape project. The repository uses Makefiles exclusively for building and testing.
 
 ## Makefile build
 
@@ -11,7 +11,6 @@ This document describes how to build the BitScrape project. The repository now u
 - Build a single module: `make -C modules/<module>`
 - Build CLI only: `make -C apps/cli`
 - Tests: `make test` for all modules or `make -C modules/<module> test` for one module.
-
 
 ## Prerequisites
 
@@ -38,19 +37,59 @@ The executable will be located at `build/bin/bitscrape_cli`.
 
 ## Project Structure
 
-- `apps/cli`: CLI application
-- `modules/`: Core modules
-  - `beacon`: Logging and notification system
-  - `bencode`: Bencode encoding/decoding
-  - `bittorrent`: BitTorrent protocol implementation
-  - `core`: Core application logic
-  - `dht`: DHT protocol implementation
-  - `event`: Event system
-  - `network`: Network communication
-  - `storage`: Data storage
-  - `tracker`: Tracker communication
-  - `types`: Common types
-  - `web`: Web interface
+```
+bitscrape/
+├── apps/
+│   └── cli/              # CLI application
+├── include/
+│   └── bitscrape/        # Centralized public headers
+│       ├── beacon/
+│       ├── bencode/
+│       ├── bittorrent/
+│       ├── core/
+│       ├── dht/
+│       ├── event/
+│       ├── lock/
+│       ├── network/
+│       ├── storage/
+│       ├── tracker/
+│       ├── types/
+│       └── web/
+├── modules/              # Module implementations
+│   ├── beacon/           # Logging and notification system
+│   ├── bencode/          # Bencode encoding/decoding
+│   ├── bittorrent/       # BitTorrent protocol implementation
+│   ├── core/             # Core application logic
+│   ├── dht/              # DHT protocol implementation
+│   ├── event/            # Event system
+│   ├── lock/             # Locking utilities
+│   ├── network/          # Network communication
+│   ├── storage/          # Data storage
+│   ├── tracker/          # Tracker communication
+│   ├── types/            # Common types
+│   └── web/              # Web interface
+├── tests/                # Unit tests
+│   ├── helpers/          # Test helper utilities
+│   ├── core/             # Tests for core module
+│   └── doctest_main.cpp  # Shared test runner
+└── build/                # Build output directory
+```
+
+### Module Layout
+
+Each module under `modules/` contains:
+- `src/` - Implementation files (`.cpp`)
+- `Makefile` - Module-specific build rules (includes `module.mk`)
+
+Public headers for all modules are centralized under `include/bitscrape/<module>/`.
+
+### Test Layout
+
+Tests are organized under `tests/<module>/`:
+- `tests/core/configuration_tests.cpp`
+- `tests/core/controller_tests.cpp`
+
+Test helpers live in `tests/helpers/`.
 
 ## Testing
 
@@ -65,6 +104,12 @@ The executable will be located at `build/bin/bitscrape_cli`.
 
   ```bash
   make -C modules/<module> test
+  ```
+
+- Run a specific test binary directly:
+
+  ```bash
+  ./build/tests/<module>/run_tests
   ```
 
 ### Coverage
@@ -87,7 +132,38 @@ The Make build produces a `build/bitscrape.json.template` file plus `build/publi
 Override standard Make variables as needed:
 
 ```bash
-make CXX=clang++ CXXFLAGS="-std=c++23 -O2 -Wall" 
+make CXX=clang++ CXXFLAGS="-std=c++23 -O2 -Wall"
 make DEBUG=1
 make PREFIX=/opt/bitscrape install
+```
+
+## Adding New Code
+
+### Adding a New Header
+
+Place new public headers under `include/bitscrape/<module>/`:
+
+```
+include/bitscrape/core/my_new_header.hpp
+```
+
+### Adding a New Implementation File
+
+Place new implementation files under `modules/<module>/src/`:
+
+```
+modules/core/src/my_new_impl.cpp
+```
+
+### Adding a New Test
+
+Place new test files under `tests/<module>/`:
+
+```
+tests/core/my_new_tests.cpp
+```
+
+Include test helpers with:
+```cpp
+#include "test_helpers.hpp"
 ```

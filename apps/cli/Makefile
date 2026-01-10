@@ -17,7 +17,7 @@ SRCDIR := src
 OBJDIR := $(BUILD_DIR)/apps/cli
 SRCS := $(shell find $(SRCDIR) -name '*.cpp')
 OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
-INCLUDES := -Iinclude $(shell for d in $(TOP)/modules/*/include; do if [ -d $$d ]; then printf " -I%s" $$d; fi; done)
+INCLUDES := -I$(TOP)/include
 LIBS := $(patsubst %,$(LIB_DIR)/lib%.a,$(MODULES))
 
 PUBLIC_DIR := $(BUILD_DIR)/public

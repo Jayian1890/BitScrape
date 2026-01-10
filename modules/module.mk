@@ -5,14 +5,14 @@ BUILD_DIR ?= $(TOP)/build
 LIB_DIR ?= $(BUILD_DIR)/lib
 CXX ?= g++
 CXXFLAGS ?= -std=c++23 -Wall -Wextra -Wpedantic
-DOCTEST_DIR ?= $(TOP)/third_party
+DOCTEST_DIR ?= $(TOP)/include
 RUN_TESTS ?= 1
 
 SRCDIR := src
 OBJDIR := $(BUILD_DIR)/modules/$(MODULE)
 SRCS := $(shell find $(SRCDIR) -name '*.cpp')
 OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
-INCLUDES := -Iinclude -I$(TOP)/include $(shell for d in $(TOP)/modules/*/include; do if [ -d $$d ]; then printf " -I%s" $$d; fi; done)
+INCLUDES := -I$(TOP)/include
 TEST_INCLUDES := $(INCLUDES) -I$(DOCTEST_DIR)
 
 .PHONY: all clean test maybe_test
@@ -28,7 +28,7 @@ $(LIB_DIR)/lib$(MODULE).a: $(OBJS)
 	ar rcs $@ $^
 
 # Unit test support (optional)
-TEST_SRCDIR := tests/unit
+TEST_SRCDIR := $(TOP)/tests/$(MODULE)
 TEST_BIN_DIR := $(BUILD_DIR)/tests/$(MODULE)
 TEST_SRCS := $(shell if [ -d $(TEST_SRCDIR) ]; then find $(TEST_SRCDIR) -name '*.cpp'; fi)
 TEST_OBJS := $(patsubst $(TEST_SRCDIR)/%.cpp,$(TEST_BIN_DIR)/%.o,$(TEST_SRCS))
@@ -52,7 +52,7 @@ endif
 
 $(TEST_BIN_DIR)/%.o: $(TEST_SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) -D__FILE__='"modules/$(MODULE)/tests/unit/$(notdir $<)"' -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) -I$(TOP)/tests/helpers -D__FILE__='"tests/$(MODULE)/$(notdir $<)"' -c $< -o $@
 
 
 $(TEST_MAIN_OBJ): $(TOP)/tests/doctest_main.cpp

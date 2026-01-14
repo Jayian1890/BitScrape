@@ -29,8 +29,9 @@ void MetadataExchange::initialize() {
           // Extended handshake
           handle_extended_handshake(address, extended_message->payload());
         } else if (extended_message->extended_type() == ut_metadata_id_) {
-          // Metadata message
-          handle_metadata_message(address, extended_message->payload());
+          // Metadata message - pass trailing data for BEP-9 piece extraction
+          handle_metadata_message(address, extended_message->payload(),
+                                  extended_message->trailing_data());
         }
       });
 }
@@ -104,7 +105,8 @@ void MetadataExchange::handle_extended_handshake(
 }
 
 void MetadataExchange::handle_metadata_message(
-    const network::Address &address, const bencode::BencodeValue &message) {
+    const network::Address &address, const bencode::BencodeValue &message,
+    const std::vector<uint8_t> &trailing_data) {
   // Check if the message is a dictionary
   if (!message.is_dict()) {
     return;
@@ -188,20 +190,18 @@ void MetadataExchange::handle_metadata_message(
     std::string address_str = address.to_string();
     peer_metadata_size_[address_str] = size;
 
-    // Get the piece data
+    // Get the piece data - may be in dictionary OR in trailing bytes (BEP-9)
     std::vector<uint8_t> piece_data;
     const bencode::BencodeValue *data = message.get("data");
     if (data != nullptr && data->is_string()) {
       // The data is included in the dictionary
       piece_data = std::vector<uint8_t>(data->as_string().begin(),
                                         data->as_string().end());
-    } else {
-      // The data is appended to the bencoded dictionary
-      // We need to extract the data from the raw message
-      // This is a bit tricky because we don't have access to the raw message
-      // here For now, we'll just skip this case and rely on the data being
-      // included in the dictionary
+    } else if (!trailing_data.empty()) {
+      // The data is appended after the bencoded dictionary (BEP-9 style)
+      piece_data = trailing_data;
     }
+    // If still empty, we can't process this piece
 
     // Store the piece
     if (!piece_data.empty()) {

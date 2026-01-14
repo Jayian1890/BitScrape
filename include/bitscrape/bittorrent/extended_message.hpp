@@ -23,18 +23,30 @@ public:
   ExtendedMessage(uint8_t extended_type, const bencode::BencodeValue &payload);
 
   /**
+   * @brief Constructor with trailing data (for BEP-9 data messages)
+   *
+   * @param extended_type Extended message type
+   * @param payload Bencoded payload dictionary
+   * @param trailing_data Raw bytes appended after the bencoded dictionary
+   */
+  ExtendedMessage(uint8_t extended_type, const bencode::BencodeValue &payload,
+                  const std::vector<uint8_t> &trailing_data);
+
+  /**
    * @brief Get the extended message type
    *
    * @return Extended message type
    */
   [[nodiscard]] uint8_t extended_type() const;
 
-  /**
-   * @brief Get the payload
-   *
-   * @return Payload
-   */
   [[nodiscard]] const bencode::BencodeValue &payload() const;
+
+  /**
+   * @brief Get the trailing data (for BEP-9 data messages)
+   *
+   * @return Trailing data bytes (may be empty)
+   */
+  [[nodiscard]] const std::vector<uint8_t> &trailing_data() const;
 
   /**
    * @brief Serialize the message to a byte vector
@@ -53,6 +65,8 @@ public:
 private:
   uint8_t extended_type_;         ///< Extended message type (0 = handshake)
   bencode::BencodeValue payload_; ///< Payload data
+  std::vector<uint8_t>
+      trailing_data_; ///< Raw bytes after bencoded dict (BEP-9)
 };
 
 } // namespace bitscrape::bittorrent

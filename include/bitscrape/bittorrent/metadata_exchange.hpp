@@ -90,10 +90,13 @@ private:
    * @brief Handle a metadata message
    *
    * @param address Peer address
-   * @param message Metadata message
+   * @param message Metadata message bencoded dictionary
+   * @param trailing_data Raw bytes appended after bencoded dict (BEP-9 piece
+   * data)
    */
   void handle_metadata_message(const network::Address &address,
-                               const bencode::BencodeValue &message);
+                               const bencode::BencodeValue &message,
+                               const std::vector<uint8_t> &trailing_data);
 
   /**
    * @brief Send an extended handshake message

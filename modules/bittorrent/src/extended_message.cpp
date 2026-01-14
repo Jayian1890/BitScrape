@@ -9,12 +9,22 @@ namespace bitscrape::bittorrent {
 ExtendedMessage::ExtendedMessage(uint8_t extended_type,
                                  const bencode::BencodeValue &payload)
     : PeerMessage(PeerMessageType::EXTENDED), extended_type_(extended_type),
-      payload_(payload) {}
+      payload_(payload), trailing_data_() {}
+
+ExtendedMessage::ExtendedMessage(uint8_t extended_type,
+                                 const bencode::BencodeValue &payload,
+                                 const std::vector<uint8_t> &trailing_data)
+    : PeerMessage(PeerMessageType::EXTENDED), extended_type_(extended_type),
+      payload_(payload), trailing_data_(trailing_data) {}
 
 uint8_t ExtendedMessage::extended_type() const { return extended_type_; }
 
 const bencode::BencodeValue &ExtendedMessage::payload() const {
   return payload_;
+}
+
+const std::vector<uint8_t> &ExtendedMessage::trailing_data() const {
+  return trailing_data_;
 }
 
 std::vector<uint8_t> ExtendedMessage::serialize() const {

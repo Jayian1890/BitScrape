@@ -1,5 +1,6 @@
 #include "bitscrape/bittorrent/peer_message.hpp"
 #include "bitscrape/bencode/bencode_decoder.hpp"
+#include "bitscrape/bencode/bencode_encoder.hpp"
 #include "bitscrape/bittorrent/extended_message.hpp"
 
 #include <iomanip>
@@ -150,13 +151,28 @@ PeerMessageFactory::create_from_data(const std::vector<uint8_t> &data) {
     // Get payload
     std::vector<uint8_t> payload_data(data.begin() + 2, data.end());
 
-    // Decode payload
+    // Decode payload - for BEP-9 data messages, there may be raw bytes
+    // appended after the bencoded dictionary. We need to figure out where
+    // the bencoded data ends and extract trailing bytes.
     try {
       auto decoder = bencode::create_bencode_decoder();
       bencode::BencodeValue payload = decoder->decode(payload_data);
 
-      // Create extended message
-      return std::make_shared<ExtendedMessage>(extended_type, payload);
+      // To find trailing bytes, we re-encode the decoded value and compare
+      // lengths. If the original data is longer, the extra bytes are trailing.
+      auto encoder = bencode::create_bencode_encoder();
+      std::vector<uint8_t> re_encoded = encoder->encode(payload);
+
+      std::vector<uint8_t> trailing_data;
+      if (payload_data.size() > re_encoded.size()) {
+        // There are trailing bytes after the bencoded dictionary
+        trailing_data.assign(payload_data.begin() + re_encoded.size(),
+                             payload_data.end());
+      }
+
+      // Create extended message with trailing data
+      return std::make_shared<ExtendedMessage>(extended_type, payload,
+                                               trailing_data);
     } catch (const std::exception &) {
       // Failed to decode payload
       return nullptr;

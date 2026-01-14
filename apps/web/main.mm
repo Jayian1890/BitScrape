@@ -31,7 +31,7 @@ using namespace bitscrape::web;
     NSImage *icon = [NSImage imageNamed:@"menubar_icon"];
     if (icon) {
         NSImage *resizedIcon = [self resizeImage:icon toSize:NSMakeSize(ICON_SIZE, ICON_SIZE)];
-        [resizedIcon setTemplate:YES]; // allow dark mode adaptation
+        [resizedIcon setTemplate:YES];
         self.statusItem.button.image = resizedIcon;
     }
     self.statusItem.button.title = @"";
@@ -42,9 +42,11 @@ using namespace bitscrape::web;
 - (NSImage *)resizeImage:(NSImage *)sourceImage toSize:(NSSize)size {
     NSImage *newImage = [[NSImage alloc] initWithSize:size];
     [newImage lockFocus];
+    [[NSColor clearColor] set];
+    NSRectFill(NSMakeRect(0, 0, size.width, size.height));
     [sourceImage drawInRect:NSMakeRect(0, 0, size.width, size.height)
                    fromRect:NSZeroRect
-                  operation:NSCompositingOperationCopy
+                  operation:NSCompositingOperationSourceOver
                    fraction:1.0];
     [newImage unlockFocus];
     return newImage;

@@ -2,6 +2,7 @@
 #include "bitscrape/web/http_server.hpp"
 #include "bitscrape/web/web_controller.hpp"
 #include "bitscrape/web/static_file_handler.hpp"
+#include "bitscrape/web/api_handler.hpp"
 
 namespace bitscrape::web {
 
@@ -18,10 +19,14 @@ bool MenubarController::start_server(uint16_t port, const std::string& resource_
     auto controller = std::make_shared<WebController>("");
     // Initialize and start the controller if needed
     controller->initialize();
+    controller->start();
     controller->start_crawling();
     // Create the HTTP server
     server_ = std::make_unique<HTTPServer>(port, controller);
     
+    // Register API routes
+    APIHandler::register_routes(server_->router());
+
     // Register static file routes
     std::string public_dir = resource_path + "/public";
     StaticFileHandler::register_routes(server_->router(), public_dir);

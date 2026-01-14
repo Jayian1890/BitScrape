@@ -59,7 +59,7 @@ install: all
 
 test: modules
 	@echo "Running module tests..."
-	@set -e; for m in $(MODULES); do echo "=== Testing $$m ==="; $(MAKE) -C modules/$$m test TOP=$(TOP) BUILD_DIR=$(TOP)/$(BUILD_DIR) LIB_DIR=$(TOP)/$(LIB_DIR) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" COVERAGE=$(COVERAGE); done || true
+	@set -e; for m in $(MODULES); do echo "=== Testing $$m ==="; $(MAKE) -j1 -C modules/$$m test TOP=$(TOP) BUILD_DIR=$(TOP)/$(BUILD_DIR) LIB_DIR=$(TOP)/$(LIB_DIR) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" COVERAGE=$(COVERAGE); done
 
 coverage:
 	@echo "Rebuilding with coverage instrumentation and running tests..."

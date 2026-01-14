@@ -31,7 +31,7 @@ using namespace bitscrape::web;
     NSImage *icon = [NSImage imageNamed:@"menubar_icon"];
     if (icon) {
         NSImage *resizedIcon = [self resizeImage:icon toSize:NSMakeSize(ICON_SIZE, ICON_SIZE)];
-        [resizedIcon setTemplate:YES]; // allow dark mode adaptation
+        [resizedIcon setTemplate:NO]; // disable template to show colors
         self.statusItem.button.image = resizedIcon;
     }
     self.statusItem.button.title = @"";

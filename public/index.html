@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,30 +10,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #050505;          /* primary: black */
-      --panel: #0b0b0f;
-      --card: #0f0f15;
-      --text: #f7f2f0;
-      --muted: #c7bebb;
-      --accent: #fa8072;      /* secondary: salmon pink */
-      --accent-2: #ffc7bc;
-      --border: rgba(255, 255, 255, 0.08);
-      --shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
+      --bg: #ffffff;
+      /* primary: white */
+      --panel: #f4f4f5;
+      --card: #ffffff;
+      --text: #18181b;
+      --muted: #71717a;
+      --accent: #ffb8f0;
+      /* secondary: salmon pink */
+      --accent-2: #ff00ff;
+      /* fuchsia */
+      --border: rgba(0, 0, 0, 0.1);
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
       font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
       background: radial-gradient(55% 55% at 22% 24%, rgba(250, 128, 114, 0.2), transparent 48%),
-          radial-gradient(50% 50% at 78% 18%, rgba(0, 0, 0, 0.55), transparent 55%),
-          var(--bg);
+        radial-gradient(50% 50% at 78% 18%, rgba(0, 0, 0, 0.55), transparent 55%),
+        var(--bg);
       color: var(--text);
       padding: 28px 18px 42px;
     }
 
-    .shell { max-width: 1220px; margin: 0 auto; display: grid; gap: 18px; }
+    .shell {
+      max-width: 1220px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
 
     header {
       display: flex;
@@ -47,18 +59,33 @@
       box-shadow: var(--shadow);
     }
 
-    h1 { margin: 0; font-size: 30px; letter-spacing: -0.02em; }
-    .subtitle { color: var(--muted); font-size: 14px; }
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
     .tag {
       padding: 7px 12px;
       border: 1px solid var(--border);
       border-radius: 999px;
       font-size: 13px;
       color: var(--muted);
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(0, 0, 0, 0.05);
     }
 
-    .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
     button {
       background: var(--accent);
       color: #0b1021;
@@ -70,17 +97,34 @@
       font-size: 14px;
       transition: transform 0.08s ease, box-shadow 0.14s ease;
     }
+
     button.secondary {
       background: transparent;
       color: var(--text);
       border: 1px solid var(--border);
     }
-    button:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(250, 128, 114, 0.3); }
-    button:active { transform: translateY(0); }
 
-    .grid { display: grid; gap: 14px; }
-    .grid.stats { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-    .grid.split { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 30px rgba(250, 128, 114, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid.stats {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .grid.split {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
 
     .card {
       background: var(--card);
@@ -90,10 +134,30 @@
       box-shadow: var(--shadow);
       min-height: 120px;
     }
-    .card h3 { margin: 0 0 6px; font-size: 16px; letter-spacing: -0.01em; }
-    .muted { color: var(--muted); font-size: 13px; }
-    .value { font-size: 28px; font-weight: 600; margin: 6px 0 2px; }
-    .row { display: flex; gap: 8px; align-items: center; }
+
+    .card h3 {
+      margin: 0 0 6px;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .value {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 6px 0 2px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
     .pill {
       padding: 6px 11px;
       border-radius: 999px;
@@ -106,16 +170,51 @@
       gap: 6px;
       text-transform: lowercase;
     }
-    .pill.off { background: #ff8a80; color: #0b0b0b; }
 
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 6px; text-align: left; font-size: 13px; }
-    th { color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
-    tr + tr td { border-top: 1px solid var(--border); }
-    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    .pill.off {
+      background: #ff8a80;
+      color: #0b0b0b;
+    }
 
-    .flex-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .error { color: #ff8a80; font-weight: 600; margin-top: 8px; display: none; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 10px 6px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr+tr td {
+      border-top: 1px solid var(--border);
+    }
+
+    tr:hover td {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    .flex-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .error {
+      color: #ff8a80;
+      font-weight: 600;
+      margin-top: 8px;
+      display: none;
+    }
 
     .badge {
       padding: 4px 8px;
@@ -125,12 +224,20 @@
       background: rgba(92, 225, 230, 0.14);
       color: var(--accent);
     }
-    .badge.dim { background: rgba(255, 255, 255, 0.06); color: var(--muted); }
 
-    .search-row { display: flex; gap: 8px; }
+    .badge.dim {
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--muted);
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+    }
+
     .search-row input {
       flex: 1;
-      background: #0c1427;
+      background: #ffffff;
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 12px;
@@ -138,7 +245,11 @@
       font-size: 14px;
     }
 
-    .log-wrap { position: relative; margin-top: 6px; }
+    .log-wrap {
+      position: relative;
+      margin-top: 6px;
+    }
+
     .log-toggle {
       position: absolute;
       top: 12px;
@@ -150,30 +261,55 @@
       border-radius: 9px;
       font-size: 12px;
     }
+
     .log-box {
       max-height: 320px;
       overflow-y: auto;
       font-family: "SFMono-Regular", "JetBrains Mono", ui-monospace, monospace;
       font-size: 12px;
-      background: #0c0c12;
+      background: #18181b;
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px;
-      color: var(--muted);
+      color: #a1a1aa;
       margin-top: 8px;
     }
-    .log-entry { margin: 0 0 6px; line-height: 1.5; }
-    .log-entry .time { color: var(--accent-2); margin-right: 8px; }
-    .log-entry.error { color: #ff8a80; }
+
+    .log-entry {
+      margin: 0 0 6px;
+      line-height: 1.5;
+    }
+
+    .log-entry .time {
+      color: var(--accent-2);
+      margin-right: 8px;
+    }
+
+    .log-entry.error {
+      color: #ff8a80;
+    }
 
     @media (max-width: 720px) {
-      header { flex-direction: column; align-items: flex-start; }
-      .actions { width: 100%; }
-      .search-row { flex-direction: column; }
-      .search-row button { width: 100%; }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .actions {
+        width: 100%;
+      }
+
+      .search-row {
+        flex-direction: column;
+      }
+
+      .search-row button {
+        width: 100%;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="shell">
     <header>
@@ -227,7 +363,13 @@
         </div>
         <table id="infohash-table">
           <thead>
-            <tr><th>Infohash</th><th>Peers</th><th>First seen</th><th>Last seen</th><th>Metadata</th></tr>
+            <tr>
+              <th>Infohash</th>
+              <th>Peers</th>
+              <th>First seen</th>
+              <th>Last seen</th>
+              <th>Metadata</th>
+            </tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -244,7 +386,12 @@
         </div>
         <table id="metadata-table">
           <thead>
-            <tr><th>Name</th><th>Size</th><th>Files</th><th>Downloaded</th></tr>
+            <tr>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Files</th>
+              <th>Downloaded</th>
+            </tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -259,7 +406,12 @@
       </div>
       <table id="nodes-table">
         <thead>
-          <tr><th>Address</th><th>Port</th><th>Last seen</th><th>Ping</th></tr>
+          <tr>
+            <th>Address</th>
+            <th>Port</th>
+            <th>Last seen</th>
+            <th>Ping</th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -496,4 +648,5 @@
     setInterval(refreshAll, 5000);
   </script>
 </body>
+
 </html>

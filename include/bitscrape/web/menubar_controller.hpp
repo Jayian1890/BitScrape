@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 namespace bitscrape::web {
 
@@ -13,7 +14,7 @@ public:
     ~MenubarController();
 
     // Starts the server on the given port (default 8080). Returns true on success.
-    bool start_server(uint16_t port = 8080);
+    bool start_server(uint16_t port, const std::string& resource_path);
 
     // Stops the server if it is running.
     void stop_server();

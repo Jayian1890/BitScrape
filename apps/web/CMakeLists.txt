@@ -9,6 +9,7 @@ add_executable(bitscrape_web MACOSX_BUNDLE
     ${CMAKE_CURRENT_SOURCE_DIR}/menubar_controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/main.mm
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/menubar_icon.png
+    ${CMAKE_SOURCE_DIR}/public/index.html
 )
 
 target_include_directories(bitscrape_web PRIVATE ${CMAKE_SOURCE_DIR}/include)
@@ -23,4 +24,5 @@ set_target_properties(bitscrape_web PROPERTIES
 )
 
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/resources/menubar_icon.png PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+set_source_files_properties(${CMAKE_SOURCE_DIR}/public/index.html PROPERTIES MACOSX_PACKAGE_LOCATION Resources/public)
 

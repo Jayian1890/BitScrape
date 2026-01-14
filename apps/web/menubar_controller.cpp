@@ -1,6 +1,7 @@
 #include "bitscrape/web/menubar_controller.hpp"
 #include "bitscrape/web/http_server.hpp"
 #include "bitscrape/web/web_controller.hpp"
+#include "bitscrape/web/static_file_handler.hpp"
 
 namespace bitscrape::web {
 
@@ -9,7 +10,7 @@ MenubarController::~MenubarController() {
     stop_server();
 }
 
-bool MenubarController::start_server(uint16_t port) {
+bool MenubarController::start_server(uint16_t port, const std::string& resource_path) {
     if (server_ && server_->is_running()) {
         return true;
     }
@@ -19,6 +20,11 @@ bool MenubarController::start_server(uint16_t port) {
     controller->initialize();
     // Create the HTTP server
     server_ = std::make_unique<HTTPServer>(port, controller);
+    
+    // Register static file routes
+    std::string public_dir = resource_path + "/public";
+    StaticFileHandler::register_routes(server_->router(), public_dir);
+    
     return server_->start();
 }
 

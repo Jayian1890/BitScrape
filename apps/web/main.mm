@@ -7,6 +7,12 @@ using namespace bitscrape::web;
 @property (strong) NSStatusItem *statusItem;
 @end
 
+// Menubar icon size
+#define ICON_SIZE 18
+
+// Server port
+#define SERVER_PORT 8080
+
 @implementation AppDelegate {
     // C++ controller pointer
     MenubarController *controller_; // raw pointer managed manually
@@ -24,7 +30,7 @@ using namespace bitscrape::web;
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     NSImage *icon = [NSImage imageNamed:@"menubar_icon"];
     if (icon) {
-        NSImage *resizedIcon = [self resizeImage:icon toSize:NSMakeSize(18, 18)];
+        NSImage *resizedIcon = [self resizeImage:icon toSize:NSMakeSize(ICON_SIZE, ICON_SIZE)];
         [resizedIcon setTemplate:YES]; // allow dark mode adaptation
         self.statusItem.button.image = resizedIcon;
     }
@@ -84,7 +90,8 @@ using namespace bitscrape::web;
         controller_->stop_server();
         serverRunning_ = NO;
     } else {
-        serverRunning_ = controller_->start_server(8080);
+        NSString *resourcePath = [[NSBundle mainBundle] resourcePath];
+        serverRunning_ = controller_->start_server(SERVER_PORT, [resourcePath UTF8String]);
         // Automatically open Web UI when starting
         [self openWebUI:nil];
     }
@@ -92,7 +99,7 @@ using namespace bitscrape::web;
 }
 
 - (void)openWebUI:(id)sender {
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://localhost:8080"]];
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d", SERVER_PORT]]];
 }
 
 - (void)quitApp:(id)sender {

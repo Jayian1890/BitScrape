@@ -563,8 +563,9 @@ public:
       if (dht_session_ && dht_session_->is_running()) {
         beacon_->info("Starting DHT crawling", types::BeaconCategory::DHT);
 
-        // Start a background thread for DHT crawling
-        std::thread([this]() {
+        // Start a background thread for DHT crawling - assign to member for
+        // join
+        dht_crawling_thread_ = std::thread([this]() {
           try {
             // Continue crawling until stopped
             while (is_crawling_ && is_running_) {
@@ -586,7 +587,7 @@ public:
                                std::string(e.what()),
                            types::BeaconCategory::DHT);
           }
-        }).detach(); // Detach the thread so it runs independently
+        });
       } else {
         beacon_->warning(
             "DHT component is not running, crawling will be limited",
@@ -594,7 +595,7 @@ public:
       }
 
       // Start a background thread to periodically check for new infohashes
-      std::thread([this]() {
+      infohash_check_thread_ = std::thread([this]() {
         try {
           while (is_crawling_ && is_running_) {
             // Sleep for a while before checking for new infohashes
@@ -647,7 +648,7 @@ public:
                              std::string(e.what()),
                          types::BeaconCategory::GENERAL);
         }
-      }).detach(); // Detach the thread so it runs independently
+      });
 
       is_crawling_ = true;
       beacon_->info("Crawling started successfully");
@@ -684,6 +685,18 @@ public:
 
       // Give the background thread a moment to notice the flag change
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+      // Join background threads if they are joinable
+      if (dht_crawling_thread_.joinable()) {
+        beacon_->info("Waiting for DHT crawling thread to finish",
+                      types::BeaconCategory::DHT);
+        dht_crawling_thread_.join();
+      }
+      if (infohash_check_thread_.joinable()) {
+        beacon_->info("Waiting for infohash check thread to finish",
+                      types::BeaconCategory::GENERAL);
+        infohash_check_thread_.join();
+      }
 
       // Stop DHT crawling if the DHT component is running
       if (dht_session_ && dht_session_->is_running()) {
@@ -1458,6 +1471,10 @@ public:
 
   // DHT component
   std::unique_ptr<dht::DHTSession> dht_session_;
+
+  // Background crawling threads (managed for proper shutdown)
+  std::thread dht_crawling_thread_;
+  std::thread infohash_check_thread_;
 };
 
 // Controller implementation

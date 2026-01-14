@@ -4,16 +4,6 @@ add_executable(bitscrape_cli main.cpp)
 # Link against all module libraries
 target_link_libraries(bitscrape_cli PRIVATE
     core
-    lock
-    types
-    beacon
-    event
-    storage
-    dht
-    bittorrent
-    tracker
-    network
-    bencode
     web
 )
 

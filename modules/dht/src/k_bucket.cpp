@@ -34,12 +34,15 @@ bool KBucket::add_node(const types::DHTNode& node) {
     auto guard = lock_manager_.get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
 
     // Check if the bucket is full
-    if (is_full()) {
+    if (nodes_.size() >= K) {
         return false;
     }
 
     // Check if the node is already in the bucket
-    if (contains_node(node.id())) {
+    auto it = std::find_if(nodes_.begin(), nodes_.end(), [&node](const types::DHTNode& n) {
+        return n.id() == node.id();
+    });
+    if (it != nodes_.end()) {
         return false;
     }
 

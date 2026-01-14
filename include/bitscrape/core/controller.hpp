@@ -198,7 +198,6 @@ private:
 
     // DHT crawling methods
     void perform_random_node_lookups();
-    void perform_infohash_lookups();
 
     // Private implementation
     class Impl;

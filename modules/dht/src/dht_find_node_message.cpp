@@ -72,11 +72,24 @@ bencode::BencodeValue DHTFindNodeMessage::to_bencode() const {
             const auto& id_bytes = node.id().bytes();
             nodes_str.append(std::string(id_bytes.begin(), id_bytes.end()));
             
-            // Add endpoint (6 bytes: 4 bytes IP + 2 bytes port)
-            // This is a simplified implementation - in a real implementation,
-            // we would need to convert the IP address to a 4-byte representation
-            // For now, just add 6 null bytes as a placeholder
-            nodes_str.append(std::string(6, '\0'));
+            // Add endpoint (6 bytes: 4 bytes IP + 2 bytes port in network byte order)
+            const auto& endpoint = node.endpoint();
+            // Parse IP address into 4 bytes
+            std::string ip = endpoint.address();
+            unsigned int b0, b1, b2, b3;
+            if (std::sscanf(ip.c_str(), "%u.%u.%u.%u", &b0, &b1, &b2, &b3) == 4) {
+                nodes_str.push_back(static_cast<char>(b0));
+                nodes_str.push_back(static_cast<char>(b1));
+                nodes_str.push_back(static_cast<char>(b2));
+                nodes_str.push_back(static_cast<char>(b3));
+            } else {
+                // Invalid IP, add zeros
+                nodes_str.append(std::string(4, '\0'));
+            }
+            // Add port in big-endian
+            uint16_t port = endpoint.port();
+            nodes_str.push_back(static_cast<char>((port >> 8) & 0xFF));
+            nodes_str.push_back(static_cast<char>(port & 0xFF));
         }
         response_map["nodes"] = bencode::BencodeValue(nodes_str);
         

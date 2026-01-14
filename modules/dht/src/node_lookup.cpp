@@ -3,8 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <future>
-#include <sstream>
-#include "bitscrape/lock/lock_manager_singleton.hpp"
+#include "bitscrape/dht/dht_session.hpp"
 
 namespace bitscrape::dht {
 
@@ -13,12 +12,14 @@ NodeLookup::NodeLookup(const types::NodeID& local_id,
                        const RoutingTable& routing_table,
                        network::UDPSocket& socket,
                        DHTMessageFactory& message_factory,
+                       DHTSession& session,
                        std::shared_ptr<lock::LockManager> lock_manager)
     : local_id_(local_id),
       target_id_(target_id),
       routing_table_(routing_table),
       socket_(socket),
       message_factory_(message_factory),
+      session_(session),
       active_queries_(0),
       complete_(false),
       lock_manager_(lock_manager),
@@ -33,6 +34,7 @@ std::string NodeLookup::get_resource_name() const {
 
 NodeLookup::~NodeLookup() {
     // Ensure any waiting threads are notified
+    std::lock_guard<std::mutex> lock(cv_mutex_);
     complete_.store(true);
     cv_.notify_all();
 }
@@ -47,8 +49,8 @@ std::vector<types::DHTNode> NodeLookup::start() {
     // Start sending queries
     send_queries();
 
-    // Wait for the lookup to complete
-    wait_for_completion();
+    // Wait for the lookup to complete (5 second timeout)
+    wait_for_completion(5000);
 
     // Return the k closest nodes
     return get_closest_nodes();
@@ -69,6 +71,10 @@ void NodeLookup::process_response(const std::shared_ptr<DHTMessage>& response, c
     });
 
     if (it != nodes_.end()) {
+        // Calculate RTT
+        auto now = std::chrono::steady_clock::now();
+        (void)std::chrono::duration_cast<std::chrono::milliseconds>(now - it->sent_time).count();
+
         // Update the node state
         it->state = NodeState::RESPONDED;
 
@@ -89,11 +95,12 @@ void NodeLookup::process_response(const std::shared_ptr<DHTMessage>& response, c
         add_nodes(new_nodes);
 
         // Check if we need to send more queries
-        if (!complete_ && !has_converged()) {
-            send_queries();
+        if (!complete_.load() && !has_converged()) {
+            send_queries_internal();
         } else if (active_queries_ == 0) {
             // No more active queries and we've converged, so we're done
-            complete_ = true;
+            std::lock_guard<std::mutex> lock(cv_mutex_);
+            complete_.store(true);
             cv_.notify_all();
         }
     }
@@ -104,12 +111,11 @@ bool NodeLookup::is_complete() const {
 }
 
 bool NodeLookup::wait_for_completion(int timeout_ms) {
-    // Create a mutex and lock it for the condition variable
-    std::mutex mtx;
-    std::unique_lock<std::mutex> lock(mtx);
+    // Lock the condition variable mutex
+    std::unique_lock<std::mutex> lock(cv_mutex_);
 
-    // Also get the lock guard for our resource
-    auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
+    // Note: We intentionally do NOT hold the resource lock while waiting
+    // to allow process_response to run and update completion status.
 
     if (timeout_ms > 0) {
         // Wait with timeout
@@ -127,7 +133,10 @@ bool NodeLookup::wait_for_completion(int timeout_ms) {
 
 void NodeLookup::send_queries() {
     auto guard = lock_manager_->get_lock_guard(resource_id_, lock::LockManager::LockType::EXCLUSIVE);
+    send_queries_internal();
+}
 
+void NodeLookup::send_queries_internal() {
     // Get the closest unqueried nodes
     auto nodes_to_query = get_closest_unqueried_nodes(ALPHA - active_queries_);
 
@@ -140,7 +149,8 @@ void NodeLookup::send_queries() {
 
     // If there are no active queries and no more nodes to query, we're done
     if (active_queries_ == 0) {
-        complete_ = true;
+        std::lock_guard<std::mutex> lock(cv_mutex_);
+        complete_.store(true);
         cv_.notify_all();
     }
 }
@@ -163,11 +173,15 @@ bool NodeLookup::send_query(const types::DHTNode& node) {
         network::Address address(node.endpoint().address(), node.endpoint().port());
         socket_.send_to(data.data(), data.size(), address);
 
+        // Register the transaction with the session
+        session_.register_transaction(transaction_id, shared_from_this());
+
         // Update the node state
         it->state = NodeState::QUERIED;
+        it->sent_time = std::chrono::steady_clock::now();
 
         // Schedule a timeout
-        std::thread([this, node]() {
+        std::thread([this, node, transaction_id]() {
             // Sleep for the timeout duration
             std::this_thread::sleep_for(std::chrono::milliseconds(TIMEOUT_MS));
 
@@ -194,14 +208,21 @@ bool NodeLookup::send_query(const types::DHTNode& node) {
                 --active_queries_;
 
                 // Check if we need to send more queries
+                // Check if we need to send more queries
                 if (!complete_.load() && !has_converged()) {
-                    send_queries();
-                } else if (active_queries_ == 0) {
+                    send_queries_internal();
+                }
+
+                if (active_queries_ == 0) {
                     // No more active queries and we've converged, so we're done
+                    std::lock_guard<std::mutex> lock(cv_mutex_);
                     complete_.store(true);
                     cv_.notify_all();
                 }
             }
+            
+            // Clean up the transaction
+            session_.unregister_transaction(transaction_id);
         }).detach();
 
         return true;
@@ -213,6 +234,13 @@ bool NodeLookup::send_query(const types::DHTNode& node) {
 void NodeLookup::add_node(const types::DHTNode& node) {
     // Don't add the local node
     if (node.id() == local_id_) {
+        return;
+    }
+
+    // Validate the endpoint - reject invalid/empty endpoints
+    const auto& endpoint = node.endpoint();
+    if (!endpoint.is_valid() || endpoint.address().empty() || 
+        endpoint.address() == "0.0.0.0" || endpoint.port() == 0) {
         return;
     }
 

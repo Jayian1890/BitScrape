@@ -16,3 +16,11 @@ set_target_properties(bitscrape_cli PROPERTIES
 
 # Install target
 install(TARGETS bitscrape_cli DESTINATION bin)
+
+# Copy public directory to build directory for local running
+add_custom_command(TARGET bitscrape_cli POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/public
+        $<TARGET_FILE_DIR:bitscrape_cli>/public
+    COMMENT "Copying public directory to build output"
+)

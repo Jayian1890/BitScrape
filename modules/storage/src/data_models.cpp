@@ -17,9 +17,15 @@ namespace {
     }
 
     std::chrono::system_clock::time_point string_to_time_point(const std::string& str) {
+        if (str.empty() || str == "Never" || str == "Unknown") {
+            return std::chrono::system_clock::time_point();
+        }
         std::tm tm = {};
         std::stringstream ss(str);
         ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+        if (ss.fail()) {
+            return std::chrono::system_clock::time_point();
+        }
         return std::chrono::system_clock::from_time_t(std::mktime(&tm));
     }
 }
@@ -28,16 +34,25 @@ namespace {
 NodeModel NodeModel::from_db_result(const detail::DatabaseResult& result) {
     NodeModel model;
 
-    // Extract node_id as blob
-    auto node_id_blob = result.get_blob("node_id");
-    if (node_id_blob.size() == types::NodeID::SIZE) {
-        model.node_id = types::NodeID(std::vector<uint8_t>(node_id_blob.begin(), node_id_blob.end()));
+    // Extract node_id from hex string
+    std::string node_id_hex = result.get_string("node_id");
+    if (!node_id_hex.empty()) {
+        try {
+            model.node_id = types::NodeID(node_id_hex);
+        } catch (const std::exception&) {
+            // Invalid hex, stays as default
+        }
     }
 
     // Extract endpoint
-    std::string ip = result.get_string("ip");
-    int port = result.get_int("port");
-    model.endpoint = types::Endpoint(ip, port);
+    try {
+        std::string ip = result.get_string("ip");
+        int port = result.get_int("port");
+        model.endpoint = types::Endpoint(ip, port);
+    } catch (const std::exception&) {
+        // Invalid endpoint in database, leave as default (invalid)
+        // This prevents get_node from crashing on corrupted data
+    }
 
     // Extract timestamps
     model.first_seen = string_to_time_point(result.get_string("first_seen"));
@@ -47,6 +62,7 @@ NodeModel NodeModel::from_db_result(const detail::DatabaseResult& result) {
     model.ping_count = static_cast<uint32_t>(result.get_int("ping_count"));
     model.query_count = static_cast<uint32_t>(result.get_int("query_count"));
     model.response_count = static_cast<uint32_t>(result.get_int("response_count"));
+    model.last_rtt_ms = static_cast<uint32_t>(result.get_int("last_rtt_ms"));
 
     // Extract flags
     model.is_responsive = result.get_int("is_responsive") != 0;
@@ -73,6 +89,7 @@ std::vector<std::string> NodeModel::to_sql_params() const {
     params.push_back(std::to_string(ping_count));
     params.push_back(std::to_string(query_count));
     params.push_back(std::to_string(response_count));
+    params.push_back(std::to_string(last_rtt_ms));
 
     // Convert flags to strings
     params.push_back(is_responsive ? "1" : "0");
@@ -84,10 +101,14 @@ std::vector<std::string> NodeModel::to_sql_params() const {
 InfoHashModel InfoHashModel::from_db_result(const detail::DatabaseResult& result) {
     InfoHashModel model;
 
-    // Extract info_hash as blob
-    auto info_hash_blob = result.get_blob("info_hash");
-    if (info_hash_blob.size() == types::InfoHash::SIZE) {
-        model.info_hash = types::InfoHash(std::vector<uint8_t>(info_hash_blob.begin(), info_hash_blob.end()));
+    // Extract info_hash from hex string
+    std::string info_hash_hex = result.get_string("info_hash");
+    if (!info_hash_hex.empty()) {
+        try {
+            model.info_hash = types::InfoHash(info_hash_hex);
+        } catch (const std::exception&) {
+            // Invalid hex, stays as default
+        }
     }
 
     // Extract timestamps
@@ -129,10 +150,14 @@ std::vector<std::string> InfoHashModel::to_sql_params() const {
 MetadataModel MetadataModel::from_db_result(const detail::DatabaseResult& result) {
     MetadataModel model;
 
-    // Extract info_hash as blob
-    auto info_hash_blob = result.get_blob("info_hash");
-    if (info_hash_blob.size() == types::InfoHash::SIZE) {
-        model.info_hash = types::InfoHash(std::vector<uint8_t>(info_hash_blob.begin(), info_hash_blob.end()));
+    // Extract info_hash from hex string
+    std::string info_hash_hex = result.get_string("info_hash");
+    if (!info_hash_hex.empty()) {
+        try {
+            model.info_hash = types::InfoHash(info_hash_hex);
+        } catch (const std::exception&) {
+            // Invalid hex, stays as default
+        }
     }
 
     // Extract metadata from raw_metadata blob
@@ -198,10 +223,14 @@ std::vector<std::string> MetadataModel::to_sql_params() const {
 FileModel FileModel::from_db_result(const detail::DatabaseResult& result) {
     FileModel model;
 
-    // Extract info_hash as blob
-    auto info_hash_blob = result.get_blob("info_hash");
-    if (info_hash_blob.size() == types::InfoHash::SIZE) {
-        model.info_hash = types::InfoHash(std::vector<uint8_t>(info_hash_blob.begin(), info_hash_blob.end()));
+    // Extract info_hash from hex string
+    std::string info_hash_hex = result.get_string("info_hash");
+    if (!info_hash_hex.empty()) {
+        try {
+            model.info_hash = types::InfoHash(info_hash_hex);
+        } catch (const std::exception&) {
+            // Invalid hex, stays as default
+        }
     }
 
     // Extract basic properties
@@ -229,10 +258,14 @@ std::vector<std::string> FileModel::to_sql_params() const {
 TrackerModel TrackerModel::from_db_result(const detail::DatabaseResult& result) {
     TrackerModel model;
 
-    // Extract info_hash as blob
-    auto info_hash_blob = result.get_blob("info_hash");
-    if (info_hash_blob.size() == types::InfoHash::SIZE) {
-        model.info_hash = types::InfoHash(std::vector<uint8_t>(info_hash_blob.begin(), info_hash_blob.end()));
+    // Extract info_hash from hex string
+    std::string info_hash_hex = result.get_string("info_hash");
+    if (!info_hash_hex.empty()) {
+        try {
+            model.info_hash = types::InfoHash(info_hash_hex);
+        } catch (const std::exception&) {
+            // Invalid hex, stays as default
+        }
     }
 
     // Extract basic properties
@@ -274,10 +307,14 @@ std::vector<std::string> TrackerModel::to_sql_params() const {
 PeerModel PeerModel::from_db_result(const detail::DatabaseResult& result) {
     PeerModel model;
 
-    // Extract info_hash as blob
-    auto info_hash_blob = result.get_blob("info_hash");
-    if (info_hash_blob.size() == types::InfoHash::SIZE) {
-        model.info_hash = types::InfoHash(std::vector<uint8_t>(info_hash_blob.begin(), info_hash_blob.end()));
+    // Extract info_hash from hex string
+    std::string info_hash_hex = result.get_string("info_hash");
+    if (!info_hash_hex.empty()) {
+        try {
+            model.info_hash = types::InfoHash(info_hash_hex);
+        } catch (const std::exception&) {
+            // Invalid hex, stays as default
+        }
     }
 
     // Extract endpoint
@@ -285,11 +322,15 @@ PeerModel PeerModel::from_db_result(const detail::DatabaseResult& result) {
     int port = result.get_int("port");
     model.endpoint = types::Endpoint(ip, port);
 
-    // Extract peer_id if not null
+    // Extract peer_id from hex string if not null
     if (!result.is_null("peer_id")) {
-        auto peer_id_blob = result.get_blob("peer_id");
-        if (peer_id_blob.size() == types::NodeID::SIZE) {
-            model.peer_id = types::NodeID(std::vector<uint8_t>(peer_id_blob.begin(), peer_id_blob.end()));
+        std::string peer_id_hex = result.get_string("peer_id");
+        if (!peer_id_hex.empty()) {
+            try {
+                model.peer_id = types::NodeID(peer_id_hex);
+            } catch (const std::exception&) {
+                // Invalid hex, stays as nullopt
+            }
         }
     }
 

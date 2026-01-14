@@ -105,6 +105,7 @@ HTTPResponse APIHandler::handle_get_nodes(const HTTPRequest& request, std::share
         node_json["ping_count"] = node.ping_count;
         node_json["query_count"] = node.query_count;
         node_json["response_count"] = node.response_count;
+        node_json["last_rtt_ms"] = node.last_rtt_ms;
         node_json["is_responsive"] = node.is_responsive;
 
         json.push_back(node_json);

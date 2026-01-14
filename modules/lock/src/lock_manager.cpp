@@ -13,7 +13,7 @@
 namespace bitscrape::lock {
 
 LockManager::LockManager(bool enable_deadlock_detection, bool enable_logging, std::shared_ptr<beacon::Beacon> beacon)
-    : next_resource_id_(1), enable_deadlock_detection_(enable_deadlock_detection), enable_logging_(enable_logging), beacon_(beacon) {
+    : next_resource_id_(1), enable_deadlock_detection_(enable_deadlock_detection), enable_logging_(false), beacon_(beacon) {
 }
 
 LockManager::~LockManager() {
@@ -467,8 +467,8 @@ bool LockManager::would_deadlock(uint64_t resource_id) const {
     return false;
 }
 
-std::unique_ptr<LockGuard> LockManager::get_lock_guard(uint64_t resource_id, LockType lock_type, uint64_t /* timeout_ms */) {
-    return std::make_unique<LockGuard>(*this, resource_id, lock_type);
+std::unique_ptr<LockGuard> LockManager::get_lock_guard(uint64_t resource_id, LockType lock_type, uint64_t timeout_ms) {
+    return std::make_unique<LockGuard>(*this, resource_id, lock_type, timeout_ms);
 }
 
 std::vector<uint64_t> LockManager::get_lock_stack() const {

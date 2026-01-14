@@ -83,7 +83,7 @@ public:
      * @param is_responsive Whether the node is responsive
      * @return true if successful, false otherwise
      */
-    bool store_node(const types::NodeID& node_id, const types::Endpoint& endpoint, bool is_responsive = true);
+    bool store_node(const types::NodeID& node_id, const types::Endpoint& endpoint, bool is_responsive = true, std::optional<uint32_t> rtt_ms = std::nullopt);
 
     /**
      * @brief Store a node asynchronously
@@ -93,7 +93,7 @@ public:
      * @param is_responsive Whether the node is responsive
      * @return Future with the result of the operation
      */
-    std::future<bool> store_node_async(const types::NodeID& node_id, const types::Endpoint& endpoint, bool is_responsive = true);
+    std::future<bool> store_node_async(const types::NodeID& node_id, const types::Endpoint& endpoint, bool is_responsive = true, std::optional<uint32_t> rtt_ms = std::nullopt);
 
     /**
      * @brief Update a node's responsiveness

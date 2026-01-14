@@ -1,9 +1,9 @@
 #include "bitscrape/dht/dht_session.hpp"
 
-#include <chrono>
 #include <future>
-#include <random>
 #include <sstream>
+#include <iostream>
+
 
 namespace bitscrape::dht {
 
@@ -121,7 +121,7 @@ bool DHTSession::start(const std::vector<types::Endpoint> &bootstrap_nodes) {
 
   // Bootstrap the DHT
   bootstrap_ = std::make_unique<Bootstrap>(node_id_, *routing_table_, *socket_,
-                                           *message_factory_);
+                                           *message_factory_, *this);
   return bootstrap_->start(bootstrap_nodes);
 }
 
@@ -153,11 +153,11 @@ void DHTSession::stop() {
 std::vector<types::DHTNode>
 DHTSession::find_nodes(const types::NodeID &target_id) {
   // Create a node lookup
-  NodeLookup lookup(node_id_, target_id, *routing_table_, *socket_,
-                    *message_factory_);
+  auto lookup = std::make_shared<NodeLookup>(node_id_, target_id, *routing_table_, *socket_,
+                    *message_factory_, *this, lock_manager_);
 
   // Start the lookup
-  return lookup.start();
+  return lookup->start();
 }
 
 std::future<std::vector<types::DHTNode>>
@@ -298,20 +298,30 @@ void DHTSession::process_message(const std::vector<uint8_t> &data,
     }
   }
 
-  // Check if this is a response to an active lookup
+
+
   if (message->type() == DHTMessage::Type::PING_RESPONSE ||
       message->type() == DHTMessage::Type::FIND_NODE_RESPONSE ||
       message->type() == DHTMessage::Type::GET_PEERS_RESPONSE ||
       message->type() == DHTMessage::Type::ANNOUNCE_PEER_RESPONSE) {
-    auto guard = lock_manager_->get_lock_guard(
-        lookups_resource_id_, lock::LockManager::LockType::SHARED);
+      
+    std::shared_ptr<NodeLookup> lookup = nullptr;
+    
+    {
+        auto guard = lock_manager_->get_lock_guard(
+            lookups_resource_id_, lock::LockManager::LockType::SHARED, 5000);
 
-    // Find the lookup with the matching transaction ID
-    auto it = lookups_.find(message->transaction_id());
-    if (it != lookups_.end()) {
-      // Process the response
-      it->second->process_response(message, sender_endpoint);
-      return;
+        // Find the lookup with the matching transaction ID
+        auto it = lookups_.find(message->transaction_id());
+        if (it != lookups_.end()) {
+          lookup = it->second;
+        }
+    }
+
+    if (lookup) {
+        // Process the response
+        lookup->process_response(message, sender_endpoint);
+        return;
     }
   }
 
@@ -349,6 +359,8 @@ void DHTSession::start_receive_loop() {
           continue; // No data received or error
         }
 
+
+
         // Convert to vector<uint8_t> and Endpoint
         std::vector<uint8_t> data(buffer.data(), buffer.data() + buffer.size());
         types::Endpoint sender_endpoint(address.to_string(), address.port());
@@ -357,6 +369,7 @@ void DHTSession::start_receive_loop() {
         process_message(data, sender_endpoint);
       } catch (const std::exception &e) {
         // Ignore exceptions
+        std::cerr << "DHTSession: Exception in receive loop: " << e.what() << std::endl;
       }
     }
   });
@@ -418,6 +431,11 @@ void DHTSession::handle_get_peers(const std::shared_ptr<DHTMessage> &message,
 
   // Get the infohash
   const auto &info_hash = get_peers_message->info_hash();
+
+  // Notify callback about discovered infohash (passive collection)
+  if (on_infohash_discovered_) {
+    on_infohash_discovered_(info_hash);
+  }
 
   // Check if we have peers for this infohash
   std::vector<types::Endpoint> peers;
@@ -482,6 +500,11 @@ void DHTSession::handle_announce_peer(
     port = sender_endpoint.port();
   }
 
+  // Notify callback about discovered infohash (passive collection)
+  if (on_infohash_discovered_) {
+    on_infohash_discovered_(info_hash);
+  }
+
   // Add the peer to our list
   types::Endpoint peer_endpoint(sender_endpoint.address(), port);
   {
@@ -500,6 +523,20 @@ void DHTSession::handle_announce_peer(
   // Send the response
   network::Address address(sender_endpoint.address(), sender_endpoint.port());
   socket_->send_to(data.data(), data.size(), address);
+}
+
+void DHTSession::register_transaction(const std::string& transaction_id, std::shared_ptr<NodeLookup> lookup) {
+    auto guard = lock_manager_->get_lock_guard(lookups_resource_id_, lock::LockManager::LockType::EXCLUSIVE, 5000);
+    lookups_[transaction_id] = lookup;
+}
+
+void DHTSession::unregister_transaction(const std::string& transaction_id) {
+    auto guard = lock_manager_->get_lock_guard(lookups_resource_id_, lock::LockManager::LockType::EXCLUSIVE, 5000);
+    lookups_.erase(transaction_id);
+}
+
+void DHTSession::set_infohash_callback(std::function<void(const types::InfoHash&)> callback) {
+    on_infohash_discovered_ = std::move(callback);
 }
 
 } // namespace bitscrape::dht

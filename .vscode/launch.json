@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(lldb) Launch CLI",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/bitscrape_cli",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "(lldb) Launch Web (App Bundle)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/bitscrape_web.app/Contents/MacOS/bitscrape_web",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

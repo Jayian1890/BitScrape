@@ -19,7 +19,7 @@ public:
      * @param resource_id Resource ID
      * @param lock_type Type of lock
      */
-    LockGuard(LockManager& lock_manager, uint64_t resource_id, LockManager::LockType lock_type);
+    LockGuard(LockManager& lock_manager, uint64_t resource_id, LockManager::LockType lock_type, uint64_t timeout_ms = 0);
     
     /**
      * @brief Destructor (releases the lock)

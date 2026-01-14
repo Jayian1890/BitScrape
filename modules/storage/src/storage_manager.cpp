@@ -13,9 +13,9 @@ class StorageManager::Impl {
 public:
   friend class StorageManager;
   Impl(const std::string &db_path, bool persistent)
-      : db_path_(db_path.empty() ? "data/default.db" : db_path),
+      : db_path_(db_path.empty() ? "data/bitscrape.db" : db_path),
         database_(std::make_shared<Database>(
-            db_path.empty() ? "data/default.db" : db_path, persistent)),
+            db_path.empty() ? "data/bitscrape.db" : db_path, persistent)),
         query_interface_(std::make_shared<QueryInterface>(database_)),
         initialized_(false) {
     // If original path was empty, we're using the default path
@@ -89,7 +89,7 @@ public:
   }
 
   bool store_node(const types::NodeID &node_id, const types::Endpoint &endpoint,
-                  bool is_responsive) {
+                  bool is_responsive, std::optional<uint32_t> rtt_ms) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     if (!initialized_) {
@@ -106,9 +106,13 @@ public:
         auto now = std::chrono::system_clock::now();
 
         return database_->execute_update("UPDATE nodes SET last_seen = ?, "
-                                         "is_responsive = ? WHERE node_id = ?",
+                                         "is_responsive = ?, ip = ?, port = ?, "
+                                         "last_rtt_ms = ? WHERE node_id = ?",
                                          {time_point_to_string(now),
                                           is_responsive ? "1" : "0",
+                                          endpoint.address(),
+                                          std::to_string(endpoint.port()),
+                                          rtt_ms ? std::to_string(*rtt_ms) : (existing_node->last_rtt_ms > 0 ? std::to_string(existing_node->last_rtt_ms) : "0"),
                                           node_id.to_hex()});
       } else {
         // Insert new node
@@ -116,10 +120,11 @@ public:
 
         return database_->execute_update(
             "INSERT INTO nodes (node_id, ip, port, first_seen, last_seen, "
-            "is_responsive) VALUES (?, ?, ?, ?, ?, ?)",
+            "is_responsive, last_rtt_ms) VALUES (?, ?, ?, ?, ?, ?, ?)",
             {node_id.to_hex(), endpoint.address(),
              std::to_string(endpoint.port()), time_point_to_string(now),
-             time_point_to_string(now), is_responsive ? "1" : "0"});
+             time_point_to_string(now), is_responsive ? "1" : "0",
+             rtt_ms ? std::to_string(*rtt_ms) : "0"});
       }
     } catch (const std::exception &e) {
       std::cerr << "Failed to store node: " << e.what() << std::endl;
@@ -129,10 +134,10 @@ public:
 
   std::future<bool> store_node_async(const types::NodeID &node_id,
                                      const types::Endpoint &endpoint,
-                                     bool is_responsive) {
+                                     bool is_responsive, std::optional<uint32_t> rtt_ms) {
     return std::async(std::launch::async,
-                      [this, node_id, endpoint, is_responsive]() {
-                        return store_node(node_id, endpoint, is_responsive);
+                      [this, node_id, endpoint, is_responsive, rtt_ms]() {
+                        return store_node(node_id, endpoint, is_responsive, rtt_ms);
                       });
   }
 
@@ -790,7 +795,7 @@ public:
 
       int64_t db_size =
           static_cast<int64_t>(page_count) * static_cast<int64_t>(page_size);
-      stats["storage.database_size"] = std::to_string(db_size);
+      stats["storage.db_size_bytes"] = std::to_string(db_size);
 
       // Get database path
       stats["storage.database_path"] = database_->path();
@@ -835,15 +840,15 @@ std::future<bool> StorageManager::close_async() { return impl_->close_async(); }
 
 bool StorageManager::store_node(const types::NodeID &node_id,
                                 const types::Endpoint &endpoint,
-                                bool is_responsive) {
-  return impl_->store_node(node_id, endpoint, is_responsive);
+                                bool is_responsive, std::optional<uint32_t> rtt_ms) {
+  return impl_->store_node(node_id, endpoint, is_responsive, rtt_ms);
 }
 
 std::future<bool>
 StorageManager::store_node_async(const types::NodeID &node_id,
                                  const types::Endpoint &endpoint,
-                                 bool is_responsive) {
-  return impl_->store_node_async(node_id, endpoint, is_responsive);
+                                 bool is_responsive, std::optional<uint32_t> rtt_ms) {
+  return impl_->store_node_async(node_id, endpoint, is_responsive, rtt_ms);
 }
 
 std::shared_ptr<QueryInterface> StorageManager::query_interface() const {

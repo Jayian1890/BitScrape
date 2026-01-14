@@ -8,6 +8,7 @@
 #include <memory>
 #include <unordered_map>
 #include <condition_variable>
+#include <functional>
 
 #include "bitscrape/types/node_id.hpp"
 #include "bitscrape/types/info_hash.hpp"
@@ -139,6 +140,21 @@ public:
     std::future<bool> announce_peer_async(const types::InfoHash& infohash, uint16_t port);
 
     /**
+     * @brief Register a transaction ID with a lookup
+     *
+     * @param transaction_id Transaction ID
+     * @param lookup Lookup to register
+     */
+    void register_transaction(const std::string& transaction_id, std::shared_ptr<NodeLookup> lookup);
+
+    /**
+     * @brief Unregister a transaction ID
+     *
+     * @param transaction_id Transaction ID
+     */
+    void unregister_transaction(const std::string& transaction_id);
+
+    /**
      * @brief Get the local node ID
      *
      * @return Local node ID
@@ -158,6 +174,16 @@ public:
      * @return true if the session is running, false otherwise
      */
     bool is_running() const;
+
+    /**
+     * @brief Set callback for infohash discovery
+     * 
+     * This callback is invoked when other nodes query for infohashes via
+     * get_peers or announce_peer messages, allowing passive collection.
+     *
+     * @param callback Function to call with discovered infohash
+     */
+    void set_infohash_callback(std::function<void(const types::InfoHash&)> callback);
 
 private:
     /**
@@ -240,6 +266,8 @@ private:
     uint64_t lookups_resource_id_;                           ///< Resource ID for the lookups map
 
     std::unique_ptr<Bootstrap> bootstrap_;                    ///< Bootstrap object for joining the DHT network
+
+    std::function<void(const types::InfoHash&)> on_infohash_discovered_; ///< Callback for infohash discovery
 };
 
 } // namespace bitscrape::dht

@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <random>
 #include <sstream>
+#include <iostream>
+#include <cstring>
 
 #include "bitscrape/bencode/bencode_decoder.hpp"
 
@@ -19,6 +21,7 @@ DHTMessageFactory::create_from_data(const std::vector<uint8_t> &data) {
     value = decoder->decode(data);
   } catch (const std::exception &e) {
     // Failed to decode the data
+    std::cerr << "DHTMessageFactory: Failed to decode bencode data: " << e.what() << std::endl;
     return nullptr;
   }
 
@@ -36,12 +39,14 @@ std::shared_ptr<DHTMessage>
 DHTMessageFactory::create_from_bencode(const bencode::BencodeValue &value) {
   // Check if the value is a dictionary
   if (!value.is_dict()) {
+    std::cerr << "DHTMessageFactory: Value is not a dictionary" << std::endl;
     return nullptr;
   }
 
   // Get the transaction ID
   const bencode::BencodeValue *t_value = value.get("t");
   if (!t_value || !t_value->is_string()) {
+    std::cerr << "DHTMessageFactory: 't' field missing or not a string" << std::endl;
     return nullptr;
   }
   std::string transaction_id = t_value->as_string();
@@ -49,6 +54,7 @@ DHTMessageFactory::create_from_bencode(const bencode::BencodeValue &value) {
   // Get the message type
   const bencode::BencodeValue *y_value = value.get("y");
   if (!y_value || !y_value->is_string()) {
+    std::cerr << "DHTMessageFactory: 'y' field missing or not a string" << std::endl;
     return nullptr;
   }
   std::string y = y_value->as_string();
@@ -57,6 +63,7 @@ DHTMessageFactory::create_from_bencode(const bencode::BencodeValue &value) {
     // Query message
     const bencode::BencodeValue *q_value = value.get("q");
     if (!q_value || !q_value->is_string()) {
+      std::cerr << "DHTMessageFactory: 'q' field missing or not a string" << std::endl;
       return nullptr;
     }
     std::string q = q_value->as_string();
@@ -71,6 +78,7 @@ DHTMessageFactory::create_from_bencode(const bencode::BencodeValue &value) {
       return parse_announce_peer(value, transaction_id, false);
     } else {
       // Unknown query type
+      std::cerr << "DHTMessageFactory: Unknown query type q=" << q << std::endl;
       return nullptr;
     }
   } else if (y == "r") {
@@ -106,12 +114,14 @@ DHTMessageFactory::create_from_bencode(const bencode::BencodeValue &value) {
     }
 
     // Failed to determine the response type
+    std::cerr << "DHTMessageFactory: Failed to determine response type for y=r" << std::endl;
     return nullptr;
   } else if (y == "e") {
     // Error message
     return parse_error(value, transaction_id);
   } else {
     // Unknown message type
+    std::cerr << "DHTMessageFactory: Unknown message type y=" << y << std::endl;
     return nullptr;
   }
 }
@@ -290,13 +300,39 @@ DHTMessageFactory::parse_get_peers(const bencode::BencodeValue &value,
     const bencode::BencodeValue *nodes_value = dict_value->get("nodes");
     if (nodes_value && nodes_value->is_string()) {
       auto nodes_str = nodes_value->as_string();
-      // Parse the nodes string (26 bytes per node: 20 bytes ID + 6 bytes
-      // endpoint) This is a simplified implementation - in a real
-      // implementation, we would need to parse the compact node info format For
-      // now, just create a dummy node
-      if (!nodes_str.empty()) {
-        nodes.push_back(types::DHTNode(
-            types::NodeID(), types::Endpoint(std::string("0.0.0.0"), 0)));
+      // Parse the nodes string (26 bytes per node: 20 bytes ID + 4 bytes IPv4 + 2 bytes port)
+      const size_t NODE_INFO_SIZE = 26;
+      for (size_t i = 0; i + NODE_INFO_SIZE <= nodes_str.size(); i += NODE_INFO_SIZE) {
+        try {
+          // Extract 20-byte node ID
+          std::vector<uint8_t> node_id_bytes(
+              reinterpret_cast<const uint8_t*>(nodes_str.data() + i),
+              reinterpret_cast<const uint8_t*>(nodes_str.data() + i + 20));
+          types::NodeID node_id_parsed(node_id_bytes);
+
+          // Extract 4-byte IPv4 address (network byte order)
+          uint8_t ip_bytes[4];
+          std::memcpy(ip_bytes, nodes_str.data() + i + 20, 4);
+          std::string ip_str = std::to_string(ip_bytes[0]) + "." +
+                               std::to_string(ip_bytes[1]) + "." +
+                               std::to_string(ip_bytes[2]) + "." +
+                               std::to_string(ip_bytes[3]);
+
+          // Extract 2-byte port (network byte order - big endian)
+          uint16_t port = (static_cast<uint8_t>(nodes_str[i + 24]) << 8) |
+                          static_cast<uint8_t>(nodes_str[i + 25]);
+
+          // Skip invalid endpoints (0.0.0.0 or port 0)
+          if (ip_str == "0.0.0.0" || port == 0) {
+            continue;
+          }
+
+          types::Endpoint endpoint(ip_str, port);
+          nodes.push_back(types::DHTNode(node_id_parsed, endpoint));
+        } catch (const std::exception& e) {
+          // Skip malformed node entries
+          continue;
+        }
       }
     }
 
@@ -308,11 +344,30 @@ DHTMessageFactory::parse_get_peers(const bencode::BencodeValue &value,
       for (const auto &value : values_list) {
         if (value.is_string()) {
           auto value_str = value.as_string();
-          // Parse the value string (6 bytes per peer: 4 bytes IP + 2 bytes
-          // port) This is a simplified implementation - in a real
-          // implementation, we would need to parse the compact peer info format
-          // For now, just create a dummy endpoint
-          values.push_back(types::Endpoint(std::string("0.0.0.0"), 0));
+          // Parse the value string (6 bytes per peer: 4 bytes IP + 2 bytes port)
+          if (value_str.size() == 6) {
+            try {
+              // Extract 4-byte IPv4 address
+              uint8_t ip_bytes[4];
+              std::memcpy(ip_bytes, value_str.data(), 4);
+              std::string ip_str = std::to_string(ip_bytes[0]) + "." +
+                                   std::to_string(ip_bytes[1]) + "." +
+                                   std::to_string(ip_bytes[2]) + "." +
+                                   std::to_string(ip_bytes[3]);
+
+              // Extract 2-byte port (network byte order - big endian)
+              uint16_t port = (static_cast<uint8_t>(value_str[4]) << 8) |
+                              static_cast<uint8_t>(value_str[5]);
+
+              // Skip invalid endpoints
+              if (ip_str != "0.0.0.0" && port != 0) {
+                values.push_back(types::Endpoint(ip_str, port));
+              }
+            } catch (const std::exception& e) {
+              // Skip malformed peer entries
+              continue;
+            }
+          }
         }
       }
     }
@@ -377,13 +432,39 @@ DHTMessageFactory::parse_find_node(const bencode::BencodeValue &value,
     const bencode::BencodeValue *nodes_value = dict_value->get("nodes");
     if (nodes_value && nodes_value->is_string()) {
       auto nodes_str = nodes_value->as_string();
-      // Parse the nodes string (26 bytes per node: 20 bytes ID + 6 bytes
-      // endpoint) This is a simplified implementation - in a real
-      // implementation, we would need to parse the compact node info format For
-      // now, just create a dummy node
-      if (!nodes_str.empty()) {
-        nodes.push_back(types::DHTNode(
-            types::NodeID(), types::Endpoint(std::string("0.0.0.0"), 0)));
+      // Parse the nodes string (26 bytes per node: 20 bytes ID + 4 bytes IPv4 + 2 bytes port)
+      const size_t NODE_INFO_SIZE = 26;
+      for (size_t i = 0; i + NODE_INFO_SIZE <= nodes_str.size(); i += NODE_INFO_SIZE) {
+        try {
+          // Extract 20-byte node ID
+          std::vector<uint8_t> node_id_bytes(
+              reinterpret_cast<const uint8_t*>(nodes_str.data() + i),
+              reinterpret_cast<const uint8_t*>(nodes_str.data() + i + 20));
+          types::NodeID node_id(node_id_bytes);
+
+          // Extract 4-byte IPv4 address (network byte order)
+          uint8_t ip_bytes[4];
+          std::memcpy(ip_bytes, nodes_str.data() + i + 20, 4);
+          std::string ip_str = std::to_string(ip_bytes[0]) + "." +
+                               std::to_string(ip_bytes[1]) + "." +
+                               std::to_string(ip_bytes[2]) + "." +
+                               std::to_string(ip_bytes[3]);
+
+          // Extract 2-byte port (network byte order - big endian)
+          uint16_t port = (static_cast<uint8_t>(nodes_str[i + 24]) << 8) |
+                          static_cast<uint8_t>(nodes_str[i + 25]);
+
+          // Skip invalid endpoints (0.0.0.0 or port 0)
+          if (ip_str == "0.0.0.0" || port == 0) {
+            continue;
+          }
+
+          types::Endpoint endpoint(ip_str, port);
+          nodes.push_back(types::DHTNode(node_id, endpoint));
+        } catch (const std::exception& e) {
+          // Skip malformed node entries
+          continue;
+        }
       }
     }
 

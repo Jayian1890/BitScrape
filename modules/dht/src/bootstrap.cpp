@@ -9,11 +9,13 @@ namespace bitscrape::dht {
 Bootstrap::Bootstrap(const types::NodeID& local_id,
                      RoutingTable& routing_table,
                      network::UDPSocket& socket,
-                     DHTMessageFactory& message_factory)
+                     DHTMessageFactory& message_factory,
+                     DHTSession& session)
     : local_id_(local_id),
       routing_table_(routing_table),
       socket_(socket),
       message_factory_(message_factory),
+      session_(session),
       active_lookups_(0),
       complete_(false) {
 }
@@ -30,6 +32,17 @@ bool Bootstrap::start(const std::vector<types::Endpoint>& bootstrap_nodes) {
     for (const auto& endpoint : bootstrap_nodes) {
         contact_bootstrap_node(endpoint);
     }
+
+    // Wait for at least one node to be added to the routing table
+    auto start_time = std::chrono::steady_clock::now();
+    while (routing_table_.size() == 0) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - start_time).count() > 2000) {
+            break; // Timeout waiting for initial nodes
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
 
     // Perform random lookups to populate the routing table
     for (size_t i = 0; i < RANDOM_LOOKUPS; ++i) {
@@ -139,6 +152,7 @@ bool Bootstrap::contact_bootstrap_node(const types::Endpoint& endpoint) {
     // Encode the message
     auto data = message->encode();
 
+// Include iostream removed
     // Send the message
     network::Address address(endpoint.address(), endpoint.port());
     if (!socket_.send_to(data.data(), data.size(), address)) {
@@ -187,7 +201,7 @@ bool Bootstrap::perform_random_lookup() {
     ++active_lookups_;
 
     // Create a node lookup on the heap so it persists after this function returns
-    auto lookup_ptr = std::make_shared<NodeLookup>(local_id_, target_id, routing_table_, socket_, message_factory_);
+    auto lookup_ptr = std::make_shared<NodeLookup>(local_id_, target_id, routing_table_, socket_, message_factory_, session_);
 
     // Start the lookup in a separate thread
     std::thread([this, lookup_ptr]() {

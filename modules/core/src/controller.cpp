@@ -31,7 +31,6 @@
 #include <bitscrape/lock/lock_guard.hpp>
 #include <bitscrape/lock/lock_manager_singleton.hpp>
 
-#include <algorithm>
 #include <chrono>
 #include <exception>
 #include <filesystem>
@@ -54,7 +53,6 @@ public:
         event_processor_(event::create_event_processor()),
         beacon_(std::make_shared<beacon::Beacon>()), is_running_(false),
         is_crawling_(false) {
-    std::cerr << "Controller::Impl ctor start\n" << std::flush;
 
     // Register resources with the LockManager
     auto lock_manager = lock::LockManagerSingleton::instance(beacon_);
@@ -69,20 +67,16 @@ public:
     storage_manager_ = nullptr; // Will be created in initialize()
 
     // Note: we still keep the beacon active for logging during initialization
-    std::cerr << "Controller::Impl ctor post-storage-defer\n" << std::flush;
   }
 
   ~Impl() {
-    std::cerr << "Controller::Impl dtor start\n" << std::flush;
     auto lock_manager = lock::LockManagerSingleton::instance();
     auto lock_guard = lock_manager->get_lock_guard(
         controller_state_resource_id_, lock::LockManager::LockType::SHARED);
     if (is_running_) {
       lock_guard.reset(); // Release the lock before calling stop()
-      std::cerr << "Controller::Impl dtor calling stop()\n" << std::flush;
       stop();
     }
-    std::cerr << "Controller::Impl dtor end\n" << std::flush;
   }
 
   bool initialize() {
@@ -164,9 +158,6 @@ public:
   }
 
   bool start() {
-    std::cerr << "start() called, is_running=" << is_running_
-              << " storage_manager=" << storage_manager_.get() << "\n"
-              << std::flush;
     beacon_->debug(std::string("start() called, is_running=") +
                        (is_running_ ? "true" : "false"),
                    types::BeaconCategory::GENERAL);
@@ -251,9 +242,6 @@ public:
   }
 
   bool stop() {
-    std::cerr << "stop() called, is_running=" << is_running_
-              << " storage_manager=" << (storage_manager_.get()) << "\n"
-              << std::flush;
     beacon_->debug(std::string("stop() called, is_running=") +
                        (is_running_ ? "true" : "false"),
                    types::BeaconCategory::GENERAL);
@@ -355,6 +343,16 @@ public:
       auto lock_manager = lock::LockManagerSingleton::instance();
       dht_session_ = std::make_unique<dht::DHTSession>(
           node_id, dht_port, *event_bus_, lock_manager);
+
+      // Set up callback for passive infohash discovery
+      dht_session_->set_infohash_callback([this](const types::InfoHash& infohash) {
+        // Store the discovered infohash in the database
+        if (storage_manager_) {
+          storage_manager_->store_infohash(infohash);
+          beacon_->info("Discovered infohash: " + infohash.to_hex().substr(0, 16) + "...",
+                       types::BeaconCategory::DHT);
+        }
+      });
 
       // Get bootstrap nodes from configuration
       std::string bootstrap_nodes_str =
@@ -571,9 +569,6 @@ public:
             while (is_crawling_ && is_running_) {
               // Perform random node lookups to discover new nodes
               perform_random_node_lookups();
-
-              // Perform infohash lookups to discover new infohashes
-              perform_infohash_lookups();
 
               // Sleep for a while before the next round of lookups
               std::this_thread::sleep_for(std::chrono::seconds(30));
@@ -1341,7 +1336,7 @@ public:
 
         // Store the discovered nodes in the database
         for (const auto &node : nodes) {
-          storage_manager_->store_node(node.id(), node.endpoint(), true);
+          storage_manager_->store_node(node.id(), node.endpoint(), true, node.last_rtt_ms());
 
           // Publish a DHT_NODE_FOUND event
           // Create a custom event derived from Event for DHT_NODE_FOUND
@@ -1361,87 +1356,6 @@ public:
       }
     } catch (const std::exception &e) {
       beacon_->error("Error performing random node lookups: " +
-                         std::string(e.what()),
-                     types::BeaconCategory::DHT);
-    }
-  }
-
-  void perform_infohash_lookups() {
-    if (!dht_session_ || !dht_session_->is_running()) {
-      return;
-    }
-
-    try {
-      // Number of infohash lookups to perform
-      const size_t NUM_LOOKUPS = 10;
-
-      beacon_->info("Performing " + std::to_string(NUM_LOOKUPS) +
-                        " infohash lookups",
-                    types::BeaconCategory::DHT);
-
-      // Get some nodes from the routing table to query
-      auto nodes = dht_session_->routing_table().get_all_nodes();
-      if (nodes.empty()) {
-        beacon_->warning("No nodes available for infohash lookups",
-                         types::BeaconCategory::DHT);
-        return;
-      }
-
-      // Shuffle the nodes to query different ones each time
-      std::random_device rd;
-      std::mt19937 g(rd());
-      // Use a lambda with the random generator as a custom shuffle function
-      std::shuffle(nodes.begin(), nodes.end(), g);
-
-      // Limit the number of nodes to query
-      const size_t MAX_NODES = 20;
-      if (nodes.size() > MAX_NODES) {
-        nodes.resize(MAX_NODES);
-      }
-
-      // Generate random infohashes to look up
-      for (size_t i = 0; i < NUM_LOOKUPS; ++i) {
-        // Generate a random infohash
-        types::InfoHash random_infohash = types::InfoHash::random();
-
-        beacon_->debug("Looking up random infohash: " +
-                           random_infohash.to_hex().substr(0, 16) + "...",
-                       types::BeaconCategory::DHT);
-
-        // Use the find_peers method to look for peers with this infohash
-        auto future = dht_session_->find_peers_async(random_infohash);
-
-        // Wait for the result
-        auto peers = future.get();
-
-        // If we found peers, store the infohash in the database
-        if (!peers.empty()) {
-          storage_manager_->store_infohash(random_infohash);
-
-          // Publish a DHT_INFOHASH_FOUND event
-          // Create a custom event derived from Event for DHT_INFOHASH_FOUND
-          // In a real implementation, we would create a proper event class
-          // For now, we'll just log the infohash discovery
-          beacon_->info("Discovered infohash: " +
-                            random_infohash.to_hex().substr(0, 16) + "...",
-                        types::BeaconCategory::DHT);
-
-          beacon_->info("Found " + std::to_string(peers.size()) +
-                            " peers for infohash: " +
-                            random_infohash.to_hex().substr(0, 16) + "...",
-                        types::BeaconCategory::DHT);
-
-          // If crawling is active, create a PeerManager for this infohash
-          if (is_crawling_ && is_running_) {
-            create_peer_manager_for_infohash(random_infohash);
-          }
-        }
-
-        // Sleep briefly between lookups to avoid overwhelming the network
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-      }
-    } catch (const std::exception &e) {
-      beacon_->error("Error performing infohash lookups: " +
                          std::string(e.what()),
                      types::BeaconCategory::DHT);
     }
@@ -1482,11 +1396,7 @@ public:
 Controller::Controller(const std::string &config_path)
     : impl_(std::make_unique<Impl>(config_path)) {}
 
-Controller::~Controller() {
-  std::cerr << "Controller dtor start\n" << std::flush;
-  // impl_ will be destroyed automatically
-  std::cerr << "Controller dtor end\n" << std::flush;
-}
+Controller::~Controller() {}
 
 bool Controller::initialize() { return impl_->initialize(); }
 

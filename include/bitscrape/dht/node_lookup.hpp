@@ -22,13 +22,15 @@
 
 namespace bitscrape::dht {
 
+class DHTSession;
+
 /**
  * @brief Performs a node lookup in the DHT network
  *
  * NodeLookup implements the iterative node lookup algorithm for finding nodes close to a target ID.
  * It sends find_node queries to the closest known nodes and processes the responses.
  */
-class NodeLookup {
+class NodeLookup : public std::enable_shared_from_this<NodeLookup> {
 public:
     /// Alpha value for parallel lookups (number of concurrent requests)
     static constexpr size_t ALPHA = 3;
@@ -56,6 +58,7 @@ public:
                const RoutingTable& routing_table,
                network::UDPSocket& socket,
                DHTMessageFactory& message_factory,
+               DHTSession& session,
                std::shared_ptr<lock::LockManager> lock_manager = lock::LockManagerSingleton::instance());
 
     /**
@@ -118,6 +121,7 @@ private:
         types::DHTNode node;      ///< The node
         NodeState state;          ///< Current state of the node
         int timeouts;             ///< Number of timeouts for this node
+        std::chrono::steady_clock::time_point sent_time; ///< Time when the query was sent
 
         /**
          * @brief Create a node entry
@@ -140,6 +144,14 @@ private:
             return a.node.id().distance(target) < b.node.id().distance(target);
         }
     };
+
+    /**
+     * @brief Send find_node queries to the closest nodes
+     */
+    /**
+     * @brief Send find_node queries to the closest nodes (internal, assumes lock held)
+     */
+    void send_queries_internal();
 
     /**
      * @brief Send find_node queries to the closest nodes
@@ -202,6 +214,7 @@ private:
     const RoutingTable& routing_table_;           ///< Routing table for initial nodes
     network::UDPSocket& socket_;                  ///< UDP socket for sending and receiving messages
     DHTMessageFactory& message_factory_;          ///< Factory for creating DHT messages
+    DHTSession& session_;                         ///< Reference to the DHT session
 
     std::vector<NodeEntry> nodes_;                ///< Nodes in the lookup process
     std::atomic<size_t> active_queries_;          ///< Number of active queries
@@ -210,6 +223,7 @@ private:
     std::shared_ptr<lock::LockManager> lock_manager_; ///< Pointer to the lock manager
     uint64_t resource_id_;                        ///< Resource ID for the lock manager
     std::condition_variable cv_;                  ///< Condition variable for waiting for completion
+    mutable std::mutex cv_mutex_;                 ///< Mutex for condition variable
 };
 
 } // namespace bitscrape::dht

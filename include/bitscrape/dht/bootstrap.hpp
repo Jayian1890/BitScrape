@@ -17,6 +17,8 @@
 
 namespace bitscrape::dht {
 
+class DHTSession;
+
 /**
  * @brief Manages the bootstrap process for joining the DHT network
  *
@@ -39,7 +41,8 @@ public:
     Bootstrap(const types::NodeID& local_id,
               RoutingTable& routing_table,
               network::UDPSocket& socket,
-              DHTMessageFactory& message_factory);
+              DHTMessageFactory& message_factory,
+              DHTSession& session);
 
     /**
      * @brief Start the bootstrap process with the specified bootstrap nodes
@@ -107,6 +110,7 @@ private:
     RoutingTable& routing_table_;                 ///< Routing table to populate
     network::UDPSocket& socket_;                  ///< UDP socket for sending and receiving messages
     DHTMessageFactory& message_factory_;          ///< Factory for creating DHT messages
+    DHTSession& session_;                         ///< Reference to the DHT session
 
     std::atomic<size_t> active_lookups_;          ///< Number of active lookups
     std::atomic<bool> complete_;                  ///< Whether the bootstrap process is complete

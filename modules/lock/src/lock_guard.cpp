@@ -3,11 +3,11 @@
 
 namespace bitscrape::lock {
 
-LockGuard::LockGuard(LockManager& lock_manager, uint64_t resource_id, LockManager::LockType lock_type)
+LockGuard::LockGuard(LockManager& lock_manager, uint64_t resource_id, LockManager::LockType lock_type, uint64_t timeout_ms)
     : lock_manager_(lock_manager), resource_id_(resource_id), lock_type_(lock_type), released_(false) {
     
     // Acquire the lock
-    auto result = lock_manager_.acquire_lock(resource_id_, lock_type_, 0);
+    auto result = lock_manager_.acquire_lock(resource_id_, lock_type_, timeout_ms);
     
     // Check the result
     switch (result) {

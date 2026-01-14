@@ -36,6 +36,7 @@ struct NodeModel {
     uint32_t ping_count = 0;                                ///< Number of successful pings
     uint32_t query_count = 0;                               ///< Number of queries sent to this node
     uint32_t response_count = 0;                            ///< Number of responses received from this node
+    uint32_t last_rtt_ms = 0;                               ///< Last round-trip time in milliseconds
     bool is_responsive = false;                             ///< Whether the node is responsive
 
     /**

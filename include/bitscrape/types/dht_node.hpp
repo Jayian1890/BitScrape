@@ -114,6 +114,20 @@ public:
      * @brief Update the last seen time to now
      */
     void update_last_seen();
+
+    /**
+     * @brief Get the last RTT in milliseconds
+     * 
+     * @return Last RTT in milliseconds
+     */
+    uint32_t last_rtt_ms() const { return last_rtt_ms_; }
+
+    /**
+     * @brief Set the last RTT in milliseconds
+     * 
+     * @param rtt_ms Last RTT in milliseconds
+     */
+    void set_last_rtt_ms(uint32_t rtt_ms) { last_rtt_ms_ = rtt_ms; }
     
     /**
      * @brief Check if the node is valid
@@ -178,6 +192,7 @@ private:
     Endpoint endpoint_;                          ///< Node endpoint
     Status status_ = Status::UNKNOWN;            ///< Node status
     std::chrono::system_clock::time_point last_seen_; ///< Last seen time
+    uint32_t last_rtt_ms_ = 0;                   ///< Last RTT in milliseconds
 };
 
 } // namespace bitscrape::types

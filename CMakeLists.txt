@@ -17,6 +17,8 @@ if(APPLE AND NOT DEFINED CMAKE_CXX_COMPILER)
         message(STATUS "Using Homebrew LLVM: ${CMAKE_CXX_COMPILER}")
     endif()
 endif()
+# Find SQLite3
+find_package(SQLite3 REQUIRED)
 
 # Compiler flags
 add_compile_options(
@@ -67,6 +69,9 @@ add_subdirectory(apps/cli)
 # Create output directories
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/public)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/data)
+
+# Install public directory
+install(DIRECTORY public DESTINATION share/bitscrape)
 
 # Print configuration summary
 message(STATUS "")

@@ -51,33 +51,31 @@ bool HTTPRouter::match_route(const Route& route, const std::string& method, cons
     std::vector<std::string> route_segments = split_path(route.path_pattern);
     std::vector<std::string> path_segments = split_path(path);
 
-    // Check segment count
-    if (route_segments.size() != path_segments.size()) {
-        // Special case: route ends with a parameter
-        if (!route_segments.empty() && route_segments.back() == "*") {
+    // Check each segment
+    for (size_t i = 0; i < route_segments.size(); ++i) {
+        const std::string& route_segment = route_segments[i];
+
+        // Check if segment is a wildcard
+        if (route_segment == "*") {
             // Match all remaining segments
-            if (route_segments.size() >= 2 && path_segments.size() >= 1) {
-                // Safe to access route_segments.size() - 2
-                size_t prev_segment_index = route_segments.size() - 2;
-                if (prev_segment_index < path_segments.size()) {
-                    path_params["*"] = path.substr(path.find(path_segments[prev_segment_index]) + path_segments[prev_segment_index].length());
-                } else {
-                    // Handle case where path doesn't have enough segments
-                    path_params["*"] = "";
+            if (i < path_segments.size()) {
+                // Find where this segment starts in the original path
+                size_t pos = 0;
+                for (size_t j = 0; j < i; ++j) {
+                    pos = path.find('/', pos + 1);
                 }
+                path_params["*"] = path.substr(pos + 1);
             } else {
-                // Handle the case where there's only one segment (e.g., /*)
-                path_params["*"] = path;
+                path_params["*"] = "";
             }
             return true;
         }
 
-        return false;
-    }
+        // Check if we have a path segment to match
+        if (i >= path_segments.size()) {
+            return false;
+        }
 
-    // Check each segment
-    for (size_t i = 0; i < route_segments.size(); ++i) {
-        const std::string& route_segment = route_segments[i];
         const std::string& path_segment = path_segments[i];
 
         // Check if segment is a parameter
@@ -93,7 +91,8 @@ bool HTTPRouter::match_route(const Route& route, const std::string& method, cons
         }
     }
 
-    return true;
+    // All segments matched, check if path has extra segments
+    return route_segments.size() == path_segments.size();
 }
 
 std::vector<std::string> HTTPRouter::split_path(const std::string& path) const {

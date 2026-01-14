@@ -127,7 +127,7 @@ public:
      */
     std::unique_ptr<LockGuard> get_lock_guard(uint64_t resource_id,
                                              LockType lock_type = LockType::EXCLUSIVE,
-                                             uint64_t timeout_ms = 0);
+                                             uint64_t timeout_ms = 5000);
 
     /**
      * @brief Get the current thread's lock stack

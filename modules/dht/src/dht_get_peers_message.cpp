@@ -1,6 +1,7 @@
 #include "bitscrape/dht/dht_get_peers_message.hpp"
 
 #include <sstream>
+#include <cstdio>
 
 namespace bitscrape::dht {
 
@@ -98,24 +99,43 @@ bencode::BencodeValue DHTGetPeersMessage::to_bencode() const {
                 const auto& id_bytes = node.id().bytes();
                 nodes_bytes.insert(nodes_bytes.end(), id_bytes.begin(), id_bytes.end());
                 
-                // Add endpoint (4 bytes IP + 2 bytes port)
-                // This is a simplified implementation - in a real implementation,
-                // we would need to convert the IP address to bytes
-                // For now, just add 6 zero bytes as a placeholder
-                nodes_bytes.insert(nodes_bytes.end(), 6, 0);
+                // Add endpoint (4 bytes IP + 2 bytes port in network byte order)
+                const auto& endpoint = node.endpoint();
+                std::string ip = endpoint.address();
+                unsigned int b0, b1, b2, b3;
+                if (std::sscanf(ip.c_str(), "%u.%u.%u.%u", &b0, &b1, &b2, &b3) == 4) {
+                    nodes_bytes.push_back(static_cast<uint8_t>(b0));
+                    nodes_bytes.push_back(static_cast<uint8_t>(b1));
+                    nodes_bytes.push_back(static_cast<uint8_t>(b2));
+                    nodes_bytes.push_back(static_cast<uint8_t>(b3));
+                } else {
+                    nodes_bytes.insert(nodes_bytes.end(), 4, 0);
+                }
+                uint16_t port = endpoint.port();
+                nodes_bytes.push_back(static_cast<uint8_t>((port >> 8) & 0xFF));
+                nodes_bytes.push_back(static_cast<uint8_t>(port & 0xFF));
             }
             response_map["nodes"] = bencode::BencodeValue(nodes_bytes);
         }
         
-        // Add values if present
+        // Add values if present (compact peer info)
         if (!values_.empty()) {
             std::vector<bencode::BencodeValue> values_list;
             for (const auto& endpoint : values_) {
                 // Compact peer info: 6 bytes per peer (4 byte IP + 2 byte port)
-                // This is a simplified implementation - in a real implementation,
-                // we would need to convert the IP address and port to bytes
-                // For now, just add the endpoint address as a string
-                values_list.push_back(bencode::BencodeValue(endpoint.to_string()));
+                std::string compact_peer;
+                std::string ip = endpoint.address();
+                unsigned int b0, b1, b2, b3;
+                if (std::sscanf(ip.c_str(), "%u.%u.%u.%u", &b0, &b1, &b2, &b3) == 4) {
+                    compact_peer.push_back(static_cast<char>(b0));
+                    compact_peer.push_back(static_cast<char>(b1));
+                    compact_peer.push_back(static_cast<char>(b2));
+                    compact_peer.push_back(static_cast<char>(b3));
+                    uint16_t port = endpoint.port();
+                    compact_peer.push_back(static_cast<char>((port >> 8) & 0xFF));
+                    compact_peer.push_back(static_cast<char>(port & 0xFF));
+                    values_list.push_back(bencode::BencodeValue(compact_peer));
+                }
             }
             response_map["values"] = bencode::BencodeValue(values_list);
         }

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iomanip>
 #include <memory>
+#include <cstdint>
 
 namespace bitscrape::web {
 
@@ -42,29 +43,34 @@ public:
     JSON(bool value) : value_(value) {}
 
     /**
-     * @brief Create a JSON value from an integer
+     * @brief Create a JSON value from an int
      */
     JSON(int value) : value_(static_cast<Number>(value)) {}
 
     /**
-     * @brief Create a JSON value from a size_t
+     * @brief Create a JSON value from an unsigned int
      */
-    JSON(size_t value) : value_(static_cast<Number>(value)) {}
-
-    /**
-     * @brief Create a JSON value from a uint32_t
-     */
-    JSON(uint32_t value) : value_(static_cast<Number>(value)) {}
-
-    /**
-     * @brief Create a JSON value from a uint64_t
-     */
-    JSON(uint64_t value) : value_(static_cast<Number>(value)) {}
+    JSON(unsigned int value) : value_(static_cast<Number>(value)) {}
 
     /**
      * @brief Create a JSON value from a long
      */
     JSON(long value) : value_(static_cast<Number>(value)) {}
+
+    /**
+     * @brief Create a JSON value from an unsigned long
+     */
+    JSON(unsigned long value) : value_(static_cast<Number>(value)) {}
+
+    /**
+     * @brief Create a JSON value from a long long
+     */
+    JSON(long long value) : value_(static_cast<Number>(value)) {}
+
+    /**
+     * @brief Create a JSON value from an unsigned long long
+     */
+    JSON(unsigned long long value) : value_(static_cast<Number>(value)) {}
 
     /**
      * @brief Create a JSON value from a double

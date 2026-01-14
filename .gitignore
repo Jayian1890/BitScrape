@@ -1,5 +1,6 @@
 .continue/
 .sonarlint/
+sonar-project.properties
 
 # Build directories
 build/

@@ -6,30 +6,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BitScrape - Explore the Decentralized Web</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Google Fonts -->
+  <!-- Google Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Roboto:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 </head>
 
 <body>
   <div id="app">
-    <!-- Persistent Header -->
-    <header>
-      <div class="logo">
+    <!-- Persistent Header (Changes based on view) -->
+    <header id="main-header">
+      <div class="logo" onclick="App.navigate('home')">
         <span>B</span><span>i</span><span>t</span><span>S</span><span>c</span><span>r</span><span>a</span><span>p</span><span>e</span>
       </div>
-      <nav>
+      <nav id="top-nav">
         <a href="#" class="home-link active">Home</a>
         <a href="#results" class="results-link">Browse</a>
         <a href="#dashboard" class="dashboard-link">Dashboard</a>
       </nav>
       <div class="header-actions">
-        <button id="crawling-status" class="btn" onclick="App.toggleCrawling()">Status: ...</button>
+        <div id="crawling-status" class="btn">
+          <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px;">settings_remote</span>
+          Checking Status...
+        </div>
       </div>
     </header>
 
-    <main>
+    <main id="main-content">
       <!-- View: Home (Google Style) -->
       <div id="home-view" class="view">
         <div class="home-logo logo">
@@ -37,8 +44,12 @@
         </div>
         <div class="search-container">
           <div class="search-input-wrapper">
-            <span class="search-icon">🔍</span>
+            <span class="material-symbols-outlined search-icon-left">search</span>
             <input type="text" id="search-input" placeholder="Search the BitScrape Network or type a URL" autofocus>
+            <div class="search-icons-right">
+              <span class="material-symbols-outlined">mic</span>
+              <span class="material-symbols-outlined">image_search</span>
+            </div>
           </div>
         </div>
         <div class="home-buttons">
@@ -60,73 +71,96 @@
       <!-- View: Detail -->
       <div id="detail-view" class="view hidden">
         <div class="results-header">
-          <a href="#" onclick="history.back(); return false;" class="result-url">← Back to search results</a>
+          <a href="#" onclick="history.back(); return false;" class="result-url">
+            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">arrow_back</span>
+            Back to search results
+          </a>
         </div>
         <div id="detail-main">
           <!-- Detail content populated by app.js -->
         </div>
       </div>
 
-      <!-- View: Dashboard -->
-      <div id="dashboard-view" class="view hidden">
-        <div class="card">
-          <h2>Network Overview</h2>
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div id="stat-nodes" class="stat-value">...</div>
-              <div class="stat-label">Active Nodes</div>
+      <!-- View: Dashboard (Sidebar Layout) -->
+      <div id="dashboard-view" class="view hidden sidebar-layout">
+        <aside class="sidebar">
+          <div class="sidebar-item active" onclick="App.switchDashboardTab('overview')">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span>Overview</span>
+          </div>
+          <div class="sidebar-item" onclick="App.switchDashboardTab('nodes')">
+            <span class="material-symbols-outlined">lan</span>
+            <span>Nodes</span>
+          </div>
+          <div class="sidebar-item" onclick="App.switchDashboardTab('hashes')">
+            <span class="material-symbols-outlined">tag</span>
+            <span>Infohashes</span>
+          </div>
+
+        </aside>
+
+        <section class="dashboard-content">
+          <div id="dashboard-tab-overview" class="dashboard-tab">
+            <div class="card">
+              <h2 class="card-title">Network Overview</h2>
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <span class="material-symbols-outlined stat-icon">lan</span>
+                  <div id="stat-nodes" class="stat-value">...</div>
+                  <div class="stat-label">Active Nodes</div>
+                </div>
+                <div class="stat-card">
+                  <span class="material-symbols-outlined stat-icon">database</span>
+                  <div id="stat-hashes" class="stat-value">...</div>
+                  <div class="stat-label">Infohashes Seen</div>
+                </div>
+                <div class="stat-card">
+                  <span class="material-symbols-outlined stat-icon">description</span>
+                  <div id="stat-metadata" class="stat-value">...</div>
+                  <div class="stat-label">Metadata Indexed</div>
+                </div>
+                <div class="stat-card">
+                  <span class="material-symbols-outlined stat-icon">storage</span>
+                  <div id="stat-db-size" class="stat-value">...</div>
+                  <div class="stat-label">Database Size</div>
+                </div>
+              </div>
             </div>
-            <div class="stat-card">
-              <div id="stat-hashes" class="stat-value">...</div>
-              <div class="stat-label">Infohashes Seen</div>
+
+            <div class="card">
+              <h2 class="card-title">Recent Network Activity</h2>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>IP Address</th>
+                      <th>Port</th>
+                      <th>Latency</th>
+                      <th>Last Seen</th>
+                      <th>Responsive</th>
+                    </tr>
+                  </thead>
+                  <tbody id="nodes-tbody">
+                    <!-- Nodes populated by app.js -->
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div class="stat-card">
-              <div id="stat-metadata" class="stat-value">...</div>
-              <div class="stat-label">Metadata Indexed</div>
-            </div>
-            <div class="stat-card">
-              <div id="stat-db-size" class="stat-value">...</div>
-              <div class="stat-label">Database Size</div>
+
+            <div class="card">
+              <h2 class="card-title">System Activity Log</h2>
+              <div id="log-container" class="log-container">
+                <div class="log-entry">Waiting for activity...</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="card">
-          <h2>Recent Network Activity</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>IP Address</th>
-                <th>Port</th>
-                <th>Latency</th>
-                <th>Last Seen</th>
-                <th>Responsive</th>
-              </tr>
-            </thead>
-            <tbody id="nodes-tbody">
-              <!-- Nodes populated by app.js -->
-            </tbody>
-          </table>
-        </div>
 
-        <div class="card">
-          <h2>System Control</h2>
-          <div class="home-buttons">
-            <button class="btn btn-primary" onclick="App.toggleCrawling()">Toggle Crawler</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>System Activity Log</h2>
-          <div id="log-container" class="log-container">
-            <div class="log-entry">Waiting for activity...</div>
-          </div>
-        </div>
+        </section>
       </div>
     </main>
 
-    <footer
-      style="padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px; border-top: 1px solid var(--border-color); background: var(--bg-secondary);">
+    <footer>
       &copy; 2026 BitScrape Network • Decentralized indexing for the open web.
     </footer>
   </div>

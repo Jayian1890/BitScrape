@@ -42,6 +42,23 @@ const App = {
         this.bindEvents();
         this.route();
         this.startBackgroundTasks();
+        this.autoStart();
+    },
+
+    async autoStart() {
+        console.log("Auto-starting crawler...");
+        try {
+            const status = await API.getStatus();
+            if (!status.crawling) {
+                await API.startCrawling();
+                this.addLog("Crawler automatically started.");
+            } else {
+                this.addLog("Crawler is already running.");
+            }
+        } catch (err) {
+            console.error("Auto-start failed:", err);
+            this.addLog("Failed to auto-start crawler: " + err.message, true);
+        }
     },
 
     bindEvents() {
@@ -103,6 +120,8 @@ const App = {
             this.navigate('detail');
         } else if (hash === 'dashboard') {
             this.navigate('dashboard');
+        } else if (hash === 'results') {
+            this.navigate('results');
         } else {
             this.navigate('home');
         }
@@ -122,6 +141,12 @@ const App = {
         document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
         const activeView = document.getElementById(`${view}-view`);
         if (activeView) activeView.classList.remove('hidden');
+
+        // Reset dashboard to overview if navigating to it
+        if (view === 'dashboard') this.switchDashboardTab('overview');
+
+        // Update Body Class for view-specific styling
+        document.body.className = `view-${view}`;
 
         // Update Active Nav
         document.querySelectorAll('nav a').forEach(el => el.classList.remove('active'));
@@ -326,14 +351,22 @@ const App = {
         }
     },
 
-    async toggleCrawling() {
-        try {
-            if (this.state.status.crawling) await API.stopCrawling();
-            else await API.startCrawling();
-            this.updateStats();
-        } catch (err) {
-            alert(`Failed to toggle crawling: ${err.message}`);
-        }
+
+
+    switchDashboardTab(tabId) {
+        // Update Sidebar Active State
+        document.querySelectorAll('.sidebar-item').forEach(el => {
+            el.classList.remove('active');
+            if (el.textContent.toLowerCase().includes(tabId)) el.classList.add('active');
+        });
+
+        // Toggle Tab Content
+        document.querySelectorAll('.dashboard-tab').forEach(el => el.classList.add('hidden'));
+        const activeTab = document.getElementById(`dashboard-tab-${tabId}`);
+        if (activeTab) activeTab.classList.remove('hidden');
+
+        // Load data if switching to nodes or overview
+        if (tabId === 'nodes' || tabId === 'overview') this.loadNodes();
     },
 
     startBackgroundTasks() {

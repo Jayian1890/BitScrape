@@ -1,0 +1,204 @@
+Controller::Impl ctor start
+Controller::Impl ctor post-storage-defer
+start() called, is_running=0 storage_manager=0x946c00938
+2026-01-14 20:19:11.181 [36m[DEBUG][0m [GENERAL] start() called, is_running=false (controller.cpp:170)
+2026-01-14 20:19:11.183 [32m[INFO][0m [BITTORRENT] BitTorrent component started successfully (controller.cpp:223)
+2026-01-14 20:19:11.183 [32m[INFO][0m [TRACKER] Tracker component initialized successfully (controller.cpp:238)
+2026-01-14 20:19:11.205 [36m[DEBUG][0m [DHT] Added bootstrap node: dht.aelitis.com:6881 (controller.cpp:396)
+2026-01-14 20:19:11.293 [36m[DEBUG][0m [DHT] Added bootstrap node: router.utorrent.com:6881 (controller.cpp:396)
+2026-01-14 20:19:11.294 [36m[DEBUG][0m [DHT] Added bootstrap node: router.bittorrent.com:6881 (controller.cpp:396)
+Bootstrap: Starting random lookups with 1 nodes in table
+NodeLookup: Sending query tid hex=06cd
+NodeLookup: Sending query tid hex=aa36
+NodeLookup: Sending query tid hex=51a8
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=6dc6
+NodeLookup: Sending query tid hex=895b
+NodeLookup: Sending query tid hex=112a
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=5673
+NodeLookup: Sending query tid hex=398d
+NodeLookup: Sending query tid hex=414e
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=ffc7
+NodeLookup: Sending query tid hex=4df3
+NodeLookup: Sending query tid hex=61ed
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=03b4
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=4b97
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=16b0
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=6f12
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=306b
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=a73b
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=137f
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=be6b
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=baca
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=c7e1
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=ae81
+NodeLookup: Processing PING response
+NodeLookup: Sending query tid hex=1bb3
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=8564
+NodeLookup: Sending query tid hex=NodeLookup: Sending query tid hex=12NodeLookup: Sending query tid hex=146d
+b8a6
+d3
+NodeLookup: Sending query tid hex=f4f1
+NodeLookup: Sending query tid hex=91d4
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=d3e7
+NodeLookup: Sending query tid hex=b025
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=c722
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=cf29
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=1715
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=98af
+NodeLookup: Sending query tid hex=d955
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=e51f
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=5820
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=3e73
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=b8a3
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=173c
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=1cce
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=9688
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=74f2
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=dba6
+NodeLookup: Sending query tid hex=3dc4
+NodeLookup: Sending query tid hex=9e7e
+NodeLookup: Sending query tid hex=86b5
+NodeLookup: Sending query tid hex=bebe
+NodeLookup: Sending query tid hex=8329
+NodeLookup: Sending query tid hex=f4d6
+NodeLookup: Sending query tid hex=3162
+NodeLookup: Sending query tid hex=3d96
+NodeLookup: Sending query tid hex=9aea
+NodeLookup: Sending query tid hex=7b1a
+NodeLookup: Sending query tid hex=8e20
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=bf82
+NodeLookup: Sending query tid hex=fff0
+NodeLookup: Sending query tid hex=44a2
+NodeLookup: Sending query tid hex=946d
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=393a
+2026-01-14 20:19:16.405 [32m[INFO][0m [DHT] DHT component started successfully (controller.cpp:473)
+2026-01-14 20:19:16.405 [32m[INFO][0m [GENERAL] Controller started successfully (controller.cpp:205)
+2026-01-14 20:19:16.405 [32m[INFO][0m [SYSTEM] BitScrape CLI started (main.cpp:676)
+2026-01-14 20:19:16.405 [32m[INFO][0m [SYSTEM] Version: 0.1.0 (main.cpp:677)
+2026-01-14 20:19:16.405 [32m[INFO][0m [SYSTEM] Starting in interactive mode (main.cpp:695)
+2026-01-14 20:19:16.405 [32m[INFO][0m [SYSTEM] Type 'help' for a list of commands (main.cpp:696)
+2026-01-14 20:19:16.405 [32m[INFO][0m [SYSTEM] Web interface available at http://localhost:8080 (main.cpp:195)
+
+BitScrape> NodeLookup: Sending query tid hex=0c65
+NodeLookup: Sending query tid hex=63f0
+NodeLookup: Sending query tid hex=df0c
+2026-01-14 20:19:16.864 [32m[INFO][0m [DHT] Discovered infohash: b92cce145a82f5c4... (controller.cpp:364)
+NodeLookup: Sending query tid hex=7ca1
+NodeLookup: Sending query tid hex=4767
+NodeLookup: Sending query tid hex=e9da
+NodeLookup: Sending query tid hex=52cc
+NodeLookup: Sending query tid hex=6f79
+NodeLookup: Sending query tid hex=62b5
+NodeLookup: Sending query tid hex=a910
+NodeLookup: Sending query tid hex=0885
+NodeLookup: Sending query tid hex=3621
+NodeLookup: Sending query tid hex=b4c0
+NodeLookup: Sending query tid hex=ed28
+NodeLookup: Sending query tid hex=007c
+NodeLookup: Sending query tid hex=b133
+NodeLookup: Sending query tid hex=744b
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=0d62
+NodeLookup: Sending query tid hex=bd2f
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=cac5
+NodeLookup: Sending query tid hex=922d
+NodeLookup: Sending query tid hex=b4fb
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=9222
+NodeLookup: Sending query tid hex=0422
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=4723
+NodeLookup: Sending query tid hex=8eaa
+NodeLookup: Sending query tid hex=7035
+NodeLookup: Sending query tid hex=279a
+NodeLookup: Sending query tid hex=f471
+NodeLookup: Sending query tid hex=af95
+NodeLookup: Sending query tid hex=b60b
+NodeLookup: Sending query tid hex=910e
+NodeLookup: Sending query tid hex=eb42
+NodeLookup: Sending query tid hex=8875
+NodeLookup: Sending query tid hex=7320
+NodeLookup: Sending query tid hex=40b9
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=0364
+NodeLookup: Sending query tid hex=18b6
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=2589
+NodeLookup: Sending query tid hex=5e30
+NodeLookup: Sending query tid hex=28b3
+NodeLookup: Sending query tid hex=dcd5
+NodeLookup: Sending query tid hex=4c25
+NodeLookup: Sending query tid hex=502f
+NodeLookup: Sending query tid hex=1ea6
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=9fac
+NodeLookup: Sending query tid hex=a8cc
+NodeLookup: Sending query tid hex=5726
+NodeLookup: Sending query tid hex=2aa9
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=4e64
+NodeLookup: Sending query tid hex=2209
+NodeLookup: Sending query tid hex=5244
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=b552
+NodeLookup: Sending query tid hex=50e6
+DHTMessageFactory: Failed to decode bencode data: BencodeDecoder: String length exceeds data size
+NodeLookup: Sending query tid hex=b6cd
+NodeLookup: Sending query tid hex=2d24
+NodeLookup: Sending query tid hex=8f2b
+NodeLookup: Sending query tid hex=259e
+NodeLookup: Sending query tid hex=e6db
+NodeLookup: Sending query tid hex=154d
+NodeLookup: Sending query tid hex=9452
+NodeLookup: Sending query tid hex=059b
+NodeLookup: Sending query tid hex=7a1f
+DHTMessageFactory: Failed to decode bencode data: BencodeDecoder: String length exceeds data size
+NodeLookup: Sending query tid hex=7a85
+NodeLookup: Sending query tid hex=67e7
+NodeLookup: Sending query tid hex=9160
+NodeLookup: Sending query tid hex=9470
+NodeLookup: Sending query tid hex=ae5c
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=9dd7
+NodeLookup: Sending query tid hex=3918
+NodeLookup: Sending query tid hex=e2a0
+NodeLookup: Sending query tid hex=89dc
+NodeLookup: Sending query tid hex=31a1
+NodeLookup: Sending query tid hex=b7a7
+NodeLookup: Sending query tid hex=6d54
+NodeLookup: Processing FIND_NODE response
+NodeLookup: Sending query tid hex=0c02
+NodeLookup: Sending query tid hex=23f0
+NodeLookup: Sending query tid hex=e96a

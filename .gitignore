@@ -5,6 +5,7 @@ sonar-project.properties
 # Build directories
 build/
 bin/
+data/
 
 # Cache files
 .cache/

@@ -17,10 +17,22 @@ bool MenubarController::start_server(uint16_t port, const std::string& resource_
     }
     // Create a WebController with default config (empty string) for now
     auto controller = std::make_shared<WebController>("");
-    // Initialize and start the controller if needed
-    controller->initialize();
-    controller->start();
-    controller->start_crawling();
+    
+    // Get the underlying core controller to initialize it properly
+    auto core_controller = controller->get_controller();
+    
+    // Initialize and start the core controller
+    if (!core_controller->initialize()) {
+        return false;
+    }
+    
+    if (!core_controller->start()) {
+        return false;
+    }
+
+    // Start crawling automatically
+    core_controller->start_crawling();
+
     // Create the HTTP server
     server_ = std::make_unique<HTTPServer>(port, controller);
     

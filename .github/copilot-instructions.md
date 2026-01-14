@@ -36,6 +36,20 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
 - **Logging**: Use `bitscrape::beacon::Beacon`. Typically `beacon_->info("Message", types::BeaconCategory::GENERAL)`.
 - **Async**: Heavy use of `std::future`, `std::async` for non-blocking operations.
 - **Dependencies**: Codebase is self-contained (vendored `doctest` if used), minimal external deps.
+- **Git Commit Messages**: Follow the Conventional Commits specification:
+  - Format: `<type>(<scope>): <subject>`
+  - Types:
+    - `feat`: New feature
+    - `fix`: Bug fix
+    - `docs`: Documentation only changes
+    - `style`: Changes that do not affect the meaning of the code (white-space, formatting, etc)
+    - `refactor`: A code change that neither fixes a bug nor adds a feature
+    - `perf`: A code change that improves performance
+    - `test`: Adding missing tests or correcting existing tests
+    - `build`: Changes that affect the build system or external dependencies
+    - `ci`: Changes to our CI configuration files and scripts
+    - `chore`: Other changes that don't modify src or test files
+    - `revert`: Reverts a previous commit
 
 ## Files an agent should read to understand code paths quickly
 - **Root Build**: `CMakeLists.txt` (Project settings, compiler flags).

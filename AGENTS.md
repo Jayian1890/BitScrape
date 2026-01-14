@@ -1,4 +1,4 @@
-# Copilot / AI agent instructions for BitScrape
+# AI agent instructions
 
 Goal: make an AI coding agent productive quickly by documenting the project shape, common workflows, and repository conventions.
 

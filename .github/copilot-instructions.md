@@ -50,6 +50,9 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
     - `ci`: Changes to our CI configuration files and scripts
     - `chore`: Other changes that don't modify src or test files
     - `revert`: Reverts a previous commit
+- **Git Workflow**:
+  - AI must commit and push all changes on a per task basis.
+  - Try not to merge files from seperate tasks.
 
 ## Files an agent should read to understand code paths quickly
 - **Root Build**: `CMakeLists.txt` (Project settings, compiler flags).

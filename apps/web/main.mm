@@ -25,6 +25,7 @@ using namespace bitscrape::web;
     NSImage *icon = [NSImage imageNamed:@"menubar_icon"];
     if (icon) {
         [icon setTemplate:YES]; // allow dark mode adaptation
+        icon.size = NSMakeSize(18, 18); // Force correct size
         self.statusItem.button.image = icon;
     }
     self.statusItem.button.title = @"";

@@ -1,6 +1,5 @@
 # CLI Application
-file(GLOB_RECURSE CLI_SOURCES src/*.cpp)
-add_executable(bitscrape_cli ${CLI_SOURCES})
+add_executable(bitscrape_cli main.cpp)
 
 # Link against all module libraries
 target_link_libraries(bitscrape_cli PRIVATE

@@ -24,12 +24,24 @@ using namespace bitscrape::web;
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     NSImage *icon = [NSImage imageNamed:@"menubar_icon"];
     if (icon) {
-        [icon setTemplate:YES]; // allow dark mode adaptation
-        icon.size = NSMakeSize(18, 18); // Force correct size
-        self.statusItem.button.image = icon;
+        NSImage *resizedIcon = [self resizeImage:icon toSize:NSMakeSize(18, 18)];
+        [resizedIcon setTemplate:YES]; // allow dark mode adaptation
+        self.statusItem.button.image = resizedIcon;
     }
     self.statusItem.button.title = @"";
     self.statusItem.menu = [self createMenu];
+}
+
+// Manually resize image to ensure it draws at the correct size
+- (NSImage *)resizeImage:(NSImage *)sourceImage toSize:(NSSize)size {
+    NSImage *newImage = [[NSImage alloc] initWithSize:size];
+    [newImage lockFocus];
+    [sourceImage drawInRect:NSMakeRect(0, 0, size.width, size.height)
+                   fromRect:NSZeroRect
+                  operation:NSCompositingOperationCopy
+                   fraction:1.0];
+    [newImage unlockFocus];
+    return newImage;
 }
 
 - (void)dealloc {
@@ -45,6 +57,12 @@ using namespace bitscrape::web;
     NSMenuItem *toggleItem = [[NSMenuItem alloc] initWithTitle:@"Start Server" action:@selector(toggleServer:) keyEquivalent:@""];
     toggleItem.target = self;
     [menu addItem:toggleItem];
+    
+    // Add Open Web UI item
+    NSMenuItem *openWebItem = [[NSMenuItem alloc] initWithTitle:@"Open Web UI" action:@selector(openWebUI:) keyEquivalent:@""];
+    openWebItem.target = self;
+    [menu addItem:openWebItem];
+
     [menu addItem:[NSMenuItem separatorItem]];
     NSMenuItem *quitItem = [[NSMenuItem alloc] initWithTitle:@"Exit" action:@selector(quitApp:) keyEquivalent:@"q"];
     quitItem.target = self;
@@ -67,8 +85,14 @@ using namespace bitscrape::web;
         serverRunning_ = NO;
     } else {
         serverRunning_ = controller_->start_server(8080);
+        // Automatically open Web UI when starting
+        [self openWebUI:nil];
     }
     [self updateToggleTitle];
+}
+
+- (void)openWebUI:(id)sender {
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://localhost:8080"]];
 }
 
 - (void)quitApp:(id)sender {

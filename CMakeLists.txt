@@ -29,6 +29,8 @@ add_compile_options(
 if(APPLE AND CMAKE_CXX_COMPILER MATCHES ".*homebrew.*")
     add_compile_options(-stdlib=libc++)
     add_link_options(-stdlib=libc++)
+    add_link_options("-L/opt/homebrew/opt/llvm/lib/c++")
+    add_link_options("-Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++")
 endif()
 
 # Build type specific flags

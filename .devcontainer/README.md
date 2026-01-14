@@ -4,12 +4,12 @@ This directory contains the development container configuration for the BitScrap
 
 ## Features
 
-- **C++23 Support**: GCC 11+ and Clang 14+ with full C++23 standard support
-- **Complete Build Environment**: All necessary tools for building and testing BitScrape
-- **Development Tools**: GDB debugger, Valgrind, coverage analysis with gcovr
-- **VS Code Integration**: Pre-configured extensions and settings for optimal C++ development
-- **Persistent Build Cache**: Build artifacts persist between container restarts
-- **Network Access**: Support for DHT bootstrap nodes and web interface
+- **C++23 Support**: Proprely configured GCC 12 and Clang 15 with full C++23 standard support.
+- **Complete Build Environment**: Based on Microsoft's optimized C++ development image.
+- **Development Tools**: GDB, LLDB, Valgrind, and coverage analysis with `gcovr`.
+- **VS Code Integration**: Pre-configured extensions (CMake, C++, GitLens) and settings.
+- **Docker Compose Orchestration**: Uses Docker Compose for better volume management and network isolation.
+- **Persistent Build Cache**: Named volumes ensure build artifacts persist and don't conflict with your host OS.
 
 ## Prerequisites
 
@@ -21,9 +21,9 @@ This directory contains the development container configuration for the BitScrap
 
 ### Option 1: VS Code Dev Containers (Recommended)
 
-1. Open the BitScrape project in VS Code
-2. When prompted, click "Reopen in Container" or use Command Palette: `Dev Containers: Reopen in Container`
-3. The container will build automatically and open the project
+1. Open the BitScrape project in VS Code.
+2. When prompted, click **"Reopen in Container"** or use the Command Palette (`Cmd+Shift+P` on Mac) and select `Dev Containers: Reopen in Container`.
+3. The container will build automatically and initialize the CMake build system.
 
 ### Option 2: Docker Compose
 
@@ -37,141 +37,50 @@ docker-compose -f .devcontainer/docker-compose.yml up -d
 docker-compose -f .devcontainer/docker-compose.yml exec bitscrape-dev bash
 ```
 
-### Option 3: Manual Docker Build
-
-```bash
-# Build the container
-docker build -f .devcontainer/Dockerfile -t bitscrape-dev .
-
-# Run the container
-docker run -it --rm \
-  -v $(pwd):/workspace \
-  -v $(pwd)/build:/workspace/build \
-  -v $(pwd)/data:/workspace/data \
-  --cap-add=SYS_PTRACE \
-  --security-opt seccomp=unconfined \
-  -p 8080:8080 \
-  bitscrape-dev bash
-```
-
 ## Development Workflow
 
-Once inside the container:
+The environment is optimized for **CMake**. Once inside the container:
 
 ```bash
-# Build the entire project
-make
+# The project is already configured via postCreateCommand
+# To build everything:
+cmake --build build/container -j$(nproc)
 
-# Build with debug flags
-make DEBUG=1
+# To run tests:
+ctest --test-dir build/container
 
-# Build a specific module
-make -C modules/core
-
-# Run all tests
-make test
-
-# Run tests for a specific module
-make -C modules/core test
-
-# Generate coverage report
-make coverage
-
-# Install the project
-make install PREFIX=/usr/local
+# To run the CLI:
+./build/container/apps/cli/bitscrape-cli --help
 ```
 
 ## Debugging
 
-The container is configured for debugging with:
+The container is fully configured for debugging. You can use the VS Code "Run and Debug" side bar to start debugging with the pre-configured LLDB or GDB setups.
 
-- **GDB**: `gdb ./build/bin/bitscrape_cli`
-- **LLDB**: `lldb ./build/bin/bitscrape_cli`
-- **Valgrind**: `valgrind --tool=memcheck ./build/bin/bitscrape_cli`
+- **Valgrind**: `valgrind --tool=memcheck ./build/container/apps/cli/bitscrape-cli`
+- **Coverage**: `cmake -DENABLE_COVERAGE=ON ..` (if supported by CMakeLists)
 
 ## Web Interface
 
-The web interface runs on port 8080 and will be automatically forwarded when using VS Code Dev Containers.
-
-```bash
-# Start the web interface
-./build/bin/bitscrape_cli --web-port=8080
-```
-
-## VS Code Extensions
-
-The following extensions are automatically installed and configured:
-
-- **C/C++ Extension Pack**: Complete C++ development support
-- **Makefile Tools**: Enhanced Makefile support
-- **CMake Tools**: CMake integration (if needed)
-- **LLDB Debugger**: Native debugger support
-- **Python**: For build scripts and coverage tools
+The web interface runs on port 8080 and is automatically forwarded by VS Code.
 
 ## Customization
 
 ### Adding Dependencies
 
-To add system dependencies, modify `.devcontainer/Dockerfile`:
-
-```dockerfile
-RUN apt-get update && apt-get install -y \
-    your-package-here \
-    && rm -rf /var/lib/apt/lists/*
-```
+To add system dependencies, modify `.devcontainer/Dockerfile` and rebuild the container.
 
 ### VS Code Settings
 
-Modify `.devcontainer/devcontainer.json` to change VS Code settings and add more extensions.
-
-### Build Configuration
-
-The container uses the project's Makefile build system. Modify `Makefile` for custom build configurations.
+Modify `.devcontainer/devcontainer.json` to change default editor behavior or add extensions.
 
 ## Troubleshooting
 
-### Build Issues
+### Rebuilding the Container
 
-If you encounter build issues:
+If you change the Dockerfile, you must rebuild the container:
+`Dev Containers: Rebuild Container` in the Command Palette.
 
-1. Clean the build directory: `make clean`
-2. Rebuild from scratch: `make`
-3. Check compiler version: `g++ --version`
+### Architecture Conflicts
 
-### Permission Issues
-
-The container runs as a non-root user (`vscode`). If you need root access:
-
-```bash
-sudo apt-get update
-```
-
-### Network Issues
-
-For DHT functionality, ensure the container can reach the internet:
-
-```bash
-ping router.bittorrent.com
-```
-
-### Performance Issues
-
-If builds are slow, try:
-- Increasing Docker memory allocation
-- Using build cache mounts
-- Running parallel builds: `make -j$(nproc)`
-
-## Project Structure
-
-The development container preserves the original project structure while providing isolated build and data directories:
-
-```
-/workspace/
-├── include/          # Public headers
-├── modules/          # Module implementations
-├── apps/            # Applications (CLI, GUI, Web)
-├── tests/           # Unit tests
-├── build/           # Build artifacts (mounted)
-├── data/            # Runtime data (mounted)
-└── .devcontainer/   # Dev container configuration
-```
+This setup uses a named volume for the `build` directory (`build/container`) to prevent conflicts between your host OS and the Linux container. Always build inside `/workspace/build/container` when in the devcontainer.

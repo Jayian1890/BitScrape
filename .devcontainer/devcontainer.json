@@ -1,44 +1,54 @@
 {
   "name": "BitScrape C++23 Development",
-  "dockerFile": "Dockerfile",
-  "context": "..",
-  "runArgs": [
-    "--cap-add=SYS_PTRACE",
-    "--security-opt",
-    "seccomp=unconfined"
-  ],
-  "settings": {
-    "C_Cpp.default.cppStandard": "c++23",
-    "C_Cpp.default.compilerPath": "/usr/bin/g++",
-    "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
-    "files.associations": {
-      "*.hpp": "cpp",
-      "*.cpp": "cpp"
-    },
-    "terminal.integrated.shell.linux": "/bin/bash"
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "bitscrape",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "C_Cpp.default.cppStandard": "c++23",
+        "C_Cpp.default.compilerPath": "/usr/bin/g++",
+        "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
+        "files.associations": {
+          "*.hpp": "cpp",
+          "*.cpp": "cpp",
+          "*.tcc": "cpp"
+        },
+        "cmake.configureOnOpen": true,
+        "cmake.buildDirectory": "${workspaceFolder}/build/container"
+      },
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cmake-tools",
+        "vadimcn.vscode-lldb",
+        "ms-vscode.hexeditor",
+        "ms-python.python",
+        "redhat.vscode-yaml",
+        "eamodio.gitlens",
+        "jeff-hykin.better-cpp-syntax",
+        "xaver.clang-format"
+      ]
+    }
   },
-  "extensions": [
-    "ms-vscode.cpptools",
-    "ms-vscode.cpptools-extension-pack",
-    "ms-vscode.makefile-tools",
-    "ms-vscode.cmake-tools",
-    "vadimcn.vscode-lldb",
-    "ms-vscode.hexeditor",
-    "ms-python.python",
-    "redhat.vscode-yaml"
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "upgradePackages": true
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/git-lfs:1": {}
+  },
+  "postCreateCommand": "mkdir -p build/container && cmake -S . -B build/container -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && echo 'BitScrape environment ready!'",
+  "forwardPorts": [
+    8080
   ],
-  "forwardPorts": [8080],
   "portsAttributes": {
     "8080": {
       "label": "Web UI",
       "onAutoForward": "notify"
     }
-  },
-  "postCreateCommand": "make -j$(nproc) && echo 'BitScrape build completed successfully!'",
-  "remoteUser": "vscode",
-  "mounts": [
-    "source=${localWorkspaceFolder}/build,target=/workspace/build,type=bind,consistency=cached",
-    "source=${localWorkspaceFolder}/data,target=/workspace/data,type=bind,consistency=cached"
-  ],
-  "workspaceFolder": "/workspace"
+  }
 }

@@ -7,8 +7,8 @@ services:
       dockerfile: .devcontainer/Dockerfile
     volumes:
       - ..:/workspace:cached
-      - /workspace/build
-      - /workspace/data
+      - bitscrape-build:/workspace/build/container
+      - bitscrape-data:/workspace/data
     working_dir: /workspace
     command: sleep infinity
     ports:
@@ -18,8 +18,6 @@ services:
     security_opt:
       - seccomp:unconfined
     user: vscode
-    environment:
-      - DISPLAY=${DISPLAY}
     networks:
       - bitscrape-net
 
@@ -28,7 +26,5 @@ networks:
     driver: bridge
 
 volumes:
-  build-cache:
-    driver: local
-  data-volume:
-    driver: local
+  bitscrape-build:
+  bitscrape-data:

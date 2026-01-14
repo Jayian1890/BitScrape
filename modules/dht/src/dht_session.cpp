@@ -430,10 +430,9 @@ void DHTSession::handle_get_peers(const std::shared_ptr<DHTMessage> &message,
     }
   }
 
-  // Create a token for this sender
-  // In a real implementation, we would generate a token based on the sender's
-  // IP and a secret For now, just use a random token
-  types::DHTToken token = types::DHTToken::random();
+  // Create a token for this sender using the token manager
+  // The token is based on the sender's IP and a secret per BEP-0005
+  types::DHTToken token = token_manager_->generate_token(sender_endpoint);
 
   // Find nodes close to the infohash
   types::NodeID target_id(
@@ -466,9 +465,13 @@ void DHTSession::handle_announce_peer(
   types::DHTNode node(announce_peer_message->node_id(), sender_endpoint);
   routing_table_->add_node(node);
 
-  // Verify the token
-  // In a real implementation, we would verify the token against the sender's IP
-  // For now, just accept any token
+  // Verify the token using the token manager
+  const auto &token = announce_peer_message->token();
+  if (!token_manager_->verify_token(token, sender_endpoint)) {
+    // Invalid token - reject the announce
+    // TODO: Optionally send an error response
+    return;
+  }
 
   // Get the infohash and port
   types::InfoHash info_hash = announce_peer_message->info_hash();

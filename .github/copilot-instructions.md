@@ -13,8 +13,8 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
 - **Architecture**: Modular, event-driven. Modules are static libraries, apps link them.
 - **Directory Structure**:
   - `include/bitscrape/<module>/`: Public headers.
-  - `modules/<module>/src/`: Implementation files.
-  - `apps/`: Executables (e.g. `apps/cli`).
+  - `modules/<module>/src/`: Module implementation files.
+  - `apps/`: Applications and UIs (e.g. `apps/cli`, `apps/web`).
   - `CMakeLists.txt`: Root and per-module build definitions.
 - **Key Modules**:
   - `modules/core`: Controller (orchestration), Configuration.
@@ -22,6 +22,9 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
   - `modules/storage`: SQLite database wrapper (`StorageManager`).
   - `modules/event`: Event bus system.
   - `modules/beacon`: Logging system.
+- **Applications**:
+  - `apps/cli`: Command-line interface.
+  - `apps/web`: Web UI (HTTP server, API handlers, WebSocket).
 
 ## Project conventions & patterns an agent should follow
 - **Language**: C++23 is required.

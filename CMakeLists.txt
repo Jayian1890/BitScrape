@@ -59,9 +59,9 @@ add_subdirectory(modules/dht)
 add_subdirectory(modules/tracker)
 add_subdirectory(modules/bittorrent)
 add_subdirectory(modules/core)
-add_subdirectory(modules/web)
 
-# Add CLI application
+# Add applications
+add_subdirectory(apps/web)
 add_subdirectory(apps/cli)
 
 # Create output directories

@@ -51,8 +51,8 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
     - `chore`: Other changes that don't modify src or test files
     - `revert`: Reverts a previous commit
 - **Git Workflow**:
-  - AI must commit and push all changes on a per task basis.
-  - Try not to merge files from seperate tasks.
+  - **Atomic Task Commits**: AI MUST commit and push changes immediately after completing each distinct user task or logical unit of work.
+  - **No Batching**: Do NOT combine changes from separate tasks into a single commit. Process each request's changes independently to maintain a clean and revertible history.
 
 ## Files an agent should read to understand code paths quickly
 - **Root Build**: `CMakeLists.txt` (Project settings, compiler flags).

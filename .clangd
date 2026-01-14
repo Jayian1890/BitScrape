@@ -1,10 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/clangd.json
 CompileFlags:
   CompilationDatabase: build/
-  Add:
-    - "-std=c++23"
-    - "-I./include"
-    - "-I./tests/helpers"
 Diagnostics:
   MissingIncludes: Strict
   UnusedIncludes: Strict

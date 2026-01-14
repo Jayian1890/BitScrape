@@ -17,7 +17,7 @@
             }
         },
         {
-            "label": "Build CLI App (Debug)",
+            "label": "Debug CLI",
             "type": "shell",
             "command": "make",
             "args": [
@@ -33,7 +33,7 @@
             }
         },
         {
-            "label": "Run BitScrape CLI",
+            "label": "Run CLI",
             "type": "shell",
             "command": "./build/bin/bitscrape_cli",
             "args": [],
@@ -84,7 +84,21 @@
             },
             "presentation": {
                 "panel": "shared"
-            }
+            },
+        },
+        {
+            "label": "Compile Commands",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "compile_commands"
+            ],
+            "options": {
+                "env": {}
+            },
+            "presentation": {
+                "panel": "shared"
+            },
         }
     ]
 }

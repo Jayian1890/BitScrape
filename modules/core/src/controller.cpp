@@ -90,10 +90,10 @@ public:
 
       // Initialize storage manager (create it here if deferred)
       if (!storage_manager_) {
-        std::string db_path =
-            config_->get_string("database.path", "data/bitscrape.db");
+        std::string default_db_path = (std::filesystem::path(Configuration::get_default_base_dir()) / "bitscrape.db").string();
+        std::string db_path = config_->get_string("database.path", default_db_path);
         if (db_path.empty()) {
-          db_path = "data/bitscrape.db";
+          db_path = default_db_path;
           beacon_->info(std::string("Using default database path: ") + db_path,
                         types::BeaconCategory::GENERAL);
         }
@@ -108,8 +108,8 @@ public:
         } catch (const std::exception &e) {
           beacon_->error("Failed to create database directory: ",
                          types::BeaconCategory::GENERAL, e.what());
-          db_path = "bitscrape.db"; // Use current directory as fallback
-          beacon_->warning("Falling back to current directory: " + db_path,
+          db_path = (std::filesystem::path(Configuration::get_default_base_dir()) / "bitscrape.db").string(); 
+          beacon_->warning("Falling back to default directory: " + db_path,
                            types::BeaconCategory::GENERAL);
           storage_manager_ = storage::create_storage_manager(db_path, true);
         }

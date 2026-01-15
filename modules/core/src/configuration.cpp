@@ -13,13 +13,14 @@
 #include <iostream>
 #include <unordered_set>
 #include <algorithm>
+#include <cstdlib>
 
 namespace bitscrape::core {
 
 class Configuration::Impl {
 public:
     Impl(const std::string& config_path)
-        : config_path_(config_path.empty() ? "bitscrape.json" : config_path)
+        : config_path_(config_path.empty() ? Configuration::get_default_config_path() : config_path)
     {
         // Register the configuration resource with the LockManager
         auto lock_manager = lock::LockManagerSingleton::instance();
@@ -498,6 +499,12 @@ public:
 
             out << "\n}\n";
 
+            // Ensure the directory exists
+            std::filesystem::path p(config_path_);
+            if (!p.parent_path().empty() && !std::filesystem::exists(p.parent_path())) {
+                std::filesystem::create_directories(p.parent_path());
+            }
+
             std::ofstream file(config_path_);
             if (!file.is_open()) {
                 std::cerr << "Failed to open configuration file for writing: " << config_path_ << std::endl;
@@ -684,9 +691,10 @@ public:
 
 private:
     void apply_missing_defaults() {
+        std::string base_dir = Configuration::get_default_base_dir();
         const std::unordered_map<std::string, std::string> defaults = {
-            {"database.path", "bitscrape.db"},
-            {"dht.bootstrap_nodes", "v4.router.mega.co.nz:6881,dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"},
+            {"database.path", (std::filesystem::path(base_dir) / "bitscrape.db").string()},
+            {"dht.bootstrap_nodes", "dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"},
             {"dht.port", "6881"},
             {"dht.node_id", ""},
             {"dht.max_nodes", "1000"},
@@ -699,7 +707,7 @@ private:
             {"tracker.announce_interval", "1800"},
             {"tracker.max_trackers", "20"},
             {"log.level", "info"},
-            {"log.file", "bitscrape.log"},
+            {"log.file", (std::filesystem::path(base_dir) / "bitscrape.log").string()},
             {"log.max_size", "10485760"},
             {"log.max_files", "5"},
             {"web.auto_start", "true"},
@@ -715,9 +723,10 @@ private:
     }
 
     void create_default_configuration() {
+        std::string base_dir = Configuration::get_default_base_dir();
         // Set default values
-        config_["database.path"] = "bitscrape.db";
-        config_["dht.bootstrap_nodes"] = "v4.router.mega.co.nz:6881,dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"; // Default public routers
+        config_["database.path"] = (std::filesystem::path(base_dir) / "bitscrape.db").string();
+        config_["dht.bootstrap_nodes"] = "dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"; // Default public routers
         config_["dht.port"] = "6881";
         config_["dht.node_id"] = ""; // Will be generated randomly if empty
         config_["dht.max_nodes"] = "1000";
@@ -730,7 +739,7 @@ private:
         config_["tracker.announce_interval"] = "1800"; // 30 minutes
         config_["tracker.max_trackers"] = "20";
         config_["log.level"] = "info";
-        config_["log.file"] = "bitscrape.log";
+        config_["log.file"] = (std::filesystem::path(base_dir) / "bitscrape.log").string();
         config_["log.max_size"] = "10485760"; // 10 MB
         config_["log.max_files"] = "5";
         config_["web.auto_start"] = "true"; // Auto-start web interface by default
@@ -749,6 +758,21 @@ private:
 
 Configuration::Configuration(const std::string& config_path)
     : impl_(std::make_unique<Impl>(config_path)) {
+}
+
+std::string Configuration::get_default_base_dir() {
+    const char* home = std::getenv("HOME");
+    std::filesystem::path base_dir;
+    if (home) {
+        base_dir = std::filesystem::path(home) / ".config" / "bitscrape";
+    } else {
+        base_dir = std::filesystem::current_path() / ".config" / "bitscrape";
+    }
+    return base_dir.string();
+}
+
+std::string Configuration::get_default_config_path() {
+    return (std::filesystem::path(get_default_base_dir()) / "settings.json").string();
 }
 
 Configuration::~Configuration() = default;

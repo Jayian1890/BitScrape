@@ -96,11 +96,11 @@ Tests use the vendored doctest header; no external GoogleTest/GMock or CMake too
 ### Command Line Interface
 
 ```bash
-# Start crawling the DHT network
-bitscrape-cli --bootstrap-nodes=router.bittorrent.com:6881,router.utorrent.com:6881
+# Start crawling the DHT network (uses default config at ~/.config/bitscrape/settings.json)
+bitscrape-cli
 
 # Crawl with specific options
-bitscrape-cli --max-connections=1000 --storage-path=/path/to/storage
+bitscrape-cli --max-connections=1000 --config=/path/to/bitscrape.json
 
 # Show help
 bitscrape-cli --help

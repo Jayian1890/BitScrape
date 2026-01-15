@@ -744,11 +744,13 @@ public:
             }
 
             // Generate a new random infohash occasionally
-            if (rand() % 5 == 0) {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<int> chance_dist(0, 4);
+            
+            if (chance_dist(gen) == 0) {
               // 20% chance
               // Generate random infohash
-              std::random_device rd;
-              std::mt19937 gen(rd());
               std::uniform_int_distribution<uint8_t> dist(0, 255);
 
               std::vector<uint8_t> hash_bytes(20);

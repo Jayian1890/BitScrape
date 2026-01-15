@@ -663,12 +663,13 @@ public:
                           "(crawler.generate_test_infohashes=true)",
                       types::BeaconCategory::GENERAL);
 
+        // Set up random number generator once
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<uint8_t> dist(0, 255);
+
         for (std::size_t i = 0; i < num_to_generate; i++) {
           // Generate random infohash
-          std::random_device rd;
-          std::mt19937 gen(rd());
-          std::uniform_int_distribution<uint8_t> dist(0, 255);
-
           std::vector<uint8_t> hash_bytes(20);
           for (auto &byte : hash_bytes) {
             byte = dist(gen);
@@ -723,6 +724,12 @@ public:
       // Start a background thread to periodically check for new infohashes
       infohash_check_thread_ = std::thread([this]() {
         try {
+          // Set up random number generator once for the thread
+          std::random_device rd;
+          std::mt19937 gen(rd());
+          std::uniform_int_distribution<int> chance_dist(0, 4);
+          std::uniform_int_distribution<uint8_t> byte_dist(0, 255);
+
           while (is_crawling_ && is_running_) {
             // Sleep for a while before checking for new infohashes
             std::this_thread::sleep_for(std::chrono::seconds(60));
@@ -744,18 +751,12 @@ public:
             }
 
             // Generate a new random infohash occasionally
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<int> chance_dist(0, 4);
-            
             if (chance_dist(gen) == 0) {
               // 20% chance
               // Generate random infohash
-              std::uniform_int_distribution<uint8_t> dist(0, 255);
-
               std::vector<uint8_t> hash_bytes(20);
               for (auto &byte : hash_bytes) {
-                byte = dist(gen);
+                byte = byte_dist(gen);
               }
 
               types::InfoHash random_hash(hash_bytes);

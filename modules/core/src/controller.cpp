@@ -1209,7 +1209,7 @@ public:
       std::string info_hash_str = info_hash.to_hex();
       {
         std::lock_guard<std::mutex> lock(maps_mutex_);
-        if (peer_managers_.find(info_hash_str) != peer_managers_.end()) {
+        if (peer_managers_.count(info_hash_str) > 0) {
           return; // Already have a peer manager for this infohash
         }
       }
@@ -1255,8 +1255,9 @@ public:
         {
           std::lock_guard<std::mutex> lock(maps_mutex_);
           // Re-check if another thread created this peer manager while we were creating ours
-          if (peer_managers_.find(info_hash_str) == peer_managers_.end()) {
-            peer_managers_[info_hash_str] = peer_manager;
+          // Use insert() which returns pair<iterator, bool> for single lookup
+          auto [it, inserted] = peer_managers_.insert({info_hash_str, peer_manager});
+          if (inserted) {
             metadata_exchanges_[info_hash_str] = metadata_exchange;
             tracker_managers_[info_hash_str] = tracker_manager;
             should_register = true;

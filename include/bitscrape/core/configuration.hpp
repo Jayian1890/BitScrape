@@ -105,6 +105,15 @@ public:
     std::string get_string(const std::string& key, const std::string& default_value = "") const;
 
     /**
+     * @brief Get a path value from the configuration (expands ~)
+     *
+     * @param key Configuration key
+     * @param default_value Default value to return if key is not found
+     * @return std::string Expanded path
+     */
+    std::string get_path(const std::string& key, const std::string& default_value = "") const;
+
+    /**
      * @brief Set an integer value in the configuration
      *
      * @param key Configuration key

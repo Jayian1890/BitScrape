@@ -9,7 +9,7 @@ BitScrape is a high-performance BitTorrent DHT crawler and metadata scraper desi
 - **DHT Crawling**: Discover nodes and infohashes in the BitTorrent DHT network
 - **Metadata Acquisition**: Download and parse BitTorrent metadata from peers
 - **High Performance**: Handle thousands of concurrent connections efficiently
-- **Event-Driven Architecture**: Non-blocking operations using modern C++23 features
+- **Event-Driven Architecture**: Non-blocking operations using modern C++20 features
 - **Modular Design**: Independent components that can be used separately
 - **Cross-Platform**: Runs on macOS, Linux, and Windows
 
@@ -34,9 +34,9 @@ BitScrape follows a modular, event-driven architecture designed to handle high-t
                               │
 ┌─────────────────────────────────────────────────────────────────┐
 │                       Protocol Layer                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │ DHT         │  │ BitTorrent  │  │ Tracker     │              │
-│  └─────────────┘  └─────────────┘  └─────────────┘              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────┐ │
+│  │ DHT         │  │ BitTorrent  │  │ Tracker     │  │         │ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────┘ │
 └─────────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────────┐
@@ -56,40 +56,43 @@ Key architectural principles:
 
 ## Requirements
 
-- C++23 compatible compiler (GCC 11+, Clang 14+, or MSVC 19.29+)
-- make
+- C++20 compatible compiler (GCC 10+, Clang 11+, or MSVC 19.28+)
+- CMake (3.18+)
 
-## Building (Make-only)
+## Building (CMake)
 
-The repository ships Makefiles for modules and the CLI. Common tasks:
+The repository uses CMake as the primary build system. Common tasks:
 
 ```bash
+# Configure build directory (Debug or Release)
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug
+
 # Build everything (modules + apps)
-make
+cmake --build build --parallel
 
 # Build with debug flags (adds -g -O0)
-make DEBUG=1
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug && cmake --build build
 
-# Build a single module
-make -C modules/<module>
+# Build a single module (target name equals module library or target)
+cmake --build build --target <module>
 
 # Build the CLI app only
-make -C apps/cli
+cmake --build build --target bitscrape_cli
 
 # Clean
-make clean
+cmake --build build --target clean
 
 # Install
-make install PREFIX=/usr/local
+cmake --install build --prefix /usr/local
 
-# Run all module tests
-make test
+# Run all tests
+ctest --test-dir build
 
-# Run tests for one module
-make -C modules/<module> test
+# Run tests for one module (if module provides tests as a target)
+ctest --test-dir build -R <module>
 ```
 
-Tests use the vendored doctest header; no external GoogleTest/GMock or CMake toolchain is required.
+Tests use the vendored doctest header; no external GoogleTest/GMock is required.
 
 ## Usage
 
@@ -152,7 +155,7 @@ bitscrape/
 │   ├── core/                 # Core module tests
 │   └── doctest_main.cpp      # Shared test runner
 ├── scripts/                  # Utility scripts
-└── Makefile                  # Top-level Make entry point
+└── CMakeLists.txt            # Top-level CMake entry point
 ```
 
 ## Module Overview

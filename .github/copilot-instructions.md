@@ -27,7 +27,7 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
   - `apps/web`: Web UI (HTTP server, API handlers, WebSocket).
 
 ## Project conventions & patterns an agent should follow
-- **Language**: C++23 is required.
+- **Language**: C++20 is required.
 - **Build System**: **CMake** is the source of truth. Ensure `CMakeLists.txt` files are updated when adding files.
 - **Headers**: Always place public headers in `include/bitscrape/<module>/`.
 - **Implementation**: Use the Pimpl idiom (`class Impl`) in `.cpp` files to hide private details (e.g., `Controller::Impl` in `modules/core/src/controller.cpp`).

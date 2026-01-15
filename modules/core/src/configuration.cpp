@@ -723,6 +723,7 @@ private:
             {"bittorrent.download_timeout", "30"},
             {"tracker.announce_interval", "1800"},
             {"tracker.max_trackers", "20"},
+            {"tracker.default_trackers", "udp://tracker.opentrackr.org:1337/announce,udp://tracker.torrent.eu.org:451/announce"},
             {"log.level", "info"},
             {"log.file", (std::filesystem::path(base_dir) / "bitscrape.log").string()},
             {"log.max_size", "10485760"},

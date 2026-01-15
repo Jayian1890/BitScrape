@@ -1343,9 +1343,9 @@ public:
                           types::BeaconCategory::BITTORRENT);
 
             // Log file details for debugging
-            for (const auto &file : files) {
-              beacon_->debug("File: " + file.first + ", Size: " +
-                                 std::to_string(file.second) + " bytes",
+            for (const auto &[filename, size] : files) {
+              beacon_->debug("File: " + filename + ", Size: " +
+                                 std::to_string(size) + " bytes",
                              types::BeaconCategory::BITTORRENT);
             }
           } else {

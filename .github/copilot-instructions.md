@@ -7,7 +7,8 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
 - **Configure**: `cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug` (or `Release`).
 - **Build**: `cmake --build build` (parallel build: `cmake --build build -j$(nproc)`).
 - **Run CLI**: `./build/bin/bitscrape_cli --help`.
-- **Note on Tests**: The `tests` directory may not be present in the current workspace view; if available, standard CMake testing would be `ctest --test-dir build`.
+- **Run Tests**: `ctest --test-dir build --output-on-failure` (run all tests with detailed output on failure).
+- **Clean Build**: `rm -rf build && cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug` (start fresh if needed).
 
 ## Big picture (short)
 - **Architecture**: Modular, event-driven. Modules are static libraries, apps link them.
@@ -72,3 +73,37 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
 ## Integration points
 - **Database**: SQLite DB file defaults to `data/bitscrape.db` (created by `modules/storage`).
 - **Network**: Binds to ports (default 6881) for DHT/BitTorrent.
+
+## Testing
+- **Test Framework**: Uses CTest with CMake.
+- **Running Tests**: After building, run `ctest --test-dir build --output-on-failure`.
+- **Test Location**: Test files should be organized alongside module code or in dedicated test directories.
+- **Writing Tests**: Follow existing test patterns in the repository. Tests should be focused, fast, and independent.
+
+## Security best practices
+- **Never commit secrets**: API keys, passwords, or sensitive data should never be in source code.
+- **Input validation**: Always validate and sanitize user input, especially from network sources.
+- **Error handling**: Handle errors gracefully without exposing internal details.
+- **Dependencies**: Minimize external dependencies; when adding new dependencies, ensure they are from trusted sources.
+
+## Common pitfalls to avoid
+- **Don't modify generated files**: Files in `build/` are generated; changes should be made to source files.
+- **Thread safety**: Be careful with shared state; use proper locking mechanisms from `modules/lock`.
+- **Memory management**: Use smart pointers (`std::unique_ptr`, `std::shared_ptr`) over raw pointers.
+- **Async operations**: Always handle futures and async operations properly; don't let them dangle.
+- **Platform differences**: Test cross-platform changes on multiple OSes (Linux, macOS, Windows).
+
+## Code quality guidelines
+- **Keep functions small**: Each function should do one thing well.
+- **Avoid deep nesting**: Refactor deeply nested code into separate functions.
+- **Use RAII**: Resource Acquisition Is Initialization for all resource management.
+- **Const correctness**: Use `const` wherever applicable for parameters and methods.
+- **Error messages**: Provide clear, actionable error messages through the Beacon logging system.
+
+## When adding new features
+1. **Update CMakeLists.txt**: Add new source files to the appropriate module's `CMakeLists.txt`.
+2. **Public headers**: Place in `include/bitscrape/<module>/`, implementation in `modules/<module>/src/`.
+3. **Follow Pimpl**: Use the Pimpl idiom for implementation details.
+4. **Add tests**: Write tests for new functionality.
+5. **Update documentation**: Keep README.md and relevant docs in sync with code changes.
+6. **Event integration**: If the feature needs to communicate with other modules, use the event system.

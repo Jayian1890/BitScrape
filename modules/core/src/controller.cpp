@@ -1585,7 +1585,7 @@ public:
 Controller::Controller(const std::string &config_path)
     : impl_(std::make_unique<Impl>(config_path)) {}
 
-Controller::~Controller() {}
+Controller::~Controller() = default;
 
 bool Controller::initialize() { return impl_->initialize(); }
 

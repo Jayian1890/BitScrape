@@ -657,13 +657,13 @@ public:
       bool generate_test_hashes =
           config_->get_bool("crawler.generate_test_infohashes", false);
       if (generate_test_hashes && infohash_models.size() < 5) {
-        int num_to_generate = 5 - infohash_models.size();
+        std::size_t num_to_generate = 5 - infohash_models.size();
         beacon_->info("Generating " + std::to_string(num_to_generate) +
                           " random infohashes for testing "
                           "(crawler.generate_test_infohashes=true)",
                       types::BeaconCategory::GENERAL);
 
-        for (int i = 0; i < num_to_generate; i++) {
+        for (std::size_t i = 0; i < num_to_generate; i++) {
           // Generate random infohash
           std::random_device rd;
           std::mt19937 gen(rd());

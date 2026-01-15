@@ -288,7 +288,6 @@ const App = {
 
     async renderDashboard() {
         this.updateStats();
-        this.loadNodes();
     },
 
     async updateStats() {
@@ -335,25 +334,7 @@ const App = {
         }
     },
 
-    async loadNodes() {
-        const tbody = document.getElementById('nodes-tbody');
-        if (!tbody) return;
 
-        try {
-            const nodes = await API.getNodes(20);
-            tbody.innerHTML = nodes.map(n => `
-                <tr>
-                    <td><code>${n.ip}</code></td>
-                    <td>${n.port}</td>
-                    <td>${n.last_rtt_ms}ms</td>
-                    <td>${this.formatDate(n.last_seen)}</td>
-                    <td>${n.is_responsive ? '<span style="color:var(--google-green)">Yes</span>' : '<span style="color:var(--google-red)">No</span>'}</td>
-                </tr>
-            `).join('');
-        } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="5">Error: ${err.message}</td></tr>`;
-        }
-    },
 
 
 
@@ -371,7 +352,7 @@ const App = {
 
         // Load data based on which tab is active
         if (tabId === 'overview') {
-            this.loadNodes(); // Load quick overview nodes
+            // No extra data to load for overview now
         } else if (tabId === 'nodes') {
             this.loadNodesTab();
         } else if (tabId === 'hashes') {
@@ -499,7 +480,12 @@ const App = {
         setInterval(() => {
             if (this.state.currentView === 'dashboard') {
                 this.updateStats();
-                this.loadNodes();
+                const activeTab = document.querySelector('.sidebar-item.active');
+                if (activeTab) {
+                    const text = activeTab.textContent.toLowerCase();
+                    if (text.includes('nodes')) this.loadNodesTab();
+                    else if (text.includes('hashes')) this.loadHashesTab();
+                }
             } else {
                 this.updateStats(); // Keep status updated for the header
             }

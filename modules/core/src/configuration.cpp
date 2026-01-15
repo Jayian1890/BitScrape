@@ -344,8 +344,7 @@ public:
             lock_guard.reset();
             // Always rewrite on load so the file is pretty-printed and complete
             if (!save()) {
-                std::cerr << "Failed to save configuration after loading defaults" << std::endl;
-                return false;
+                std::cerr << "Warning: Failed to save configuration after loading defaults (may be read-only)" << std::endl;
             }
             return true;
         } catch (const lock::LockOperationException& e) {

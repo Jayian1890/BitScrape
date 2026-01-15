@@ -25,6 +25,7 @@
 #include <bitscrape/tracker/tracker_manager.hpp>
 
 // DHT module
+#include <bitscrape/dht/dht_events.hpp>
 #include <bitscrape/dht/dht_session.hpp>
 
 // Lock module
@@ -193,12 +194,136 @@ public:
       }
 
       is_running_ = true;
+      stop_discovery_threads_ = false;
+      start_peer_refresh_thread();
       beacon_->info("Controller started successfully");
       return true;
     } catch (const std::exception &e) {
       beacon_->error("Failed to start controller: {}",
                      types::BeaconCategory::GENERAL, e.what());
       return false;
+    }
+  }
+
+  void start_peer_refresh_thread() {
+    peer_refresh_thread_ = std::thread([this]() {
+      beacon_->info("Peer refresh thread started",
+                    types::BeaconCategory::GENERAL);
+
+      // Wait a bit after start before first refresh
+      for (int i = 0; i < 30 && !stop_discovery_threads_; ++i) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+      }
+
+      while (!stop_discovery_threads_) {
+        try {
+          refresh_peers();
+        } catch (const std::exception &e) {
+          beacon_->error("Error in peer refresh loop: " + std::string(e.what()));
+        }
+
+        // Sleep for 2 minutes or until stopped
+        for (int i = 0; i < 120 && !stop_discovery_threads_; ++i) {
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+      }
+
+      beacon_->info("Peer refresh thread stopping",
+                    types::BeaconCategory::GENERAL);
+    });
+  }
+
+  void refresh_peers() {
+    std::vector<types::InfoHash> hashes_to_refresh;
+
+    {
+      std::lock_guard<std::mutex> lock(maps_mutex_);
+      // Collect targets that need metadata
+      for (auto const &[hash_str, pm] : peer_managers_) {
+        auto hash = pm->info_hash();
+        auto metadata =
+            storage_manager_->query_interface()->get_metadata(hash);
+        if (!metadata) {
+          hashes_to_refresh.push_back(hash);
+        }
+      }
+    }
+
+    // Clean up finished futures
+    {
+      std::lock_guard<std::mutex> lock(maps_mutex_);
+      background_futures_.erase(
+          std::remove_if(background_futures_.begin(), background_futures_.end(),
+                         [](const std::future<void> &f) {
+                           return f.wait_for(std::chrono::seconds(0)) ==
+                                  std::future_status::ready;
+                         }),
+          background_futures_.end());
+    }
+
+    for (const auto &hash : hashes_to_refresh) {
+      beacon_->debug(
+          "Refreshing peers for infohash: " + hash.to_hex().substr(0, 8),
+          types::BeaconCategory::GENERAL);
+
+      // DHT lookup
+      if (dht_session_) {
+        auto dht_task = std::async(std::launch::async, [this, hash]() {
+          try {
+            dht_session_->find_peers(hash);
+          } catch (...) {
+          }
+        });
+        {
+          std::lock_guard<std::mutex> lock(maps_mutex_);
+          background_futures_.push_back(std::move(dht_task));
+        }
+      }
+
+      // Tracker announcement
+      std::string hash_str = hash.to_hex();
+      bool found_managers = false;
+      std::shared_ptr<tracker::TrackerManager> tm;
+      std::shared_ptr<bittorrent::PeerManager> pm;
+
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        if (tracker_managers_.count(hash_str) && peer_managers_.count(hash_str)) {
+          tm = tracker_managers_[hash_str];
+          pm = peer_managers_[hash_str];
+          found_managers = true;
+        }
+      }
+
+      if (found_managers) {
+        std::string peer_id_str(pm->peer_id().begin(), pm->peer_id().end());
+        uint16_t port =
+            static_cast<uint16_t>(config_->get_int("bittorrent.port", 6881));
+
+        // Trigger another announce to get more peers
+        auto future = tm->announce_async(peer_id_str, port, 0, 0, 0, "");
+        auto task = std::async(
+            std::launch::async,
+            [this, future = std::move(future), hash]() mutable {
+              try {
+                auto responses = future.get();
+                for (const auto &[url, response] : responses) {
+                  if (!response.has_error()) {
+                    for (const auto &peer : response.peers()) {
+                      event_bus_->publish(
+                          bittorrent::PeerDiscoveredEvent(hash, peer));
+                    }
+                  }
+                }
+              } catch (...) {
+              }
+            });
+        
+        {
+          std::lock_guard<std::mutex> lock(maps_mutex_);
+          background_futures_.push_back(std::move(task));
+        }
+      }
     }
   }
 
@@ -254,6 +379,11 @@ public:
     }
 
     try {
+      stop_discovery_threads_ = true;
+      if (peer_refresh_thread_.joinable()) {
+        peer_refresh_thread_.join();
+      }
+
       // Stop crawling if active
       if (is_crawling_) {
         lock_guard.reset(); // Release the lock before calling stop_crawling()
@@ -346,12 +476,13 @@ public:
 
       // Set up callback for passive infohash discovery
       dht_session_->set_infohash_callback([this](const types::InfoHash& infohash) {
-        // Store the discovered infohash in the database
-        if (storage_manager_) {
-          storage_manager_->store_infohash(infohash);
-          beacon_->info("Discovered infohash: " + infohash.to_hex().substr(0, 16) + "...",
-                       types::BeaconCategory::DHT);
-        }
+        // Create and dispatch a DHT_INFOHASH_FOUND event
+        dht::DHTInfoHashFoundEvent event(infohash);
+        event_bus_->publish(event);
+        
+        // Also log it directly for now (optional, duplicate of what handler does)
+        beacon_->info("Discovered infohash: " + infohash.to_hex().substr(0, 16) + "...",
+                     types::BeaconCategory::DHT);
       });
 
       // Get bootstrap nodes from configuration
@@ -698,20 +829,24 @@ public:
         beacon_->info("Stopping DHT crawling", types::BeaconCategory::DHT);
         // No specific action needed here, just logging
       }
-
       // Stop all active peer managers to stop metadata downloading
       beacon_->info("Stopping " + std::to_string(peer_managers_.size()) +
                         " active peer managers",
                     types::BeaconCategory::BITTORRENT);
 
-      for (const auto &[info_hash, peer_manager] : peer_managers_) {
-        try {
-          peer_manager->stop();
-        } catch (const std::exception &e) {
-          beacon_->warning("Failed to stop peer manager for infohash " +
-                               info_hash + ": " + e.what(),
-                           types::BeaconCategory::BITTORRENT);
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        for (const auto &[info_hash, peer_manager] : peer_managers_) {
+          try {
+            peer_manager->stop();
+          } catch (const std::exception &e) {
+            beacon_->warning("Failed to stop peer manager for infohash " +
+                                 info_hash + ": " + e.what(),
+                             types::BeaconCategory::BITTORRENT);
+          }
         }
+        peer_managers_.clear();
+        metadata_exchanges_.clear();
       }
 
       // Cancel any pending tracker announcements
@@ -719,24 +854,28 @@ public:
                         " active tracker managers",
                     types::BeaconCategory::TRACKER);
 
-      for (const auto &[info_hash, tracker_manager] : tracker_managers_) {
-        try {
-          // Send a stopped announce to all trackers
-          std::string peer_id_str(20, '0');
-          uint16_t port =
-              static_cast<uint16_t>(config_->get_int("bittorrent.port", 6881));
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        for (const auto &[info_hash, tracker_manager] : tracker_managers_) {
+          try {
+            // Send a stopped announce to all trackers
+            std::string peer_id_str(20, '0');
+            uint16_t port =
+                static_cast<uint16_t>(config_->get_int("bittorrent.port", 6881));
 
-          tracker_manager->announce_async(peer_id_str, port,
-                                          0, // uploaded
-                                          0, // downloaded
-                                          0, // left
-                                          "stopped");
-        } catch (const std::exception &e) {
-          beacon_->warning(
-              "Failed to cancel tracker announcements for infohash " +
-                  info_hash + ": " + e.what(),
-              types::BeaconCategory::TRACKER);
+            tracker_manager->announce_async(peer_id_str, port,
+                                            0, // uploaded
+                                            0, // downloaded
+                                            0, // left
+                                            "stopped");
+          } catch (const std::exception &e) {
+            beacon_->warning(
+                "Failed to cancel tracker announcements for infohash " +
+                    info_hash + ": " + e.what(),
+                types::BeaconCategory::TRACKER);
+          }
         }
+        tracker_managers_.clear();
       }
 
       beacon_->info("Crawling stopped successfully");
@@ -783,28 +922,34 @@ public:
     }
 
     // Add BitTorrent statistics
-    stats["bittorrent.peer_manager_count"] =
-        std::to_string(peer_managers_.size());
-    stats["bittorrent.metadata_exchange_count"] =
-        std::to_string(metadata_exchanges_.size());
+    {
+      std::lock_guard<std::mutex> lock(maps_mutex_);
+      stats["bittorrent.peer_manager_count"] =
+          std::to_string(peer_managers_.size());
+      stats["bittorrent.metadata_exchange_count"] =
+          std::to_string(metadata_exchanges_.size());
 
-    // Count total connected peers across all peer managers
-    size_t total_connected_peers = 0;
-    for (const auto &[info_hash, peer_manager] : peer_managers_) {
-      total_connected_peers += peer_manager->connected_peers().size();
+      // Count total connected peers across all peer managers
+      size_t total_connected_peers = 0;
+      for (const auto &[info_hash, peer_manager] : peer_managers_) {
+        total_connected_peers += peer_manager->connected_peers().size();
+      }
+      stats["bittorrent.connected_peer_count"] =
+          std::to_string(total_connected_peers);
     }
-    stats["bittorrent.connected_peer_count"] =
-        std::to_string(total_connected_peers);
 
     // Add Tracker statistics
-    stats["tracker.manager_count"] = std::to_string(tracker_managers_.size());
+    {
+      std::lock_guard<std::mutex> lock(maps_mutex_);
+      stats["tracker.manager_count"] = std::to_string(tracker_managers_.size());
 
-    // Count total trackers across all tracker managers
-    size_t total_trackers = 0;
-    for (const auto &[info_hash, tracker_manager] : tracker_managers_) {
-      total_trackers += tracker_manager->tracker_urls().size();
+      // Count total trackers across all tracker managers
+      size_t total_trackers = 0;
+      for (const auto &[info_hash, tracker_manager] : tracker_managers_) {
+        total_trackers += tracker_manager->tracker_urls().size();
+      }
+      stats["tracker.url_count"] = std::to_string(total_trackers);
     }
-    stats["tracker.url_count"] = std::to_string(total_trackers);
 
     return stats;
   }
@@ -994,26 +1139,29 @@ public:
     try {
       // For DHT_INFOHASH_FOUND events, we expect the event to contain infohash
       // information in its data field, which we need to extract
-      beacon_->debug("DHT infohash discovered event received",
+      beacon_->debug("DHT infohash found event received",
                      types::BeaconCategory::DHT);
 
-      // In a real implementation, we would extract the infohash from the event
-      // For now, we'll generate a random infohash for testing
-      std::random_device rd;
-      std::mt19937 gen(rd());
-      std::uniform_int_distribution<uint8_t> dist(0, 255);
+      const types::InfoHash* info_hash_ptr = nullptr;
 
-      std::vector<uint8_t> hash_bytes(20);
-      for (auto &byte : hash_bytes) {
-        byte = dist(gen);
+      // Try to cast the event to a more specific type
+      if (auto *dht_event =
+              dynamic_cast<const dht::DHTInfoHashFoundEvent *>(&event)) {
+        info_hash_ptr = &dht_event->info_hash();
       }
 
-      types::InfoHash info_hash(hash_bytes);
+      if (!info_hash_ptr) {
+        beacon_->error("Received DHT_INFOHASH_FOUND event with unknown format",
+                       types::BeaconCategory::DHT);
+        return;
+      }
+
+      const types::InfoHash &info_hash = *info_hash_ptr;
 
       // Store the infohash in the database
       storage_manager_->store_infohash(info_hash);
 
-      beacon_->info("Stored DHT infohash: " + info_hash.to_hex().substr(0, 16) +
+      beacon_->info("Stored discovered DHT infohash: " + info_hash.to_hex().substr(0, 16) +
                         "...",
                     types::BeaconCategory::DHT);
 
@@ -1033,8 +1181,11 @@ public:
     try {
       // Check if we already have a peer manager for this infohash
       std::string info_hash_str = info_hash.to_hex();
-      if (peer_managers_.find(info_hash_str) != peer_managers_.end()) {
-        return; // Already have a peer manager for this infohash
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        if (peer_managers_.find(info_hash_str) != peer_managers_.end()) {
+          return; // Already have a peer manager for this infohash
+        }
       }
 
       // Generate a random peer ID
@@ -1055,7 +1206,10 @@ public:
       // Start the peer manager
       if (peer_manager->start()) {
         // Add the peer manager to our map
-        peer_managers_[info_hash_str] = peer_manager;
+        {
+          std::lock_guard<std::mutex> lock(maps_mutex_);
+          peer_managers_[info_hash_str] = peer_manager;
+        }
 
         // Create a metadata exchange for this infohash
         auto metadata_exchange = std::make_shared<bittorrent::MetadataExchange>(
@@ -1063,7 +1217,10 @@ public:
         metadata_exchange->initialize();
 
         // Add the metadata exchange to our map
-        metadata_exchanges_[info_hash_str] = metadata_exchange;
+        {
+          std::lock_guard<std::mutex> lock(maps_mutex_);
+          metadata_exchanges_[info_hash_str] = metadata_exchange;
+        }
 
         // Add the peer manager and metadata exchange to the BitTorrent event
         // processor
@@ -1088,7 +1245,10 @@ public:
         tracker_manager->set_request_timeout(request_timeout);
 
         // Add the tracker manager to our map
-        tracker_managers_[info_hash_str] = tracker_manager;
+        {
+          std::lock_guard<std::mutex> lock(maps_mutex_);
+          tracker_managers_[info_hash_str] = tracker_manager;
+        }
 
         beacon_->info("Created peer manager, metadata exchange, and tracker "
                       "manager for infohash: " +
@@ -1119,11 +1279,29 @@ public:
         uint16_t port =
             static_cast<uint16_t>(config_->get_int("bittorrent.port", 6881));
 
-        tracker_manager->announce_async(peer_id_str, port,
+        auto future = tracker_manager->announce_async(peer_id_str, port,
                                         0, // uploaded
                                         0, // downloaded
                                         0, // left
                                         "started");
+
+        // Process tracker responses asynchronously
+        std::thread([this, future = std::move(future), info_hash]() mutable {
+          try {
+            auto responses = future.get();
+            for (const auto &[url, response] : responses) {
+              if (!response.has_error()) {
+                for (const auto &peer : response.peers()) {
+                  // Emit PeerDiscoveredEvent
+                  event_bus_->publish(
+                      bittorrent::PeerDiscoveredEvent(info_hash, peer));
+                }
+              }
+            }
+          } catch (...) {
+            // Ignore errors in background processing
+          }
+        }).detach();
       } else {
         beacon_->error("Failed to start peer manager for infohash: " +
                            info_hash.to_hex(),
@@ -1197,10 +1375,17 @@ public:
           // If we have tracker URLs in the torrent_info, add them to the
           // tracker manager
           std::string info_hash_str = info_hash.to_hex();
-          if (tracker_managers_.find(info_hash_str) !=
-              tracker_managers_.end()) {
-            auto &tracker_manager = tracker_managers_[info_hash_str];
+          std::shared_ptr<tracker::TrackerManager> tracker_manager;
+          
+          {
+            std::lock_guard<std::mutex> lock(maps_mutex_);
+            if (tracker_managers_.find(info_hash_str) !=
+                tracker_managers_.end()) {
+              tracker_manager = tracker_managers_[info_hash_str];
+            }
+          }
 
+          if (tracker_manager) {
             // Add the main announce URL if available
             if (!torrent_info.announce().empty()) {
               tracker_manager->add_tracker(torrent_info.announce());
@@ -1369,6 +1554,10 @@ public:
   std::shared_ptr<beacon::Beacon> beacon_;
   bool is_running_;
   bool is_crawling_;
+  std::atomic<bool> stop_discovery_threads_;
+  std::thread peer_refresh_thread_;
+  mutable std::mutex maps_mutex_;
+  std::vector<std::future<void>> background_futures_;
   uint64_t
       controller_state_resource_id_; // Resource ID for the controller state
 

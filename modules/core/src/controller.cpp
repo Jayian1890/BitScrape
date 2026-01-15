@@ -958,8 +958,8 @@ public:
     std::vector<Controller::SanityCheckResult> checks;
     checks.reserve(8);
 
-    auto add = [&](std::string module, bool ok, std::string message) {
-      checks.emplace_back(std::move(module), ok, std::move(message));
+    auto add = [&](std::string module_name, bool ok, std::string message) {
+      checks.emplace_back(std::move(module_name), ok, std::move(message));
     };
 
     auto lock_manager = lock::LockManagerSingleton::instance();

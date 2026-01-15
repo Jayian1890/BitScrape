@@ -389,24 +389,41 @@ public:
         try
         {
             auto format_scalar = [](const std::string& value) {
-                // Try integer
-                try {
-                    (void)std::stoi(value);
-                    return value;
-                } catch (const std::exception&) {
-                    // Booleans
-                    if (value == "1" || value == "true" || value == "yes") {
-                        return std::string("true");
-                    }
-                    if (value == "0" || value == "false" || value == "no") {
-                        return std::string("false");
-                    }
-                    if (value.empty()) {
-                        return std::string("null");
-                    }
-                    // String
-                    return std::string("\"") + value + "\"";
+                if (value.empty()) {
+                    return std::string("null");
                 }
+
+                // Booleans
+                if (value == "true" || value == "yes") {
+                    return std::string("true");
+                }
+                if (value == "false" || value == "no") {
+                    return std::string("false");
+                }
+
+                // Strictly numeric check (integer)
+                bool is_numeric = !value.empty();
+                size_t start = (value[0] == '-') ? 1 : 0;
+                if (start == value.size()) is_numeric = false;
+                for (size_t i = start; i < value.size(); ++i) {
+                    if (!std::isdigit(static_cast<unsigned char>(value[i]))) {
+                        is_numeric = false;
+                        break;
+                    }
+                }
+
+                if (is_numeric) {
+                    // One final check: if it was a boolean "1" or "0" in the map, 
+                    // it might have come from a bool setter. But we actually store 
+                    // booleans as "1" or "0" string representations.
+                    // To stay consistent with JSON bools:
+                    if (value == "1") return std::string("true");
+                    if (value == "0") return std::string("false");
+                    return value;
+                }
+
+                // Everything else is a string and needs quotes
+                return std::string("\"") + value + "\"";
             };
 
             auto format_array = [&](const std::string& value, const std::string& indent) {
@@ -706,13 +723,15 @@ private:
             {"bittorrent.download_timeout", "30"},
             {"tracker.announce_interval", "1800"},
             {"tracker.max_trackers", "20"},
+            {"tracker.default_trackers", "udp://tracker.opentrackr.org:1337/announce,udp://tracker.torrent.eu.org:451/announce"},
             {"log.level", "info"},
             {"log.file", (std::filesystem::path(base_dir) / "bitscrape.log").string()},
             {"log.max_size", "10485760"},
             {"log.max_files", "5"},
             {"web.auto_start", "true"},
             {"web.port", "8080"},
-            {"web.static_dir", "public"}
+            {"web.static_dir", "public"},
+            {"crawler.random_discovery", "true"}
         };
 
         for (const auto& [key, value] : defaults) {
@@ -758,6 +777,27 @@ private:
 
 Configuration::Configuration(const std::string& config_path)
     : impl_(std::make_unique<Impl>(config_path)) {
+}
+
+std::string expand_path(const std::string& path) {
+    if (path.empty() || path[0] != '~') {
+        return path;
+    }
+
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        return path;
+    }
+
+    if (path.size() == 1) {
+        return home;
+    }
+
+    if (path[1] == '/' || path[1] == '\\') {
+        return std::string(home) + path.substr(1);
+    }
+
+    return path;
 }
 
 std::string Configuration::get_default_base_dir() {
@@ -807,6 +847,10 @@ void Configuration::set_string(const std::string& key, const std::string& value)
 
 std::string Configuration::get_string(const std::string& key, const std::string& default_value) const {
     return impl_->get_string(key, default_value);
+}
+
+std::string Configuration::get_path(const std::string& key, const std::string& default_value) const {
+    return expand_path(get_string(key, default_value));
 }
 
 void Configuration::set_int(const std::string& key, int value) {

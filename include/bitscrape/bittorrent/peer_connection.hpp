@@ -1,13 +1,10 @@
 #pragma once
 
-#include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 #include <future>
 #include <mutex>
 #include <atomic>
-#include <functional>
 
 #include "bitscrape/network/tcp_socket.hpp"
 #include "bitscrape/types/info_hash.hpp"

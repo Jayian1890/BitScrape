@@ -88,7 +88,7 @@ Goal: make an AI coding agent productive quickly by documenting the project shap
 
 ## Common pitfalls to avoid
 - **Don't modify generated files**: Files in `build/` are generated; changes should be made to source files.
-- **Thread safety**: Be careful with shared state; use proper locking mechanisms from `modules/lock`.
+- **Thread safety**: Be careful with shared state; use proper locking mechanisms from `modules/lock` (e.g., `LockManager`, `LockGuard` for resource-based locking).
 - **Memory management**: Use smart pointers (`std::unique_ptr`, `std::shared_ptr`) over raw pointers.
 - **Async operations**: Always handle futures and async operations properly; don't let them dangle.
 - **Platform differences**: Test cross-platform changes on multiple OSes (Linux, macOS, Windows).

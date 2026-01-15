@@ -76,6 +76,14 @@ public:
   void set_metadata_received_callback(
       std::function<void(const types::MetadataInfo &)> callback);
 
+  /**
+   * @brief Re-request missing metadata pieces from a peer
+   *
+   * @param address Peer address
+   * @return True if any requests were sent, false otherwise
+   */
+  bool re_request_missing_pieces(const network::Address &address);
+
 private:
   /**
    * @brief Handle an extended handshake message
@@ -152,6 +160,8 @@ private:
       peer_metadata_size_; ///< Metadata size reported by peers
   std::unordered_map<int, std::vector<uint8_t>>
       metadata_pieces_;             ///< Received metadata pieces
+  std::unordered_map<int, bool>
+      requested_pieces_;            ///< Track pieces currently being requested
   mutable std::mutex pieces_mutex_; ///< Mutex for pieces map
 
   std::function<void(const types::MetadataInfo &)>
@@ -159,6 +169,7 @@ private:
   mutable std::mutex callback_mutex_; ///< Mutex for callback
 
   std::atomic<int> ut_metadata_id_; ///< ut_metadata extension ID
+  std::atomic<int> metadata_size_;  ///< Total metadata size once confirmed
 };
 
 } // namespace bitscrape::bittorrent

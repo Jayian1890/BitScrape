@@ -25,6 +25,7 @@
 #include <bitscrape/tracker/tracker_manager.hpp>
 
 // DHT module
+#include <bitscrape/dht/dht_events.hpp>
 #include <bitscrape/dht/dht_session.hpp>
 
 // Lock module
@@ -194,12 +195,136 @@ public:
       }
 
       is_running_ = true;
+      stop_discovery_threads_ = false;
+      start_peer_refresh_thread();
       beacon_->info("Controller started successfully");
       return true;
     } catch (const std::exception &e) {
       beacon_->error("Failed to start controller: {}",
                      types::BeaconCategory::GENERAL, e.what());
       return false;
+    }
+  }
+
+  void start_peer_refresh_thread() {
+    peer_refresh_thread_ = std::thread([this]() {
+      beacon_->info("Peer refresh thread started",
+                    types::BeaconCategory::GENERAL);
+
+      // Wait a bit after start before first refresh
+      for (int i = 0; i < 30 && !stop_discovery_threads_; ++i) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+      }
+
+      while (!stop_discovery_threads_) {
+        try {
+          refresh_peers();
+        } catch (const std::exception &e) {
+          beacon_->error("Error in peer refresh loop: " + std::string(e.what()));
+        }
+
+        // Sleep for 2 minutes or until stopped
+        for (int i = 0; i < 120 && !stop_discovery_threads_; ++i) {
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+      }
+
+      beacon_->info("Peer refresh thread stopping",
+                    types::BeaconCategory::GENERAL);
+    });
+  }
+
+  void refresh_peers() {
+    std::vector<types::InfoHash> hashes_to_refresh;
+
+    {
+      std::lock_guard<std::mutex> lock(maps_mutex_);
+      // Collect targets that need metadata
+      for (auto const &[hash_str, pm] : peer_managers_) {
+        auto hash = pm->info_hash();
+        auto metadata =
+            storage_manager_->query_interface()->get_metadata(hash);
+        if (!metadata) {
+          hashes_to_refresh.push_back(hash);
+        }
+      }
+    }
+
+    // Clean up finished futures
+    {
+      std::lock_guard<std::mutex> lock(maps_mutex_);
+      background_futures_.erase(
+          std::remove_if(background_futures_.begin(), background_futures_.end(),
+                         [](const std::future<void> &f) {
+                           return f.wait_for(std::chrono::seconds(0)) ==
+                                  std::future_status::ready;
+                         }),
+          background_futures_.end());
+    }
+
+    for (const auto &hash : hashes_to_refresh) {
+      beacon_->debug(
+          "Refreshing peers for infohash: " + hash.to_hex().substr(0, 8),
+          types::BeaconCategory::GENERAL);
+
+      // DHT lookup
+      if (dht_session_) {
+        auto dht_task = std::async(std::launch::async, [this, hash]() {
+          try {
+            dht_session_->find_peers(hash);
+          } catch (...) {
+          }
+        });
+        {
+          std::lock_guard<std::mutex> lock(maps_mutex_);
+          background_futures_.push_back(std::move(dht_task));
+        }
+      }
+
+      // Tracker announcement
+      std::string hash_str = hash.to_hex();
+      bool found_managers = false;
+      std::shared_ptr<tracker::TrackerManager> tm;
+      std::shared_ptr<bittorrent::PeerManager> pm;
+
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        if (tracker_managers_.count(hash_str) && peer_managers_.count(hash_str)) {
+          tm = tracker_managers_[hash_str];
+          pm = peer_managers_[hash_str];
+          found_managers = true;
+        }
+      }
+
+      if (found_managers) {
+        std::string peer_id_str(pm->peer_id().begin(), pm->peer_id().end());
+        uint16_t port =
+            static_cast<uint16_t>(config_->get_int("bittorrent.port", 6881));
+
+        // Trigger another announce to get more peers
+        auto future = tm->announce_async(peer_id_str, port, 0, 0, 0, "");
+        auto task = std::async(
+            std::launch::async,
+            [this, future = std::move(future), hash]() mutable {
+              try {
+                auto responses = future.get();
+                for (const auto &[url, response] : responses) {
+                  if (!response.has_error()) {
+                    for (const auto &peer : response.peers()) {
+                      event_bus_->publish(
+                          bittorrent::PeerDiscoveredEvent(hash, peer));
+                    }
+                  }
+                }
+              } catch (...) {
+              }
+            });
+        
+        {
+          std::lock_guard<std::mutex> lock(maps_mutex_);
+          background_futures_.push_back(std::move(task));
+        }
+      }
     }
   }
 
@@ -255,6 +380,11 @@ public:
     }
 
     try {
+      stop_discovery_threads_ = true;
+      if (peer_refresh_thread_.joinable()) {
+        peer_refresh_thread_.join();
+      }
+
       // Stop crawling if active
       if (is_crawling_) {
         lock_guard.reset(); // Release the lock before calling stop_crawling()
@@ -353,12 +483,13 @@ public:
 
       // Set up callback for passive infohash discovery
       dht_session_->set_infohash_callback([this](const types::InfoHash& infohash) {
-        // Store the discovered infohash in the database
-        if (storage_manager_) {
-          storage_manager_->store_infohash(infohash);
-          beacon_->info("Discovered infohash: " + infohash.to_hex().substr(0, 16) + "...",
-                       types::BeaconCategory::DHT);
-        }
+        // Create and dispatch a DHT_INFOHASH_FOUND event
+        dht::DHTInfoHashFoundEvent event(infohash);
+        event_bus_->publish(event);
+        
+        // Also log it directly for now (optional, duplicate of what handler does)
+        beacon_->info("Discovered infohash: " + infohash.to_hex().substr(0, 16) + "...",
+                     types::BeaconCategory::DHT);
       });
 
       // Get bootstrap nodes from configuration
@@ -705,7 +836,6 @@ public:
         beacon_->info("Stopping DHT crawling", types::BeaconCategory::DHT);
         // No specific action needed here, just logging
       }
-
       // Stop all active peer managers to stop metadata downloading
       // Copy the maps to avoid holding the lock while calling stop() on managers
       std::unordered_map<std::string, std::shared_ptr<bittorrent::PeerManager>> peer_managers_copy;
@@ -728,6 +858,8 @@ public:
                                info_hash + ": " + e.what(),
                            types::BeaconCategory::BITTORRENT);
         }
+        peer_managers_.clear();
+        metadata_exchanges_.clear();
       }
 
       // Cancel any pending tracker announcements
@@ -753,6 +885,7 @@ public:
                   info_hash + ": " + e.what(),
               types::BeaconCategory::TRACKER);
         }
+        tracker_managers_.clear();
       }
 
       beacon_->info("Crawling stopped successfully");
@@ -824,8 +957,6 @@ public:
     for (const auto &[info_hash, peer_manager] : peer_managers_copy) {
       total_connected_peers += peer_manager->connected_peers().size();
     }
-    stats["bittorrent.connected_peer_count"] =
-        std::to_string(total_connected_peers);
 
     // Add Tracker statistics
     stats["tracker.manager_count"] = std::to_string(tracker_manager_count);
@@ -835,7 +966,6 @@ public:
     for (const auto &[info_hash, tracker_manager] : tracker_managers_copy) {
       total_trackers += tracker_manager->tracker_urls().size();
     }
-    stats["tracker.url_count"] = std::to_string(total_trackers);
 
     return stats;
   }
@@ -1035,26 +1165,29 @@ public:
     try {
       // For DHT_INFOHASH_FOUND events, we expect the event to contain infohash
       // information in its data field, which we need to extract
-      beacon_->debug("DHT infohash discovered event received",
+      beacon_->debug("DHT infohash found event received",
                      types::BeaconCategory::DHT);
 
-      // In a real implementation, we would extract the infohash from the event
-      // For now, we'll generate a random infohash for testing
-      std::random_device rd;
-      std::mt19937 gen(rd());
-      std::uniform_int_distribution<uint8_t> dist(0, 255);
+      const types::InfoHash* info_hash_ptr = nullptr;
 
-      std::vector<uint8_t> hash_bytes(20);
-      for (auto &byte : hash_bytes) {
-        byte = dist(gen);
+      // Try to cast the event to a more specific type
+      if (auto *dht_event =
+              dynamic_cast<const dht::DHTInfoHashFoundEvent *>(&event)) {
+        info_hash_ptr = &dht_event->info_hash();
       }
 
-      types::InfoHash info_hash(hash_bytes);
+      if (!info_hash_ptr) {
+        beacon_->error("Received DHT_INFOHASH_FOUND event with unknown format",
+                       types::BeaconCategory::DHT);
+        return;
+      }
+
+      const types::InfoHash &info_hash = *info_hash_ptr;
 
       // Store the infohash in the database
       storage_manager_->store_infohash(info_hash);
 
-      beacon_->info("Stored DHT infohash: " + info_hash.to_hex().substr(0, 16) +
+      beacon_->info("Stored discovered DHT infohash: " + info_hash.to_hex().substr(0, 16) +
                         "...",
                     types::BeaconCategory::DHT);
 
@@ -1426,6 +1559,10 @@ public:
   std::shared_ptr<beacon::Beacon> beacon_;
   bool is_running_;
   bool is_crawling_;
+  std::atomic<bool> stop_discovery_threads_;
+  std::thread peer_refresh_thread_;
+  mutable std::mutex maps_mutex_;
+  std::vector<std::future<void>> background_futures_;
   uint64_t
       controller_state_resource_id_; // Resource ID for the controller state
 

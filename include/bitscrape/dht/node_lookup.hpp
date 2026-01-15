@@ -9,6 +9,7 @@
 #include <atomic>
 #include <condition_variable>
 
+#include "bitscrape/types/info_hash.hpp"
 #include "bitscrape/types/node_id.hpp"
 #include "bitscrape/types/dht_node.hpp"
 #include "bitscrape/dht/routing_table.hpp"
@@ -45,6 +46,14 @@ public:
     static constexpr int MAX_TIMEOUTS = 2;
 
     /**
+     * @brief Type of query to send during lookup
+     */
+    enum class QueryType {
+        FIND_NODE,
+        GET_PEERS
+    };
+
+    /**
      * @brief Create a node lookup with the specified parameters
      *
      * @param local_id Local node ID
@@ -52,6 +61,7 @@ public:
      * @param routing_table Routing table to use for initial nodes
      * @param socket UDP socket for sending and receiving messages
      * @param message_factory Factory for creating DHT messages
+     * @param query_type Type of query to send (find_node or get_peers)
      */
     NodeLookup(const types::NodeID& local_id,
                const types::NodeID& target_id,
@@ -59,7 +69,15 @@ public:
                network::UDPSocket& socket,
                DHTMessageFactory& message_factory,
                DHTSession& session,
+               QueryType query_type = QueryType::FIND_NODE,
                std::shared_ptr<lock::LockManager> lock_manager = lock::LockManagerSingleton::instance());
+
+    /**
+     * @brief Set the callback for discovered peers
+     *
+     * @param callback Callback function
+     */
+    void set_peer_callback(std::function<void(const types::InfoHash&, const types::Endpoint&)> callback);
 
     /**
      * @brief Destructor
@@ -215,6 +233,9 @@ private:
     network::UDPSocket& socket_;                  ///< UDP socket for sending and receiving messages
     DHTMessageFactory& message_factory_;          ///< Factory for creating DHT messages
     DHTSession& session_;                         ///< Reference to the DHT session
+
+    QueryType query_type_;                        ///< Type of query to send
+    std::function<void(const types::InfoHash&, const types::Endpoint&)> on_peer_discovered_; ///< Callback for discovered peers
 
     std::vector<NodeEntry> nodes_;                ///< Nodes in the lookup process
     std::atomic<size_t> active_queries_;          ///< Number of active queries

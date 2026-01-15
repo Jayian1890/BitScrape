@@ -13,6 +13,7 @@ NodeLookup::NodeLookup(const types::NodeID& local_id,
                        network::UDPSocket& socket,
                        DHTMessageFactory& message_factory,
                        DHTSession& session,
+                       QueryType query_type,
                        std::shared_ptr<lock::LockManager> lock_manager)
     : local_id_(local_id),
       target_id_(target_id),
@@ -20,10 +21,15 @@ NodeLookup::NodeLookup(const types::NodeID& local_id,
       socket_(socket),
       message_factory_(message_factory),
       session_(session),
+      query_type_(query_type),
       active_queries_(0),
       complete_(false),
       lock_manager_(lock_manager),
       resource_id_(lock_manager->register_resource(get_resource_name(), lock::LockManager::LockPriority::NORMAL)) {
+}
+
+void NodeLookup::set_peer_callback(std::function<void(const types::InfoHash&, const types::Endpoint&)> callback) {
+    on_peer_discovered_ = std::move(callback);
 }
 
 std::string NodeLookup::get_resource_name() const {
@@ -89,6 +95,23 @@ void NodeLookup::process_response(const std::shared_ptr<DHTMessage>& response, c
         if (find_node_response) {
             // Get the nodes from the response
             new_nodes = find_node_response->nodes();
+        } else {
+            // Also check for get_peers response
+            auto get_peers_response = std::dynamic_pointer_cast<DHTGetPeersMessage>(response);
+            if (get_peers_response) {
+                // Get the nodes from the response
+                new_nodes = get_peers_response->nodes();
+                
+                // Extract peers
+                auto peers = get_peers_response->values();
+                if (!peers.empty() && on_peer_discovered_) {
+                    // target_id_ is the infohash for get_peers
+                    types::InfoHash info_hash(std::vector<uint8_t>(target_id_.bytes().begin(), target_id_.bytes().end()));
+                    for (const auto& peer : peers) {
+                        on_peer_discovered_(info_hash, peer);
+                    }
+                }
+            }
         }
 
         // Add the new nodes to the lookup process
@@ -162,9 +185,17 @@ bool NodeLookup::send_query(const types::DHTNode& node) {
     });
 
     if (it != nodes_.end() && it->state == NodeState::UNKNOWN) {
-        // Create a find_node message
+        // Create a transaction ID
         auto transaction_id = DHTMessageFactory::generate_transaction_id();
-        auto message = message_factory_.create_find_node(transaction_id, local_id_, target_id_);
+        
+        // Create the message based on the query type
+        std::shared_ptr<DHTMessage> message;
+        if (query_type_ == QueryType::GET_PEERS) {
+            types::InfoHash info_hash(std::vector<uint8_t>(target_id_.bytes().begin(), target_id_.bytes().end()));
+            message = message_factory_.create_get_peers(transaction_id, local_id_, info_hash);
+        } else {
+            message = message_factory_.create_find_node(transaction_id, local_id_, target_id_);
+        }
 
         // Encode the message
         auto data = message->encode();

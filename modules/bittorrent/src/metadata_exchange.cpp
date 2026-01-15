@@ -8,7 +8,7 @@
 namespace bitscrape::bittorrent {
 
 MetadataExchange::MetadataExchange(PeerWireProtocol &protocol)
-    : protocol_(protocol), ut_metadata_id_(0) {}
+    : protocol_(protocol), ut_metadata_id_(0), metadata_size_(0) {}
 
 MetadataExchange::~MetadataExchange() = default;
 
@@ -91,15 +91,25 @@ void MetadataExchange::handle_extended_handshake(
   if (metadata_size != nullptr && metadata_size->is_integer()) {
     // Store the metadata size for this peer
     std::string address_str = address.to_string();
-    peer_metadata_size_[address_str] =
-        static_cast<int>(metadata_size->as_integer());
+    int size = static_cast<int>(metadata_size->as_integer());
+    peer_metadata_size_[address_str] = size;
+
+    // Use the first size we get, or the largest one
+    if (metadata_size_ == 0) {
+      metadata_size_ = size;
+    }
 
     // Request metadata pieces
-    int size = peer_metadata_size_[address_str];
-    int num_pieces = (size + 16383) / 16384; // 16 KiB pieces
-
+    int num_pieces = (metadata_size_ + 16383) / 16384; // 16 KiB pieces
+    
+    std::lock_guard<std::mutex> pieces_lock(pieces_mutex_);
     for (int i = 0; i < num_pieces; ++i) {
-      send_metadata_request(address, i);
+      // Only request if we don't have it and it's not already being requested
+      if (metadata_pieces_.find(i) == metadata_pieces_.end() && !requested_pieces_[i]) {
+        if (send_metadata_request(address, i)) {
+          requested_pieces_[i] = true;
+        }
+      }
     }
   }
 }
@@ -127,6 +137,11 @@ void MetadataExchange::handle_metadata_message(
   }
 
   int piece_index = static_cast<int>(piece->as_integer());
+
+  {
+    std::lock_guard<std::mutex> lock(pieces_mutex_);
+    requested_pieces_[piece_index] = false;
+  }
 
   // Handle message based on type
   switch (type) {
@@ -469,6 +484,27 @@ bool MetadataExchange::process_metadata_pieces() {
   }
 
   return true;
+}
+
+bool MetadataExchange::re_request_missing_pieces(const network::Address &address) {
+  if (ut_metadata_id_ == 0 || metadata_size_ == 0) {
+    return false;
+  }
+
+  int num_pieces = (metadata_size_ + 16383) / 16384;
+  bool sent_any = false;
+
+  std::lock_guard<std::mutex> lock(pieces_mutex_);
+  for (int i = 0; i < num_pieces; ++i) {
+    if (metadata_pieces_.find(i) == metadata_pieces_.end() && !requested_pieces_[i]) {
+      if (send_metadata_request(address, i)) {
+        requested_pieces_[i] = true;
+        sent_any = true;
+      }
+    }
+  }
+
+  return sent_any;
 }
 
 } // namespace bitscrape::bittorrent

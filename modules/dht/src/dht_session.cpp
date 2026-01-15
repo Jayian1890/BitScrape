@@ -1,4 +1,5 @@
 #include "bitscrape/dht/dht_session.hpp"
+#include "bitscrape/bittorrent/bittorrent_event_processor.hpp"
 
 #include <future>
 #include <sstream>
@@ -154,7 +155,7 @@ std::vector<types::DHTNode>
 DHTSession::find_nodes(const types::NodeID &target_id) {
   // Create a node lookup
   auto lookup = std::make_shared<NodeLookup>(node_id_, target_id, *routing_table_, *socket_,
-                    *message_factory_, *this, lock_manager_);
+                    *message_factory_, *this, NodeLookup::QueryType::FIND_NODE, lock_manager_);
 
   // Start the lookup
   return lookup->start();
@@ -183,32 +184,36 @@ DHTSession::find_peers(const types::InfoHash &infohash) {
   types::NodeID target_id(
       std::vector<uint8_t>(infohash.bytes().begin(), infohash.bytes().end()));
 
-  // Find nodes close to the infohash
-  auto nodes = find_nodes(target_id);
+  // Create a peer lookup
+  auto lookup = std::make_shared<NodeLookup>(node_id_, target_id, *routing_table_, *socket_,
+                    *message_factory_, *this, NodeLookup::QueryType::GET_PEERS, lock_manager_);
 
-  // Send get_peers messages to the found nodes
-  std::vector<types::Endpoint> found_peers;
-  for (const auto &node : nodes) {
-    // Create a get_peers message
-    auto transaction_id = DHTMessageFactory::generate_transaction_id();
-    auto message =
-        message_factory_->create_get_peers(transaction_id, node_id_, infohash);
+  // Set the peer callback
+  lookup->set_peer_callback([this](const types::InfoHash& hash, const types::Endpoint& peer) {
+      // Emit PeerDiscoveredEvent
+      if (event_bus_) {
+          network::Address address(peer.address(), peer.port());
+          event_bus_->publish(bittorrent::PeerDiscoveredEvent(hash, address));
+      }
 
-    // Encode the message
-    auto data = message->encode();
+      // Also add to our internal list
+      {
+          auto guard = lock_manager_->get_lock_guard(peers_resource_id_, lock::LockManager::LockType::EXCLUSIVE);
+          peers_[hash].push_back(peer);
+      }
+  });
 
-    // Send the message
-    network::Address address(node.endpoint().address(), node.endpoint().port());
-    socket_->send_to(data.data(), data.size(), address);
+  // Start the lookup
+  lookup->start();
 
-    // Note: In a real implementation, we would wait for responses and collect
-    // peers For now, we just send the messages and return any existing peers
-  }
-
-  // Return the peers
+  // Return the peers found during the lookup (already added to peers_ via callback)
   auto guard = lock_manager_->get_lock_guard(
       peers_resource_id_, lock::LockManager::LockType::SHARED);
-  return peers_[infohash];
+  auto it = peers_.find(infohash);
+  if (it != peers_.end()) {
+      return it->second;
+  }
+  return {};
 }
 
 std::future<std::vector<types::Endpoint>>

@@ -13,7 +13,7 @@
 namespace bitscrape::lock {
 
 LockManager::LockManager(bool enable_deadlock_detection, bool enable_logging, std::shared_ptr<beacon::Beacon> beacon)
-    : next_resource_id_(1), enable_deadlock_detection_(enable_deadlock_detection), enable_logging_(false), beacon_(beacon) {
+    : next_resource_id_(1), enable_deadlock_detection_(enable_deadlock_detection), enable_logging_(enable_logging), beacon_(beacon) {
 }
 
 LockManager::~LockManager() {

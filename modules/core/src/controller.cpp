@@ -686,21 +686,22 @@ public:
       // If we don't have enough infohashes, optionally generate some random
       // ones for testing This is disabled by default in production - enable
       // with crawler.generate_test_infohashes=true
-      bool generate_test_hashes =
-          config_->get_bool("crawler.generate_test_infohashes", false);
-      if (generate_test_hashes && infohash_models.size() < 5) {
-        int num_to_generate = 5 - infohash_models.size();
+      if (bool generate_test_hashes =
+              config_->get_bool("crawler.generate_test_infohashes", false);
+          generate_test_hashes && infohash_models.size() < 5) {
+        std::size_t num_to_generate = 5 - infohash_models.size();
         beacon_->info("Generating " + std::to_string(num_to_generate) +
                           " random infohashes for testing "
                           "(crawler.generate_test_infohashes=true)",
                       types::BeaconCategory::GENERAL);
 
-        for (int i = 0; i < num_to_generate; i++) {
-          // Generate random infohash
-          std::random_device rd;
-          std::mt19937 gen(rd());
-          std::uniform_int_distribution<uint8_t> dist(0, 255);
+        // Set up random number generator once
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<uint8_t> dist(0, 255);
 
+        for (std::size_t i = 0; i < num_to_generate; i++) {
+          // Generate random infohash
           std::vector<uint8_t> hash_bytes(20);
           for (auto &byte : hash_bytes) {
             byte = dist(gen);
@@ -755,6 +756,12 @@ public:
       // Start a background thread to periodically check for new infohashes
       infohash_check_thread_ = std::thread([this]() {
         try {
+          // Set up random number generator once for the thread
+          std::random_device rd;
+          std::mt19937 gen(rd());
+          std::uniform_int_distribution<int> chance_dist(0, 4);
+          std::uniform_int_distribution<uint8_t> byte_dist(0, 255);
+
           while (is_crawling_ && is_running_) {
             // Sleep for a while before checking for new infohashes
             std::this_thread::sleep_for(std::chrono::seconds(60));
@@ -775,19 +782,13 @@ public:
               create_peer_manager_for_infohash(model.info_hash);
             }
 
-            bool random_discovery_enabled = config_->get_bool(
-                "crawler.random_discovery",
-                config_->get_string("dht.bootstrap_infohash", "").empty());
-            if (random_discovery_enabled && (rand() % 5 == 0)) {
+            // Generate a new random infohash occasionally
+            if (chance_dist(gen) == 0) {
               // 20% chance
               // Generate random infohash
-              std::random_device rd;
-              std::mt19937 gen(rd());
-              std::uniform_int_distribution<uint8_t> dist(0, 255);
-
               std::vector<uint8_t> hash_bytes(20);
               for (auto &byte : hash_bytes) {
-                byte = dist(gen);
+                byte = byte_dist(gen);
               }
 
               types::InfoHash random_hash(hash_bytes);
@@ -1001,8 +1002,8 @@ public:
     std::vector<Controller::SanityCheckResult> checks;
     checks.reserve(8);
 
-    auto add = [&](std::string module, bool ok, std::string message) {
-      checks.push_back({std::move(module), ok, std::move(message)});
+    auto add = [&](std::string module_name, bool ok, std::string message) {
+      checks.emplace_back(std::move(module_name), ok, std::move(message));
     };
 
     auto lock_manager = lock::LockManagerSingleton::instance();
@@ -1369,17 +1370,16 @@ public:
                         types::BeaconCategory::BITTORRENT);
 
           // Extract and store file information if available
-          const auto &files = metadata.files();
-          if (!files.empty()) {
+          if (const auto &files = metadata.files(); !files.empty()) {
             beacon_->info("Storing " + std::to_string(files.size()) +
                               " files for infohash: " +
                               info_hash.to_hex().substr(0, 16) + "...",
                           types::BeaconCategory::BITTORRENT);
 
             // Log file details for debugging
-            for (const auto &file : files) {
-              beacon_->debug("File: " + file.first + ", Size: " +
-                                 std::to_string(file.second) + " bytes",
+            for (const auto &[filename, size] : files) {
+              beacon_->debug("File: " + filename + ", Size: " +
+                                 std::to_string(size) + " bytes",
                              types::BeaconCategory::BITTORRENT);
             }
           } else {
@@ -1495,10 +1495,9 @@ public:
         // Extract error information from the beacon event
         const std::string &message = beacon_event->message();
         types::BeaconCategory category = beacon_event->category();
-        types::BeaconSeverity severity = beacon_event->severity();
 
         // Log the error with the appropriate category and severity
-        if (severity == types::BeaconSeverity::ERROR) {
+        if (types::BeaconSeverity severity = beacon_event->severity(); severity == types::BeaconSeverity::ERROR) {
           beacon_->error("Error occurred: " + message, category);
         } else if (severity == types::BeaconSeverity::WARNING) {
           beacon_->warning("Warning occurred: " + message, category);
@@ -1620,7 +1619,7 @@ public:
 Controller::Controller(const std::string &config_path)
     : impl_(std::make_unique<Impl>(config_path)) {}
 
-Controller::~Controller() {}
+Controller::~Controller() = default;
 
 bool Controller::initialize() { return impl_->initialize(); }
 
@@ -1649,7 +1648,9 @@ std::shared_ptr<event::EventBus> Controller::get_event_bus() const {
   // internal Impl object (so the returned shared_ptr remains valid while the
   // Controller is alive) and aliases to the internal EventBus pointer.
   return std::shared_ptr<event::EventBus>(
-      std::shared_ptr<Impl>(impl_.get(), [](Impl *) {}),
+      std::shared_ptr<Impl>(impl_.get(), [](Impl *) {
+        // No-op deleter: Impl is managed by Controller's unique_ptr, not this shared_ptr
+      }),
       impl_->event_bus_.get());
 }
 

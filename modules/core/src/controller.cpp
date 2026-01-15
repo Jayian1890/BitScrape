@@ -858,8 +858,6 @@ public:
                                info_hash + ": " + e.what(),
                            types::BeaconCategory::BITTORRENT);
         }
-        peer_managers_.clear();
-        metadata_exchanges_.clear();
       }
 
       // Cancel any pending tracker announcements
@@ -885,7 +883,6 @@ public:
                   info_hash + ": " + e.what(),
               types::BeaconCategory::TRACKER);
         }
-        tracker_managers_.clear();
       }
 
       beacon_->info("Crawling stopped successfully");
@@ -957,6 +954,8 @@ public:
     for (const auto &[info_hash, peer_manager] : peer_managers_copy) {
       total_connected_peers += peer_manager->connected_peers().size();
     }
+    stats["bittorrent.connected_peer_count"] =
+        std::to_string(total_connected_peers);
 
     // Add Tracker statistics
     stats["tracker.manager_count"] = std::to_string(tracker_manager_count);
@@ -966,6 +965,7 @@ public:
     for (const auto &[info_hash, tracker_manager] : tracker_managers_copy) {
       total_trackers += tracker_manager->tracker_urls().size();
     }
+    stats["tracker.url_count"] = std::to_string(total_trackers);
 
     return stats;
   }
@@ -1562,7 +1562,6 @@ public:
   bool is_crawling_;
   std::atomic<bool> stop_discovery_threads_;
   std::thread peer_refresh_thread_;
-  mutable std::mutex maps_mutex_;
   std::vector<std::future<void>> background_futures_;
   uint64_t
       controller_state_resource_id_; // Resource ID for the controller state

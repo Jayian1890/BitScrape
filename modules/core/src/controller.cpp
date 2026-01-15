@@ -357,8 +357,8 @@ public:
     // Member variables
     std::shared_ptr<Configuration> config_;
     std::shared_ptr<storage::StorageManager> storage_manager_;
-    std::unique_ptr<event::EventBus> event_bus_;
-    std::unique_ptr<event::EventProcessor> event_processor_;
+    std::shared_ptr<event::EventBus> event_bus_;
+    std::shared_ptr<event::EventProcessor> event_processor_;
     std::shared_ptr<beacon::Beacon> beacon_;
     std::atomic<bool> is_running_;
     std::atomic<bool> is_crawling_;
@@ -400,14 +400,12 @@ std::shared_ptr<Configuration> Controller::get_configuration() const {
     return impl_->config_;
 }
 
-std::shared_ptr<storage::StorageManager> Controller::get_storage_manager() const {
-    return impl_->storage_manager_;
+std::shared_ptr<event::EventBus> Controller::get_event_bus() const {
+    return impl_->event_bus_;
 }
 
-std::shared_ptr<event::EventBus> Controller::get_event_bus() const {
-    // We can't return the unique_ptr directly, so we return a nullptr
-    // This method should be updated to return a reference instead
-    return nullptr;
+storage::StorageManager& Controller::get_storage_manager() const {
+    return *impl_->storage_manager_;
 }
 
 std::shared_ptr<beacon::Beacon> Controller::get_beacon() const {

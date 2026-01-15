@@ -13,13 +13,14 @@
 #include <iostream>
 #include <unordered_set>
 #include <algorithm>
+#include <cstdlib>
 
 namespace bitscrape::core {
 
 class Configuration::Impl {
 public:
     Impl(const std::string& config_path)
-        : config_path_(config_path.empty() ? "bitscrape.json" : config_path)
+        : config_path_(config_path.empty() ? Configuration::get_default_config_path() : config_path)
     {
         // Register the configuration resource with the LockManager
         auto lock_manager = lock::LockManagerSingleton::instance();
@@ -388,24 +389,41 @@ public:
         try
         {
             auto format_scalar = [](const std::string& value) {
-                // Try integer
-                try {
-                    (void)std::stoi(value);
-                    return value;
-                } catch (const std::exception&) {
-                    // Booleans
-                    if (value == "1" || value == "true" || value == "yes") {
-                        return std::string("true");
-                    }
-                    if (value == "0" || value == "false" || value == "no") {
-                        return std::string("false");
-                    }
-                    if (value.empty()) {
-                        return std::string("null");
-                    }
-                    // String
-                    return std::string("\"") + value + "\"";
+                if (value.empty()) {
+                    return std::string("null");
                 }
+
+                // Booleans
+                if (value == "true" || value == "yes") {
+                    return std::string("true");
+                }
+                if (value == "false" || value == "no") {
+                    return std::string("false");
+                }
+
+                // Strictly numeric check (integer)
+                bool is_numeric = !value.empty();
+                size_t start = (value[0] == '-') ? 1 : 0;
+                if (start == value.size()) is_numeric = false;
+                for (size_t i = start; i < value.size(); ++i) {
+                    if (!std::isdigit(static_cast<unsigned char>(value[i]))) {
+                        is_numeric = false;
+                        break;
+                    }
+                }
+
+                if (is_numeric) {
+                    // One final check: if it was a boolean "1" or "0" in the map, 
+                    // it might have come from a bool setter. But we actually store 
+                    // booleans as "1" or "0" string representations.
+                    // To stay consistent with JSON bools:
+                    if (value == "1") return std::string("true");
+                    if (value == "0") return std::string("false");
+                    return value;
+                }
+
+                // Everything else is a string and needs quotes
+                return std::string("\"") + value + "\"";
             };
 
             auto format_array = [&](const std::string& value, const std::string& indent) {
@@ -497,6 +515,12 @@ public:
             }
 
             out << "\n}\n";
+
+            // Ensure the directory exists
+            std::filesystem::path p(config_path_);
+            if (!p.parent_path().empty() && !std::filesystem::exists(p.parent_path())) {
+                std::filesystem::create_directories(p.parent_path());
+            }
 
             std::ofstream file(config_path_);
             if (!file.is_open()) {
@@ -684,9 +708,10 @@ public:
 
 private:
     void apply_missing_defaults() {
+        std::string base_dir = Configuration::get_default_base_dir();
         const std::unordered_map<std::string, std::string> defaults = {
-            {"database.path", "bitscrape.db"},
-            {"dht.bootstrap_nodes", "v4.router.mega.co.nz:6881,dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"},
+            {"database.path", (std::filesystem::path(base_dir) / "bitscrape.db").string()},
+            {"dht.bootstrap_nodes", "dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"},
             {"dht.port", "6881"},
             {"dht.node_id", ""},
             {"dht.max_nodes", "1000"},
@@ -698,13 +723,15 @@ private:
             {"bittorrent.download_timeout", "30"},
             {"tracker.announce_interval", "1800"},
             {"tracker.max_trackers", "20"},
+            {"tracker.default_trackers", "udp://tracker.opentrackr.org:1337/announce,udp://tracker.torrent.eu.org:451/announce"},
             {"log.level", "info"},
-            {"log.file", "bitscrape.log"},
+            {"log.file", (std::filesystem::path(base_dir) / "bitscrape.log").string()},
             {"log.max_size", "10485760"},
             {"log.max_files", "5"},
             {"web.auto_start", "true"},
             {"web.port", "8080"},
-            {"web.static_dir", "public"}
+            {"web.static_dir", "public"},
+            {"crawler.random_discovery", "true"}
         };
 
         for (const auto& [key, value] : defaults) {
@@ -715,9 +742,10 @@ private:
     }
 
     void create_default_configuration() {
+        std::string base_dir = Configuration::get_default_base_dir();
         // Set default values
-        config_["database.path"] = "bitscrape.db";
-        config_["dht.bootstrap_nodes"] = "v4.router.mega.co.nz:6881,dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"; // Default public routers
+        config_["database.path"] = (std::filesystem::path(base_dir) / "bitscrape.db").string();
+        config_["dht.bootstrap_nodes"] = "dht.aelitis.com:6881,router.utorrent.com:6881,router.bittorrent.com:6881"; // Default public routers
         config_["dht.port"] = "6881";
         config_["dht.node_id"] = ""; // Will be generated randomly if empty
         config_["dht.max_nodes"] = "1000";
@@ -730,7 +758,7 @@ private:
         config_["tracker.announce_interval"] = "1800"; // 30 minutes
         config_["tracker.max_trackers"] = "20";
         config_["log.level"] = "info";
-        config_["log.file"] = "bitscrape.log";
+        config_["log.file"] = (std::filesystem::path(base_dir) / "bitscrape.log").string();
         config_["log.max_size"] = "10485760"; // 10 MB
         config_["log.max_files"] = "5";
         config_["web.auto_start"] = "true"; // Auto-start web interface by default
@@ -749,6 +777,42 @@ private:
 
 Configuration::Configuration(const std::string& config_path)
     : impl_(std::make_unique<Impl>(config_path)) {
+}
+
+std::string expand_path(const std::string& path) {
+    if (path.empty() || path[0] != '~') {
+        return path;
+    }
+
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        return path;
+    }
+
+    if (path.size() == 1) {
+        return home;
+    }
+
+    if (path[1] == '/' || path[1] == '\\') {
+        return std::string(home) + path.substr(1);
+    }
+
+    return path;
+}
+
+std::string Configuration::get_default_base_dir() {
+    const char* home = std::getenv("HOME");
+    std::filesystem::path base_dir;
+    if (home) {
+        base_dir = std::filesystem::path(home) / ".config" / "bitscrape";
+    } else {
+        base_dir = std::filesystem::current_path() / ".config" / "bitscrape";
+    }
+    return base_dir.string();
+}
+
+std::string Configuration::get_default_config_path() {
+    return (std::filesystem::path(get_default_base_dir()) / "settings.json").string();
 }
 
 Configuration::~Configuration() = default;
@@ -783,6 +847,10 @@ void Configuration::set_string(const std::string& key, const std::string& value)
 
 std::string Configuration::get_string(const std::string& key, const std::string& default_value) const {
     return impl_->get_string(key, default_value);
+}
+
+std::string Configuration::get_path(const std::string& key, const std::string& default_value) const {
+    return expand_path(get_string(key, default_value));
 }
 
 void Configuration::set_int(const std::string& key, int value) {

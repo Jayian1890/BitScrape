@@ -123,6 +123,12 @@ void FileSink::rotate_if_needed() {
 }
 
 void FileSink::open_file() {
+    // Ensure the directory exists
+    std::filesystem::path p(filename_);
+    if (!p.parent_path().empty() && !std::filesystem::exists(p.parent_path())) {
+        std::error_code ec;
+        std::filesystem::create_directories(p.parent_path(), ec);
+    }
     file_.open(filename_, append_ ? (std::ios::out | std::ios::app) : std::ios::out);
 }
 

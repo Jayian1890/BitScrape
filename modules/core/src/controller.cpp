@@ -91,10 +91,10 @@ public:
 
       // Initialize storage manager (create it here if deferred)
       if (!storage_manager_) {
-        std::string db_path =
-            config_->get_string("database.path", "data/bitscrape.db");
+        std::string default_db_path = (std::filesystem::path(Configuration::get_default_base_dir()) / "bitscrape.db").string();
+        std::string db_path = config_->get_path("database.path", default_db_path);
         if (db_path.empty()) {
-          db_path = "data/bitscrape.db";
+          db_path = default_db_path;
           beacon_->info(std::string("Using default database path: ") + db_path,
                         types::BeaconCategory::GENERAL);
         }
@@ -109,8 +109,8 @@ public:
         } catch (const std::exception &e) {
           beacon_->error("Failed to create database directory: ",
                          types::BeaconCategory::GENERAL, e.what());
-          db_path = "bitscrape.db"; // Use current directory as fallback
-          beacon_->warning("Falling back to current directory: " + db_path,
+          db_path = (std::filesystem::path(Configuration::get_default_base_dir()) / "bitscrape.db").string(); 
+          beacon_->warning("Falling back to default directory: " + db_path,
                            types::BeaconCategory::GENERAL);
           storage_manager_ = storage::create_storage_manager(db_path, true);
         }
@@ -297,17 +297,17 @@ public:
       }
 
       if (found_managers) {
-        std::string peer_id_str(pm->peer_id().begin(), pm->peer_id().end());
-        uint16_t port =
-            static_cast<uint16_t>(config_->get_int("bittorrent.port", 6881));
-
         // Trigger another announce to get more peers
-        auto future = tm->announce_async(peer_id_str, port, 0, 0, 0, "");
-        auto task = std::async(
+        auto announce_task = std::async(
             std::launch::async,
-            [this, future = std::move(future), hash]() mutable {
+            [this, tm, pm, hash]() mutable {
               try {
-                auto responses = future.get();
+                if (!is_running_) return;
+
+                std::string peer_id_str(pm->peer_id().begin(), pm->peer_id().end());
+                uint16_t port = static_cast<uint16_t>(config_->get_int("bittorrent.port", 6881));
+                
+                auto responses = tm->announce(peer_id_str, port, 0, 0, 0, "");
                 for (const auto &[url, response] : responses) {
                   if (!response.has_error()) {
                     for (const auto &peer : response.peers()) {
@@ -322,7 +322,7 @@ public:
         
         {
           std::lock_guard<std::mutex> lock(maps_mutex_);
-          background_futures_.push_back(std::move(task));
+          background_futures_.push_back(std::move(announce_task));
         }
       }
     }
@@ -397,6 +397,20 @@ public:
       stop_tracker_component();
       stop_bittorrent_component();
       stop_dht_component();
+
+      // Wait for all background tasks to complete
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        if (!background_futures_.empty()) {
+            beacon_->info("Waiting for " + std::to_string(background_futures_.size()) + " background tasks to complete...");
+            for (auto& future : background_futures_) {
+              if (future.valid()) {
+                future.wait();
+              }
+            }
+            background_futures_.clear();
+        }
+      }
 
       // Stop event processor
       event_processor_->stop();
@@ -531,10 +545,8 @@ public:
         }
       }
 
-      // If no static nodes provided, try seeding via tracker peers for a known
-      // infohash
-      if (bootstrap_nodes.empty() && !bootstrap_infohash.empty() &&
-          !bootstrap_trackers.empty()) {
+      // If a bootstrap infohash is provided, try seeding via tracker peers
+      if (!bootstrap_infohash.empty() && !bootstrap_trackers.empty()) {
         try {
           auto info_hash = types::InfoHash::from_hex(bootstrap_infohash);
           tracker::TrackerManager tm(info_hash);
@@ -641,8 +653,21 @@ public:
     }
 
     try {
-      // Start BitTorrent crawling
-      // Start by loading existing infohashes from the database
+      // Start by loading existing infohashes from the database (including bootstrap hash)
+      std::string bootstrap_infohash_hex = config_->get_string("dht.bootstrap_infohash", "");
+      if (!bootstrap_infohash_hex.empty()) {
+        try {
+          auto bootstrap_hash = types::InfoHash::from_hex(bootstrap_infohash_hex);
+          storage_manager_->store_infohash(bootstrap_hash);
+          create_peer_manager_for_infohash(bootstrap_hash);
+          beacon_->info("Added bootstrap infohash to crawl: " + bootstrap_infohash_hex, 
+                        types::BeaconCategory::GENERAL);
+        } catch (...) {
+          beacon_->warning("Invalid bootstrap infohash hex: " + bootstrap_infohash_hex,
+                           types::BeaconCategory::GENERAL);
+        }
+      }
+
       auto query = storage_manager_->query_interface();
       storage::QueryInterface::InfoHashQueryOptions options;
       options.limit = 100;
@@ -750,8 +775,10 @@ public:
               create_peer_manager_for_infohash(model.info_hash);
             }
 
-            // Generate a new random infohash occasionally
-            if (rand() % 5 == 0) {
+            bool random_discovery_enabled = config_->get_bool(
+                "crawler.random_discovery",
+                config_->get_string("dht.bootstrap_infohash", "").empty());
+            if (random_discovery_enabled && (rand() % 5 == 0)) {
               // 20% chance
               // Generate random infohash
               std::random_device rd;

@@ -431,7 +431,8 @@ void PeerConnection::process_message(const PeerMessage& message) {
             break;
 
         case PeerMessageType::EXTENDED:
-            // Handle extended message (BEP 10)
+            // Forward extended messages to message handlers
+            // This is already handled by protocol_.register_message_handler in MetadataExchange
             break;
 
         default:

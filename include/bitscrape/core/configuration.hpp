@@ -25,6 +25,20 @@ public:
     explicit Configuration(const std::string& config_path = "");
 
     /**
+     * @brief Get the default configuration file path (~/.config/bitscrape/settings.json)
+     *
+     * @return std::string Default path to the configuration file
+     */
+    static std::string get_default_config_path();
+
+    /**
+     * @brief Get the default base directory for configuration and data (~/.config/bitscrape/)
+     *
+     * @return std::string Default base directory
+     */
+    static std::string get_default_base_dir();
+
+    /**
      * @brief Destroy the Configuration object
      */
     ~Configuration();
@@ -89,6 +103,15 @@ public:
      * @return std::string Configuration value
      */
     std::string get_string(const std::string& key, const std::string& default_value = "") const;
+
+    /**
+     * @brief Get a path value from the configuration (expands ~)
+     *
+     * @param key Configuration key
+     * @param default_value Default value to return if key is not found
+     * @return std::string Expanded path
+     */
+    std::string get_path(const std::string& key, const std::string& default_value = "") const;
 
     /**
      * @brief Set an integer value in the configuration

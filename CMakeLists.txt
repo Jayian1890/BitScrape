@@ -15,12 +15,15 @@ if(APPLE AND NOT DEFINED CMAKE_CXX_COMPILER)
         set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm/bin/clang++")
         set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm/bin/clang")
         message(STATUS "Using Homebrew LLVM: ${CMAKE_CXX_COMPILER}")
+
+        # Explicitly set paths for include directories and sysroot
+        set(CMAKE_SYSROOT "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk")
+        include_directories("/opt/homebrew/opt/llvm/include/c++/v1")
+        link_directories("/opt/homebrew/opt/llvm/lib")
     endif()
 endif()
-# Find SQLite3
-find_package(SQLite3 REQUIRED)
 
-# Compiler flags
+# Additional Compiler flags
 add_compile_options(
     -Wall
     -Wextra

@@ -1117,56 +1117,64 @@ public:
         tracker_manager->set_connection_timeout(connection_timeout);
         tracker_manager->set_request_timeout(request_timeout);
 
-        // Add all three to the maps atomically
+        // Add all three to the maps atomically, but check again to avoid race condition
+        bool should_register = false;
         {
           std::lock_guard<std::mutex> lock(maps_mutex_);
-          peer_managers_[info_hash_str] = peer_manager;
-          metadata_exchanges_[info_hash_str] = metadata_exchange;
-          tracker_managers_[info_hash_str] = tracker_manager;
+          // Re-check if another thread created this peer manager while we were creating ours
+          if (peer_managers_.find(info_hash_str) == peer_managers_.end()) {
+            peer_managers_[info_hash_str] = peer_manager;
+            metadata_exchanges_[info_hash_str] = metadata_exchange;
+            tracker_managers_[info_hash_str] = tracker_manager;
+            should_register = true;
+          }
         }
 
-        // Add the peer manager and metadata exchange to the BitTorrent event
-        // processor
-        if (bt_event_processor_) {
-          bt_event_processor_->add_peer_manager(info_hash, peer_manager);
-          bt_event_processor_->add_metadata_exchange(info_hash,
-                                                     metadata_exchange);
+        // Only register with event processor if we successfully inserted
+        if (should_register) {
+          // Add the peer manager and metadata exchange to the BitTorrent event
+          // processor
+          if (bt_event_processor_) {
+            bt_event_processor_->add_peer_manager(info_hash, peer_manager);
+            bt_event_processor_->add_metadata_exchange(info_hash,
+                                                       metadata_exchange);
+          }
+
+          beacon_->info("Created peer manager, metadata exchange, and tracker "
+                        "manager for infohash: " +
+                            info_hash.to_hex().substr(0, 16) + "...",
+                        types::BeaconCategory::BITTORRENT);
+
+          // Add some tracker URLs from configuration
+          std::string tracker_urls = config_->get_string(
+              "tracker.urls", "udp://tracker.opentrackr.org:1337,udp://"
+                              "tracker.openbittorrent.com:6969,udp://"
+                              "tracker.coppersurfer.tk:6969");
+
+          size_t pos = 0;
+          std::string token;
+          while ((pos = tracker_urls.find(',')) != std::string::npos) {
+            token = tracker_urls.substr(0, pos);
+            tracker_manager->add_tracker(token);
+            tracker_urls.erase(0, pos + 1);
+          }
+
+          // Add the last tracker URL
+          if (!tracker_urls.empty()) {
+            tracker_manager->add_tracker(tracker_urls);
+          }
+
+          // Announce to trackers
+          std::string peer_id_str(peer_id.begin(), peer_id.end());
+          uint16_t port =
+              static_cast<uint16_t>(config_->get_int("bittorrent.port", 6881));
+
+          tracker_manager->announce_async(peer_id_str, port,
+                                          0, // uploaded
+                                          0, // downloaded
+                                          0, // left
+                                          "started");
         }
-
-        beacon_->info("Created peer manager, metadata exchange, and tracker "
-                      "manager for infohash: " +
-                          info_hash.to_hex().substr(0, 16) + "...",
-                      types::BeaconCategory::BITTORRENT);
-
-        // Add some tracker URLs from configuration
-        std::string tracker_urls = config_->get_string(
-            "tracker.urls", "udp://tracker.opentrackr.org:1337,udp://"
-                            "tracker.openbittorrent.com:6969,udp://"
-                            "tracker.coppersurfer.tk:6969");
-
-        size_t pos = 0;
-        std::string token;
-        while ((pos = tracker_urls.find(',')) != std::string::npos) {
-          token = tracker_urls.substr(0, pos);
-          tracker_manager->add_tracker(token);
-          tracker_urls.erase(0, pos + 1);
-        }
-
-        // Add the last tracker URL
-        if (!tracker_urls.empty()) {
-          tracker_manager->add_tracker(tracker_urls);
-        }
-
-        // Announce to trackers
-        std::string peer_id_str(peer_id.begin(), peer_id.end());
-        uint16_t port =
-            static_cast<uint16_t>(config_->get_int("bittorrent.port", 6881));
-
-        tracker_manager->announce_async(peer_id_str, port,
-                                        0, // uploaded
-                                        0, // downloaded
-                                        0, // left
-                                        "started");
       } else {
         beacon_->error("Failed to start peer manager for infohash: " +
                            info_hash.to_hex(),

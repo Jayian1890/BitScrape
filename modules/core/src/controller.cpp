@@ -959,7 +959,7 @@ public:
     checks.reserve(8);
 
     auto add = [&](std::string module, bool ok, std::string message) {
-      checks.push_back({std::move(module), ok, std::move(message)});
+      checks.emplace_back(std::move(module), ok, std::move(message));
     };
 
     auto lock_manager = lock::LockManagerSingleton::instance();

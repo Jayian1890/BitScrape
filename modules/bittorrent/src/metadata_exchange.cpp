@@ -2,13 +2,14 @@
 #include "bitscrape/bencode/bencode_decoder.hpp"
 #include "bitscrape/bencode/bencode_encoder.hpp"
 #include "bitscrape/bittorrent/extended_message.hpp"
+#include "bitscrape/types/beacon_types.hpp"
 
 #include <future>
 
 namespace bitscrape::bittorrent {
 
-MetadataExchange::MetadataExchange(PeerWireProtocol &protocol)
-    : protocol_(protocol), ut_metadata_id_(0), metadata_size_(0) {}
+MetadataExchange::MetadataExchange(PeerWireProtocol &protocol, std::shared_ptr<beacon::Beacon> beacon)
+    : protocol_(protocol), beacon_(beacon), ut_metadata_id_(0), metadata_size_(0) {}
 
 MetadataExchange::~MetadataExchange() = default;
 
@@ -85,6 +86,8 @@ void MetadataExchange::handle_extended_handshake(
 
   // Store the ut_metadata extension ID
   ut_metadata_id_ = static_cast<int>(ut_metadata->as_integer());
+
+  beacon_->info("Peer " + address.to_string() + " supports ut_metadata extension (ID: " + std::to_string(ut_metadata_id_) + ")", types::BeaconCategory::BITTORRENT);
 
   // Get the metadata_size
   const bencode::BencodeValue *metadata_size = message.get("metadata_size");
@@ -251,6 +254,8 @@ void MetadataExchange::handle_metadata_message(
       std::lock_guard<std::mutex> lock(pieces_mutex_);
       metadata_pieces_[piece_index] = piece_data;
 
+      beacon_->debug("Received metadata piece " + std::to_string(piece_index) + " from " + address.to_string(), types::BeaconCategory::BITTORRENT);
+
       // Try to process the metadata
       process_metadata_pieces();
     }
@@ -295,7 +300,11 @@ bool MetadataExchange::send_extended_handshake(
       std::make_shared<ExtendedMessage>(0, handshake); // 0 = handshake
 
   // Send the message
-  return protocol_.send_message(address, *extended_message);
+  bool result = protocol_.send_message(address, *extended_message);
+  if (result) {
+    beacon_->debug("Sent extended handshake to " + address.to_string(), types::BeaconCategory::BITTORRENT);
+  }
+  return result;
 }
 
 bool MetadataExchange::send_metadata_request(const network::Address &address,
@@ -323,7 +332,11 @@ bool MetadataExchange::send_metadata_request(const network::Address &address,
       std::make_shared<ExtendedMessage>(ut_metadata_id_, request);
 
   // Send the message
-  return protocol_.send_message(address, *extended_message);
+  bool result = protocol_.send_message(address, *extended_message);
+  if (result) {
+    beacon_->debug("Requested metadata piece " + std::to_string(piece) + " from " + address.to_string(), types::BeaconCategory::BITTORRENT);
+  }
+  return result;
 }
 
 bool MetadataExchange::send_metadata_data(
@@ -482,6 +495,8 @@ bool MetadataExchange::process_metadata_pieces() {
       metadata_received_callback_(*metadata);
     }
   }
+
+  beacon_->info("Assembled complete metadata", types::BeaconCategory::BITTORRENT);
 
   return true;
 }

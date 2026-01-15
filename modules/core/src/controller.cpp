@@ -1261,8 +1261,13 @@ public:
       if (peer_manager->start()) {
         // Create a metadata exchange for this infohash
         auto metadata_exchange = std::make_shared<bittorrent::MetadataExchange>(
-            peer_manager->protocol());
+            peer_manager->protocol(), beacon_);
         metadata_exchange->initialize();
+
+        // Set callback to publish event when metadata is received
+        metadata_exchange->set_metadata_received_callback([this, info_hash](const types::MetadataInfo& metadata) {
+            event_bus_->publish(bittorrent::MetadataReceivedEvent(info_hash, metadata));
+        });
 
         // Create a tracker manager for this infohash
         auto tracker_manager =

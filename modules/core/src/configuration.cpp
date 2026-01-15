@@ -724,7 +724,7 @@ private:
             {"tracker.announce_interval", "1800"},
             {"tracker.max_trackers", "20"},
             {"tracker.default_trackers", "udp://tracker.opentrackr.org:1337/announce,udp://tracker.torrent.eu.org:451/announce"},
-            {"log.level", "info"},
+            {"log.level", "debug"},
             {"log.file", (std::filesystem::path(base_dir) / "bitscrape.log").string()},
             {"log.max_size", "10485760"},
             {"log.max_files", "5"},
@@ -757,7 +757,7 @@ private:
         config_["bittorrent.download_timeout"] = "30"; // 30 seconds
         config_["tracker.announce_interval"] = "1800"; // 30 minutes
         config_["tracker.max_trackers"] = "20";
-        config_["log.level"] = "info";
+        config_["log.level"] = "debug";
         config_["log.file"] = (std::filesystem::path(base_dir) / "bitscrape.log").string();
         config_["log.max_size"] = "10485760"; // 10 MB
         config_["log.max_files"] = "5";

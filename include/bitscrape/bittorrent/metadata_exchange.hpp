@@ -12,6 +12,7 @@
 
 #include "bitscrape/bencode/bencode_value.hpp"
 #include "bitscrape/bittorrent/peer_wire_protocol.hpp"
+#include "bitscrape/beacon/beacon.hpp"
 #include "bitscrape/types/info_hash.hpp"
 #include "bitscrape/types/metadata_info.hpp"
 
@@ -29,8 +30,9 @@ public:
    * @brief Constructor
    *
    * @param protocol Peer wire protocol instance
+   * @param beacon Beacon instance for logging
    */
-  explicit MetadataExchange(PeerWireProtocol &protocol);
+  explicit MetadataExchange(PeerWireProtocol &protocol, std::shared_ptr<beacon::Beacon> beacon);
 
   /**
    * @brief Destructor
@@ -153,6 +155,7 @@ private:
   bool process_metadata_pieces();
 
   PeerWireProtocol &protocol_; ///< Peer wire protocol instance
+  std::shared_ptr<beacon::Beacon> beacon_; ///< Beacon for logging
   std::shared_ptr<types::MetadataInfo> metadata_; ///< Metadata info
   mutable std::mutex metadata_mutex_;             ///< Mutex for metadata access
 

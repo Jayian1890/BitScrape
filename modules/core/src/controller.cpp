@@ -654,9 +654,9 @@ public:
       // If we don't have enough infohashes, optionally generate some random
       // ones for testing This is disabled by default in production - enable
       // with crawler.generate_test_infohashes=true
-      bool generate_test_hashes =
-          config_->get_bool("crawler.generate_test_infohashes", false);
-      if (generate_test_hashes && infohash_models.size() < 5) {
+      if (bool generate_test_hashes =
+              config_->get_bool("crawler.generate_test_infohashes", false);
+          generate_test_hashes && infohash_models.size() < 5) {
         std::size_t num_to_generate = 5 - infohash_models.size();
         beacon_->info("Generating " + std::to_string(num_to_generate) +
                           " random infohashes for testing "

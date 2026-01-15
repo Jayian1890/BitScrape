@@ -37,6 +37,7 @@
 #include <future>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <random>
 #include <sstream>
 #include <string>
@@ -299,8 +300,11 @@ public:
       }
 
       // Clear peer managers and metadata exchanges
-      peer_managers_.clear();
-      metadata_exchanges_.clear();
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        peer_managers_.clear();
+        metadata_exchanges_.clear();
+      }
 
       beacon_->info("BitTorrent component stopped successfully",
                     types::BeaconCategory::BITTORRENT);
@@ -315,7 +319,10 @@ public:
   void stop_tracker_component() {
     try {
       // Clear tracker managers
-      tracker_managers_.clear();
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        tracker_managers_.clear();
+      }
 
       beacon_->info("Tracker component stopped successfully",
                     types::BeaconCategory::TRACKER);
@@ -700,11 +707,20 @@ public:
       }
 
       // Stop all active peer managers to stop metadata downloading
-      beacon_->info("Stopping " + std::to_string(peer_managers_.size()) +
+      // Copy the maps to avoid holding the lock while calling stop() on managers
+      std::unordered_map<std::string, std::shared_ptr<bittorrent::PeerManager>> peer_managers_copy;
+      std::unordered_map<std::string, std::shared_ptr<tracker::TrackerManager>> tracker_managers_copy;
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        peer_managers_copy = peer_managers_;
+        tracker_managers_copy = tracker_managers_;
+      }
+
+      beacon_->info("Stopping " + std::to_string(peer_managers_copy.size()) +
                         " active peer managers",
                     types::BeaconCategory::BITTORRENT);
 
-      for (const auto &[info_hash, peer_manager] : peer_managers_) {
+      for (const auto &[info_hash, peer_manager] : peer_managers_copy) {
         try {
           peer_manager->stop();
         } catch (const std::exception &e) {
@@ -715,11 +731,11 @@ public:
       }
 
       // Cancel any pending tracker announcements
-      beacon_->info("Stopping " + std::to_string(tracker_managers_.size()) +
+      beacon_->info("Stopping " + std::to_string(tracker_managers_copy.size()) +
                         " active tracker managers",
                     types::BeaconCategory::TRACKER);
 
-      for (const auto &[info_hash, tracker_manager] : tracker_managers_) {
+      for (const auto &[info_hash, tracker_manager] : tracker_managers_copy) {
         try {
           // Send a stopped announce to all trackers
           std::string peer_id_str(20, '0');
@@ -783,25 +799,40 @@ public:
     }
 
     // Add BitTorrent statistics
+    // Copy maps to avoid holding lock during iteration
+    size_t peer_manager_count;
+    size_t metadata_exchange_count;
+    size_t tracker_manager_count;
+    std::unordered_map<std::string, std::shared_ptr<bittorrent::PeerManager>> peer_managers_copy;
+    std::unordered_map<std::string, std::shared_ptr<tracker::TrackerManager>> tracker_managers_copy;
+    {
+      std::lock_guard<std::mutex> lock(maps_mutex_);
+      peer_manager_count = peer_managers_.size();
+      metadata_exchange_count = metadata_exchanges_.size();
+      tracker_manager_count = tracker_managers_.size();
+      peer_managers_copy = peer_managers_;
+      tracker_managers_copy = tracker_managers_;
+    }
+
     stats["bittorrent.peer_manager_count"] =
-        std::to_string(peer_managers_.size());
+        std::to_string(peer_manager_count);
     stats["bittorrent.metadata_exchange_count"] =
-        std::to_string(metadata_exchanges_.size());
+        std::to_string(metadata_exchange_count);
 
     // Count total connected peers across all peer managers
     size_t total_connected_peers = 0;
-    for (const auto &[info_hash, peer_manager] : peer_managers_) {
+    for (const auto &[info_hash, peer_manager] : peer_managers_copy) {
       total_connected_peers += peer_manager->connected_peers().size();
     }
     stats["bittorrent.connected_peer_count"] =
         std::to_string(total_connected_peers);
 
     // Add Tracker statistics
-    stats["tracker.manager_count"] = std::to_string(tracker_managers_.size());
+    stats["tracker.manager_count"] = std::to_string(tracker_manager_count);
 
     // Count total trackers across all tracker managers
     size_t total_trackers = 0;
-    for (const auto &[info_hash, tracker_manager] : tracker_managers_) {
+    for (const auto &[info_hash, tracker_manager] : tracker_managers_copy) {
       total_trackers += tracker_manager->tracker_urls().size();
     }
     stats["tracker.url_count"] = std::to_string(total_trackers);
@@ -883,9 +914,14 @@ public:
         add("bittorrent", false, "Event processor not created");
       } else {
         const bool running = bt_event_processor_->is_running();
+        size_t peer_manager_count;
+        {
+          std::lock_guard<std::mutex> lock(maps_mutex_);
+          peer_manager_count = peer_managers_.size();
+        }
         std::ostringstream msg;
         msg << "running=" << (running ? "yes" : "no")
-            << " peer_managers=" << peer_managers_.size();
+            << " peer_managers=" << peer_manager_count;
         add("bittorrent", running, msg.str());
       }
     } catch (const std::exception &e) {
@@ -893,8 +929,13 @@ public:
     }
 
     try {
+      size_t tracker_manager_count;
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        tracker_manager_count = tracker_managers_.size();
+      }
       std::ostringstream msg;
-      msg << "managers=" << tracker_managers_.size();
+      msg << "managers=" << tracker_manager_count;
       add("tracker", true, msg.str());
     } catch (const std::exception &e) {
       add("tracker", false, e.what());
@@ -1033,8 +1074,11 @@ public:
     try {
       // Check if we already have a peer manager for this infohash
       std::string info_hash_str = info_hash.to_hex();
-      if (peer_managers_.find(info_hash_str) != peer_managers_.end()) {
-        return; // Already have a peer manager for this infohash
+      {
+        std::lock_guard<std::mutex> lock(maps_mutex_);
+        if (peer_managers_.find(info_hash_str) != peer_managers_.end()) {
+          return; // Already have a peer manager for this infohash
+        }
       }
 
       // Generate a random peer ID
@@ -1054,24 +1098,10 @@ public:
 
       // Start the peer manager
       if (peer_manager->start()) {
-        // Add the peer manager to our map
-        peer_managers_[info_hash_str] = peer_manager;
-
         // Create a metadata exchange for this infohash
         auto metadata_exchange = std::make_shared<bittorrent::MetadataExchange>(
             peer_manager->protocol());
         metadata_exchange->initialize();
-
-        // Add the metadata exchange to our map
-        metadata_exchanges_[info_hash_str] = metadata_exchange;
-
-        // Add the peer manager and metadata exchange to the BitTorrent event
-        // processor
-        if (bt_event_processor_) {
-          bt_event_processor_->add_peer_manager(info_hash, peer_manager);
-          bt_event_processor_->add_metadata_exchange(info_hash,
-                                                     metadata_exchange);
-        }
 
         // Create a tracker manager for this infohash
         auto tracker_manager =
@@ -1087,8 +1117,21 @@ public:
         tracker_manager->set_connection_timeout(connection_timeout);
         tracker_manager->set_request_timeout(request_timeout);
 
-        // Add the tracker manager to our map
-        tracker_managers_[info_hash_str] = tracker_manager;
+        // Add all three to the maps atomically
+        {
+          std::lock_guard<std::mutex> lock(maps_mutex_);
+          peer_managers_[info_hash_str] = peer_manager;
+          metadata_exchanges_[info_hash_str] = metadata_exchange;
+          tracker_managers_[info_hash_str] = tracker_manager;
+        }
+
+        // Add the peer manager and metadata exchange to the BitTorrent event
+        // processor
+        if (bt_event_processor_) {
+          bt_event_processor_->add_peer_manager(info_hash, peer_manager);
+          bt_event_processor_->add_metadata_exchange(info_hash,
+                                                     metadata_exchange);
+        }
 
         beacon_->info("Created peer manager, metadata exchange, and tracker "
                       "manager for infohash: " +
@@ -1197,10 +1240,16 @@ public:
           // If we have tracker URLs in the torrent_info, add them to the
           // tracker manager
           std::string info_hash_str = info_hash.to_hex();
-          if (tracker_managers_.find(info_hash_str) !=
-              tracker_managers_.end()) {
-            auto &tracker_manager = tracker_managers_[info_hash_str];
+          std::shared_ptr<tracker::TrackerManager> tracker_manager;
+          {
+            std::lock_guard<std::mutex> lock(maps_mutex_);
+            auto it = tracker_managers_.find(info_hash_str);
+            if (it != tracker_managers_.end()) {
+              tracker_manager = it->second;
+            }
+          }
 
+          if (tracker_manager) {
             // Add the main announce URL if available
             if (!torrent_info.announce().empty()) {
               tracker_manager->add_tracker(torrent_info.announce());
@@ -1382,6 +1431,9 @@ public:
   // Tracker component
   std::unordered_map<std::string, std::shared_ptr<tracker::TrackerManager>>
       tracker_managers_;
+
+  // Mutex to protect shared maps (peer_managers_, metadata_exchanges_, tracker_managers_)
+  mutable std::mutex maps_mutex_;
 
   // DHT component
   std::unique_ptr<dht::DHTSession> dht_session_;

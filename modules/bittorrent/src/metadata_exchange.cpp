@@ -9,7 +9,8 @@
 namespace bitscrape::bittorrent {
 
 MetadataExchange::MetadataExchange(PeerWireProtocol &protocol, std::shared_ptr<beacon::Beacon> beacon)
-    : protocol_(protocol), beacon_(beacon), ut_metadata_id_(0), metadata_size_(0) {}
+    : protocol_(protocol), beacon_(beacon), ut_metadata_id_(0), metadata_size_(0),
+      request_timeout_ms_(5000), max_retries_(3) {}
 
 MetadataExchange::~MetadataExchange() = default;
 
@@ -254,6 +255,9 @@ void MetadataExchange::handle_metadata_message(
       std::lock_guard<std::mutex> lock(pieces_mutex_);
       metadata_pieces_[piece_index] = piece_data;
 
+      // Mark as received and clear requested flag
+      requested_pieces_[piece_index] = false;
+
       beacon_->debug("Received metadata piece " + std::to_string(piece_index) + " from " + address.to_string(), types::BeaconCategory::BITTORRENT);
 
       // Try to process the metadata
@@ -334,7 +338,42 @@ bool MetadataExchange::send_metadata_request(const network::Address &address,
   // Send the message
   bool result = protocol_.send_message(address, *extended_message);
   if (result) {
+    {
+      std::lock_guard<std::mutex> lock(pieces_mutex_);
+      requested_pieces_[piece] = true;
+      piece_request_time_[piece] = std::chrono::steady_clock::now();
+      if (retry_count_.find(piece) == retry_count_.end()) {
+        retry_count_[piece] = 1;
+      }
+    }
+
     beacon_->debug("Requested metadata piece " + std::to_string(piece) + " from " + address.to_string(), types::BeaconCategory::BITTORRENT);
+
+    // Spawn a watcher to re-request the piece if not received within timeout
+    std::async(std::launch::async, [this, address, piece]() {
+      std::this_thread::sleep_for(std::chrono::milliseconds(request_timeout_ms_));
+      {
+        std::lock_guard<std::mutex> lock(pieces_mutex_);
+        // If piece already received, nothing to do
+        if (metadata_pieces_.find(piece) != metadata_pieces_.end()) {
+          return;
+        }
+
+        int retries = retry_count_[piece];
+        if (retries >= max_retries_) {
+          beacon_->warning("Exceeded retries for metadata piece " + std::to_string(piece) + " from " + address.to_string(), types::BeaconCategory::BITTORRENT);
+          requested_pieces_[piece] = false;
+          return;
+        }
+
+        // Increment retry count and attempt re-request
+        retry_count_[piece] = retries + 1;
+        beacon_->info("Retrying metadata piece " + std::to_string(piece) + " (attempt " + std::to_string(retry_count_[piece]) + ") from " + address.to_string(), types::BeaconCategory::BITTORRENT);
+      }
+
+      // Attempt to re-request (fire-and-forget)
+      this->send_metadata_request(address, piece);
+    });
   }
   return result;
 }

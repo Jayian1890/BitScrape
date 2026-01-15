@@ -1462,10 +1462,9 @@ public:
         // Extract error information from the beacon event
         const std::string &message = beacon_event->message();
         types::BeaconCategory category = beacon_event->category();
-        types::BeaconSeverity severity = beacon_event->severity();
 
         // Log the error with the appropriate category and severity
-        if (severity == types::BeaconSeverity::ERROR) {
+        if (types::BeaconSeverity severity = beacon_event->severity(); severity == types::BeaconSeverity::ERROR) {
           beacon_->error("Error occurred: " + message, category);
         } else if (severity == types::BeaconSeverity::WARNING) {
           beacon_->warning("Warning occurred: " + message, category);

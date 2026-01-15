@@ -34,7 +34,11 @@ const App = {
         currentInfohash: null,
         stats: {},
         status: { running: false, crawling: false },
-        logs: []
+        logs: [],
+        // Pagination state for dashboard tabs
+        nodesPage: 0,
+        hashesPage: 0,
+        ITEMS_PER_PAGE: 50
     },
 
     init() {
@@ -365,8 +369,129 @@ const App = {
         const activeTab = document.getElementById(`dashboard-tab-${tabId}`);
         if (activeTab) activeTab.classList.remove('hidden');
 
-        // Load data if switching to nodes or overview
-        if (tabId === 'nodes' || tabId === 'overview') this.loadNodes();
+        // Load data based on which tab is active
+        if (tabId === 'overview') {
+            this.loadNodes(); // Load quick overview nodes
+        } else if (tabId === 'nodes') {
+            this.loadNodesTab();
+        } else if (tabId === 'hashes') {
+            this.loadHashesTab();
+        }
+    },
+
+    // Nodes Tab (Full View with Pagination)
+    async loadNodesTab() {
+        const tbody = document.getElementById('nodes-full-tbody');
+        const countEl = document.getElementById('nodes-count');
+        const pageIndicator = document.getElementById('nodes-page-indicator');
+        const prevBtn = document.getElementById('nodes-prev-btn');
+        const nextBtn = document.getElementById('nodes-next-btn');
+        if (!tbody) return;
+
+        const offset = this.state.nodesPage * this.state.ITEMS_PER_PAGE;
+
+        try {
+            const nodes = await API.getNodes(this.state.ITEMS_PER_PAGE, offset);
+            
+            if (nodes.length === 0 && this.state.nodesPage === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--text-secondary);">No nodes discovered yet. Let the crawler run to discover DHT nodes.</td></tr>`;
+                if (countEl) countEl.textContent = '0 nodes';
+            } else {
+                tbody.innerHTML = nodes.map(n => `
+                    <tr>
+                        <td><code class="hash-truncate" title="${n.node_id}">${n.node_id.substring(0, 16)}...</code></td>
+                        <td><code>${n.ip}</code></td>
+                        <td>${n.port}</td>
+                        <td>${n.ping_count}</td>
+                        <td>${n.response_count}</td>
+                        <td>${n.last_rtt_ms}ms</td>
+                        <td>${this.formatDate(n.last_seen)}</td>
+                        <td>${n.is_responsive 
+                            ? '<span class="status-badge status-online">Online</span>' 
+                            : '<span class="status-badge status-offline">Offline</span>'}</td>
+                    </tr>
+                `).join('');
+                if (countEl) countEl.textContent = `${nodes.length} nodes`;
+            }
+
+            // Update pagination controls
+            if (pageIndicator) pageIndicator.textContent = `Page ${this.state.nodesPage + 1}`;
+            if (prevBtn) prevBtn.disabled = this.state.nodesPage === 0;
+            if (nextBtn) nextBtn.disabled = nodes.length < this.state.ITEMS_PER_PAGE;
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="8" class="log-error">Error: ${err.message}</td></tr>`;
+        }
+    },
+
+    loadNodesPage(direction) {
+        this.state.nodesPage = Math.max(0, this.state.nodesPage + direction);
+        this.loadNodesTab();
+    },
+
+    // Infohashes Tab (with Pagination)
+    async loadHashesTab() {
+        const tbody = document.getElementById('hashes-tbody');
+        const countEl = document.getElementById('hashes-count');
+        const pageIndicator = document.getElementById('hashes-page-indicator');
+        const prevBtn = document.getElementById('hashes-prev-btn');
+        const nextBtn = document.getElementById('hashes-next-btn');
+        if (!tbody) return;
+
+        const offset = this.state.hashesPage * this.state.ITEMS_PER_PAGE;
+
+        try {
+            const hashes = await API.getInfohashes(this.state.ITEMS_PER_PAGE, offset);
+            
+            if (hashes.length === 0 && this.state.hashesPage === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-secondary);">No infohashes discovered yet. Let the crawler run to discover torrents.</td></tr>`;
+                if (countEl) countEl.textContent = '0 infohashes';
+            } else {
+                tbody.innerHTML = hashes.map(h => `
+                    <tr>
+                        <td>
+                            <code class="hash-truncate" title="${h.info_hash}">${h.info_hash.substring(0, 16)}...</code>
+                            <button class="btn-icon" onclick="App.copyToClipboard('${h.info_hash}')" title="Copy full hash">
+                                <span class="material-symbols-outlined">content_copy</span>
+                            </button>
+                        </td>
+                        <td>${h.peer_count}</td>
+                        <td>${h.has_metadata 
+                            ? '<span class="status-badge status-online">Yes</span>' 
+                            : '<span class="status-badge status-pending">No</span>'}</td>
+                        <td>${this.formatDate(h.first_seen)}</td>
+                        <td>${this.formatDate(h.last_seen)}</td>
+                        <td>
+                            ${h.has_metadata 
+                                ? `<button class="btn btn-sm btn-primary" onclick="App.viewDetail('${h.info_hash}')">View Details</button>`
+                                : '<span class="text-muted">Pending metadata...</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+                if (countEl) countEl.textContent = `${hashes.length} infohashes`;
+            }
+
+            // Update pagination controls
+            if (pageIndicator) pageIndicator.textContent = `Page ${this.state.hashesPage + 1}`;
+            if (prevBtn) prevBtn.disabled = this.state.hashesPage === 0;
+            if (nextBtn) nextBtn.disabled = hashes.length < this.state.ITEMS_PER_PAGE;
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" class="log-error">Error: ${err.message}</td></tr>`;
+        }
+    },
+
+    loadHashesPage(direction) {
+        this.state.hashesPage = Math.max(0, this.state.hashesPage + direction);
+        this.loadHashesTab();
+    },
+
+    copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            this.addLog(`Copied infohash to clipboard: ${text.substring(0, 16)}...`);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
     },
 
     startBackgroundTasks() {

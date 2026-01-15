@@ -15,7 +15,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
-#include <exception>
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -25,9 +25,9 @@
 #include <atomic>
 #include <iomanip>
 #include <sstream>
-#include <algorithm>
+
 #include <cctype>
-#include <mutex>
+
 #include <filesystem>
 #include <unordered_map>
 #include <vector>
@@ -36,9 +36,7 @@
 std::atomic<bool> running{true};
 std::shared_ptr<bitscrape::core::Controller> controller;
 
-// Global variables for CLI state
-std::atomic<bool> interactive_mode{true};
-std::mutex console_mutex;
+
 
 // Global variables for web interface
 std::shared_ptr<bitscrape::web::HTTPServer> http_server;
@@ -130,12 +128,6 @@ void print_table_header(const std::vector<std::string>& headers, const std::vect
     print_table_row(separator_row, widths);
 }
 
-// Convert string to lowercase
-std::string to_lower(std::string str) {
-    std::transform(str.begin(), str.end(), str.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-    return str;
-}
 
 void print_usage(const char* program_name) {
     std::cout << "Usage: " << program_name << " [options]" << std::endl;
@@ -144,7 +136,6 @@ void print_usage(const char* program_name) {
     std::cout << "  --config, -c <file>     Specify configuration file" << std::endl;
     std::cout << "  --database, -d <file>   Specify database file" << std::endl;
     std::cout << "  --crawl, -C             Start crawling immediately" << std::endl;
-    std::cout << "  --interactive, -i       Start in interactive mode" << std::endl;
     std::cout << "  --version, -v           Show version information" << std::endl;
     std::cout << "  --no-web                Disable web interface" << std::endl;
     std::cout << "  --port=PORT             Web interface port (default: 8080)" << std::endl;
@@ -153,7 +144,7 @@ void print_usage(const char* program_name) {
 
 void print_version() {
     std::cout << "BitScrape CLI version 0.1.0" << std::endl;
-    std::cout << "Copyright (c) 2025" << std::endl;
+    std::cout << "Copyright (c) 2026" << std::endl;
     std::cout << "Licensed under the MIT License" << std::endl;
 }
 
@@ -548,33 +539,6 @@ void display_metadata_list(const std::vector<bitscrape::storage::MetadataModel>&
     print_horizontal_line();
 }
 
-// Function to display help for interactive mode
-void display_interactive_help() {
-    print_horizontal_line();
-    print_centered("BitScrape CLI - Interactive Mode Help", 80);
-    print_horizontal_line();
-
-    std::cout << "Available commands:" << std::endl;
-    std::cout << "  help                   - Show this help message" << std::endl;
-    std::cout << "  stats                  - Show statistics" << std::endl;
-    std::cout << "  health                 - Run module sanity checks" << std::endl;
-    std::cout << "  nodes [limit]          - List discovered DHT nodes" << std::endl;
-    std::cout << "  node <node_id>         - Show details for a specific node" << std::endl;
-    std::cout << "  infohashes [limit]     - List discovered infohashes" << std::endl;
-    std::cout << "  infohash <infohash>    - Show details for a specific infohash" << std::endl;
-    std::cout << "  metadata [limit]       - List downloaded metadata" << std::endl;
-    std::cout << "  search <query>         - Search for metadata by name" << std::endl;
-    std::cout << "  start                  - Start crawling" << std::endl;
-    std::cout << "  stop                   - Stop crawling" << std::endl;
-    std::cout << "  web status              - Show web interface status" << std::endl;
-    std::cout << "  web start [port]        - Start web interface" << std::endl;
-    std::cout << "  web stop                - Stop web interface" << std::endl;
-    std::cout << "  web auto-start <on|off> - Enable/disable web interface auto-start" << std::endl;
-    std::cout << "  clear                  - Clear the screen" << std::endl;
-    std::cout << "  exit                   - Exit the application" << std::endl;
-
-    print_horizontal_line();
-}
 
 int main(int argc, char *argv[])
 {
@@ -601,8 +565,6 @@ int main(int argc, char *argv[])
             return 0;
         } else if (arg == "--crawl" || arg == "-C") {
             start_crawling = true;
-        } else if (arg == "--interactive" || arg == "-i") {
-            interactive_mode = true;
         } else if ((arg == "--config" || arg == "-c") && i + 1 < argc) {
             config_path = argv[++i];
         } else if ((arg == "--database" || arg == "-d") && i + 1 < argc) {
@@ -676,6 +638,8 @@ int main(int argc, char *argv[])
     beacon->info("BitScrape CLI started", SYSTEM);
     beacon->info("Version: 0.1.0", SYSTEM);
 
+    controller->start_crawling_async();
+
     // Check if web interface should be started automatically
     bool auto_start_web = !disable_web && controller->get_configuration()->get_bool(
                               "web.auto_start", true);
@@ -691,270 +655,20 @@ int main(int argc, char *argv[])
         static_dir = controller->get_configuration()->get_string("web.static_dir", "public");
     }
 
-    if (interactive_mode) {
-        beacon->info("Starting in interactive mode", SYSTEM);
-        beacon->info("Type 'help' for a list of commands", SYSTEM);
+    // Start the web interface if auto-start is enabled and not explicitly disabled
+    if (auto_start_web) {
+        start_web_interface(web_port, static_dir, beacon);
+    }
 
-        // Start the web interface if auto-start is enabled and not explicitly disabled
-        if (auto_start_web) {
-            start_web_interface(web_port, static_dir, beacon);
-        }
+    beacon->info("Press Ctrl+C to exit", SYSTEM);
 
-        // Get a query interface for data access
-        auto& storage_manager = controller->get_storage_manager();
-        auto query = storage_manager.query_interface();
+    while (running) {
+        // Print statistics periodically
+        auto stats = controller->get_statistics();
+        display_statistics(stats);
 
-        // Interactive command loop
-        std::string command;
-        std::cout << "\nBitScrape> ";
-
-        while (running && std::getline(std::cin, command)) {
-            // Skip empty commands
-            if (command.empty()) {
-                std::cout << "BitScrape> ";
-                continue;
-            }
-
-            // Parse command and arguments
-            std::istringstream iss(command);
-            std::string cmd;
-            iss >> cmd;
-            cmd = to_lower(cmd);
-
-            // Process command
-            if (cmd == "help") {
-                display_interactive_help();
-            } else if (cmd == "stats") {
-                auto stats = controller->get_statistics();
-                display_statistics(stats);
-            } else if (cmd == "health") {
-                auto checks = controller->run_sanity_checks();
-                display_sanity_checks(checks);
-            } else if (cmd == "nodes") {
-                // Parse limit argument
-                size_t limit = 10;
-                if (iss >> limit) {
-                    // Limit is provided
-                }
-
-                // Get nodes
-                bitscrape::storage::QueryInterface::NodeQueryOptions options;
-                options.limit = limit;
-                options.order_by = "last_seen";
-                options.order_desc = true;
-
-                auto nodes = query->get_nodes(options);
-                display_nodes_list(nodes, limit);
-            } else if (cmd == "node") {
-                // Parse node_id argument
-                std::string node_id_str;
-                if (iss >> node_id_str) {
-                    try {
-                        bitscrape::types::NodeID node_id(node_id_str);
-                        auto node = query->get_node(node_id);
-
-                        if (node) {
-                            display_node_details(*node);
-                        } else {
-                            std::cout << "Node not found: " << node_id_str << std::endl;
-                        }
-                    } catch (const std::exception& e) {
-                        std::cout << "Invalid node ID: " << node_id_str << std::endl;
-                    }
-                } else {
-                    std::cout << "Usage: node <node_id>" << std::endl;
-                }
-            } else if (cmd == "infohashes") {
-                // Parse limit argument
-                size_t limit = 10;
-                if (iss >> limit) {
-                    // Limit is provided
-                }
-
-                // Get infohashes
-                bitscrape::storage::QueryInterface::InfoHashQueryOptions options;
-                options.limit = limit;
-                options.order_by = "last_seen";
-                options.order_desc = true;
-
-                auto infohashes = query->get_infohashes(options);
-                display_infohashes_list(infohashes, limit);
-            } else if (cmd == "infohash") {
-                // Parse infohash argument
-                std::string infohash_str;
-                if (iss >> infohash_str) {
-                    try {
-                        bitscrape::types::InfoHash infohash(infohash_str);
-                        auto infohash_model = query->get_infohash(infohash);
-
-                        if (infohash_model) {
-                            display_infohash_details(*infohash_model, query);
-                        } else {
-                            std::cout << "InfoHash not found: " << infohash_str << std::endl;
-                        }
-                    } catch (const std::exception& e) {
-                        std::cout << "Invalid InfoHash: " << infohash_str << std::endl;
-                    }
-                } else {
-                    std::cout << "Usage: infohash <infohash>" << std::endl;
-                }
-            } else if (cmd == "metadata") {
-                // Parse limit argument
-                size_t limit = 10;
-                if (iss >> limit) {
-                    // Limit is provided
-                }
-
-                // Get metadata
-                bitscrape::storage::QueryInterface::MetadataQueryOptions options;
-                options.limit = limit;
-                options.order_by = "download_time";
-                options.order_desc = true;
-
-                auto metadata_list = query->get_metadata_list(options);
-                display_metadata_list(metadata_list, limit);
-            } else if (cmd == "search") {
-                // Parse search query
-                std::string search_query;
-                std::getline(iss >> std::ws, search_query);
-
-                if (!search_query.empty()) {
-                    // Search metadata by name
-                    bitscrape::storage::QueryInterface::MetadataQueryOptions options;
-                    options.name_contains = search_query;
-                    options.limit = 20;
-                    options.order_by = "download_time";
-                    options.order_desc = true;
-
-                    auto metadata_list = query->get_metadata_list(options);
-
-                    std::cout << "Search results for '" << search_query << "':" << std::endl;
-                    display_metadata_list(metadata_list);
-                } else {
-                    std::cout << "Usage: search <query>" << std::endl;
-                }
-            } else if (cmd == "start") {
-                if (controller->start_crawling()) {
-                    std::cout << "Crawling started." << std::endl;
-                } else {
-                    std::cout << "Failed to start crawling." << std::endl;
-                }
-            } else if (cmd == "stop") {
-                if (controller->stop_crawling()) {
-                    std::cout << "Crawling stopped." << std::endl;
-                } else {
-                    std::cout << "Failed to stop crawling." << std::endl;
-                }
-            } else if (cmd == "web") {
-                std::string web_cmd;
-                if (iss >> web_cmd) {
-                    if (web_cmd == "status") {
-                        // Show web interface status
-                        bool auto_start = controller->get_configuration()->get_bool(
-                            "web.auto_start", true);
-                        std::cout << "Web interface auto-start: " << (auto_start
-                                ? "enabled"
-                                : "disabled") << std::endl;
-
-                        if (http_server) {
-                            std::cout << "Web interface is " << (http_server->is_running()
-                                                                     ? "running"
-                                                                     : "stopped") << std::endl;
-                            if (http_server->is_running()) {
-                                std::cout << "Port: " << http_server->port() << std::endl;
-                                std::cout << "URL: http://localhost:" << http_server->port() <<
-                                    std::endl;
-                            }
-                        } else {
-                            std::cout << "Web interface is not initialized" << std::endl;
-                        }
-                    } else if (web_cmd == "start") {
-                        // Start web interface
-                        uint16_t port = 8080;
-                        if (iss >> port) {
-                            // Port is provided
-                        }
-
-                        if (http_server && http_server->is_running()) {
-                            std::cout << "Web interface is already running on port " << http_server
-                                ->port() << std::endl;
-                        } else {
-                            if (start_web_interface(port, "public",
-                                                    controller->get_beacon())) {
-                                std::cout << "Web interface started on port " << port << std::endl;
-                                std::cout << "URL: http://localhost:" << port << std::endl;
-                            }
-                        }
-                    } else if (web_cmd == "stop") {
-                        // Stop web interface
-                        if (http_server && http_server->is_running()) {
-                            if (http_server->stop()) {
-                                std::cout << "Web interface stopped" << std::endl;
-                            } else {
-                                std::cout << "Failed to stop web interface" << std::endl;
-                            }
-                        } else {
-                            std::cout << "Web interface is not running" << std::endl;
-                        }
-                    } else if (web_cmd == "auto-start") {
-                        // Enable or disable auto-start
-                        std::string enable_str;
-                        if (iss >> enable_str) {
-                            bool enable = (
-                                enable_str == "on" || enable_str == "true" || enable_str == "1");
-                            controller->get_configuration()->set_bool("web.auto_start", enable);
-                            controller->get_configuration()->save();
-                            std::cout << "Web interface auto-start " << (enable
-                                    ? "enabled"
-                                    : "disabled") << std::endl;
-                        } else {
-                            std::cout << "Usage: web auto-start <on|off>" << std::endl;
-                        }
-                    } else {
-                        std::cout << "Unknown web command: " << web_cmd << std::endl;
-                        std::cout << "Available web commands: status, start, stop, auto-start" <<
-                            std::endl;
-                    }
-                } else {
-                    std::cout << "Usage: web <command>" << std::endl;
-                    std::cout << "Available commands:" << std::endl;
-                    std::cout << "  status                - Show web interface status" << std::endl;
-                    std::cout << "  start [port]          - Start web interface" << std::endl;
-                    std::cout << "  stop                  - Stop web interface" << std::endl;
-                    std::cout << "  auto-start <on|off>   - Enable/disable auto-start" << std::endl;
-                }
-            } else if (cmd == "clear") {
-                // Clear the screen (platform-dependent)
-#ifdef _WIN32
-                system("cls");
-#else
-                system("clear");
-#endif
-            } else if (cmd == "exit" || cmd == "quit") {
-                std::cout << "Exiting..." << std::endl;
-                running = false;
-                break;
-            } else {
-                std::cout << "Unknown command: " << cmd << std::endl;
-                std::cout << "Type 'help' for a list of commands." << std::endl;
-            }
-
-            if (running) {
-                std::cout << "BitScrape> ";
-            }
-        }
-    } else {
-        // Non-interactive mode
-        beacon->info("Press Ctrl+C to exit", SYSTEM);
-
-        while (running) {
-            // Print statistics periodically
-            auto stats = controller->get_statistics();
-            display_statistics(stats);
-
-            // Sleep for a while
-            std::this_thread::sleep_for(std::chrono::seconds(60));
-        }
+        // Sleep for a while
+        std::this_thread::sleep_for(std::chrono::seconds(60));
     }
 
     // Stop controller if not already stopped by signal handler

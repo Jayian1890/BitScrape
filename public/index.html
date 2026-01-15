@@ -155,6 +155,79 @@
             </div>
           </div>
 
+          <!-- Tab: Nodes (Full View) -->
+          <div id="dashboard-tab-nodes" class="dashboard-tab hidden">
+            <div class="card">
+              <h2 class="card-title">
+                Active DHT Nodes
+                <span id="nodes-count" class="badge">0 nodes</span>
+              </h2>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Node ID</th>
+                      <th>IP Address</th>
+                      <th>Port</th>
+                      <th>Pings</th>
+                      <th>Responses</th>
+                      <th>Latency</th>
+                      <th>Last Seen</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="nodes-full-tbody">
+                    <!-- Populated by app.js -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="pagination-controls">
+                <button class="btn btn-sm" onclick="App.loadNodesPage(-1)" id="nodes-prev-btn" disabled>
+                  <span class="material-symbols-outlined">chevron_left</span> Previous
+                </button>
+                <span id="nodes-page-indicator" class="page-indicator">Page 1</span>
+                <button class="btn btn-sm" onclick="App.loadNodesPage(1)" id="nodes-next-btn">
+                  Next <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Infohashes -->
+          <div id="dashboard-tab-hashes" class="dashboard-tab hidden">
+            <div class="card">
+              <h2 class="card-title">
+                Discovered Infohashes
+                <span id="hashes-count" class="badge">0 infohashes</span>
+              </h2>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Infohash</th>
+                      <th>Peer Count</th>
+                      <th>Has Metadata</th>
+                      <th>First Seen</th>
+                      <th>Last Seen</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="hashes-tbody">
+                    <!-- Populated by app.js -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="pagination-controls">
+                <button class="btn btn-sm" onclick="App.loadHashesPage(-1)" id="hashes-prev-btn" disabled>
+                  <span class="material-symbols-outlined">chevron_left</span> Previous
+                </button>
+                <span id="hashes-page-indicator" class="page-indicator">Page 1</span>
+                <button class="btn btn-sm" onclick="App.loadHashesPage(1)" id="hashes-next-btn">
+                  Next <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
         </section>
       </div>

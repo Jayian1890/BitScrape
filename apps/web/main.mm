@@ -36,6 +36,16 @@ using namespace bitscrape::web;
     }
     self.statusItem.button.title = @"";
     self.statusItem.menu = [self createMenu];
+
+    // Auto-start server and crawler on launch
+    NSString *resourcePath = [[NSBundle mainBundle] resourcePath];
+    serverRunning_ = controller_->start_server(SERVER_PORT, [resourcePath UTF8String]);
+    [self updateStatusLine];
+    
+    // Automatically open Web UI on startup
+    if (serverRunning_) {
+        [self openWebUI:nil];
+    }
 }
 
 // Manually resize image to ensure it draws at the correct size
@@ -62,9 +72,13 @@ using namespace bitscrape::web;
 
 - (NSMenu *)createMenu {
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@"BitScrape"];
-    NSMenuItem *toggleItem = [[NSMenuItem alloc] initWithTitle:@"Start Server" action:@selector(toggleServer:) keyEquivalent:@""];
-    toggleItem.target = self;
-    [menu addItem:toggleItem];
+    
+    // Status line (not clickable)
+    NSMenuItem *statusItem = [[NSMenuItem alloc] initWithTitle:@"Status: Stopped" action:nil keyEquivalent:@""];
+    statusItem.enabled = NO;
+    [menu addItem:statusItem];
+    
+    [menu addItem:[NSMenuItem separatorItem]];
     
     // Add Open Web UI item
     NSMenuItem *openWebItem = [[NSMenuItem alloc] initWithTitle:@"Open Web UI" action:@selector(openWebUI:) keyEquivalent:@""];
@@ -78,26 +92,13 @@ using namespace bitscrape::web;
     return menu;
 }
 
-- (void)updateToggleTitle {
-    NSMenuItem *item = self.statusItem.menu.itemArray[0]; // first item is toggle
+- (void)updateStatusLine {
+    NSMenuItem *item = self.statusItem.menu.itemArray[0]; // first item is status
     if (serverRunning_) {
-        item.title = @"Stop Server";
+        item.title = @"Status: Running";
     } else {
-        item.title = @"Start Server";
+        item.title = @"Status: Stopped";
     }
-}
-
-- (void)toggleServer:(id)sender {
-    if (serverRunning_) {
-        controller_->stop_server();
-        serverRunning_ = NO;
-    } else {
-        NSString *resourcePath = [[NSBundle mainBundle] resourcePath];
-        serverRunning_ = controller_->start_server(SERVER_PORT, [resourcePath UTF8String]);
-        // Automatically open Web UI when starting
-        [self openWebUI:nil];
-    }
-    [self updateToggleTitle];
 }
 
 - (void)openWebUI:(id)sender {

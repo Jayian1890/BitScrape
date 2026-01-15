@@ -1335,8 +1335,7 @@ public:
                         types::BeaconCategory::BITTORRENT);
 
           // Extract and store file information if available
-          const auto &files = metadata.files();
-          if (!files.empty()) {
+          if (const auto &files = metadata.files(); !files.empty()) {
             beacon_->info("Storing " + std::to_string(files.size()) +
                               " files for infohash: " +
                               info_hash.to_hex().substr(0, 16) + "...",

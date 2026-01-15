@@ -9,6 +9,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 #include "bitscrape/bencode/bencode_value.hpp"
 #include "bitscrape/bittorrent/peer_wire_protocol.hpp"
@@ -154,6 +156,16 @@ private:
    */
   bool process_metadata_pieces();
 
+    /**
+     * @brief Set metadata piece request timeout (ms)
+     */
+    void set_request_timeout_ms(int ms);
+
+    /**
+     * @brief Set maximum retries per metadata piece
+     */
+    void set_max_retries(int max_retries);
+
   PeerWireProtocol &protocol_; ///< Peer wire protocol instance
   std::shared_ptr<beacon::Beacon> beacon_; ///< Beacon for logging
   std::shared_ptr<types::MetadataInfo> metadata_; ///< Metadata info
@@ -166,6 +178,12 @@ private:
   std::unordered_map<int, bool>
       requested_pieces_;            ///< Track pieces currently being requested
   mutable std::mutex pieces_mutex_; ///< Mutex for pieces map
+
+    // Timeout / retry tracking
+    std::unordered_map<int, std::chrono::steady_clock::time_point> piece_request_time_; ///< Last request time per piece
+    std::unordered_map<int, int> retry_count_; ///< Retry count per piece
+    int request_timeout_ms_ = 5000; ///< Default timeout (ms)
+    int max_retries_ = 3; ///< Default max retries
 
   std::function<void(const types::MetadataInfo &)>
       metadata_received_callback_;    ///< Callback for metadata received

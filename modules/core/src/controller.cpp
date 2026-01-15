@@ -1614,7 +1614,9 @@ std::shared_ptr<event::EventBus> Controller::get_event_bus() const {
   // internal Impl object (so the returned shared_ptr remains valid while the
   // Controller is alive) and aliases to the internal EventBus pointer.
   return std::shared_ptr<event::EventBus>(
-      std::shared_ptr<Impl>(impl_.get(), [](Impl *) {}),
+      std::shared_ptr<Impl>(impl_.get(), [](Impl *) {
+        // No-op deleter: Impl is managed by Controller's unique_ptr, not this shared_ptr
+      }),
       impl_->event_bus_.get());
 }
 

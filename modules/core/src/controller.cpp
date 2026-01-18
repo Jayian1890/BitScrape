@@ -8,6 +8,11 @@
 #include <bitscrape/beacon/file_sink.hpp>
 #include <bitscrape/beacon/event_sink.hpp>
 
+#include <bitscrape/dht/dht_session.hpp>
+#include <bitscrape/bittorrent/peer_manager.hpp>
+#include <bitscrape/tracker/tracker_manager.hpp>
+#include <bitscrape/lock/lock_manager.hpp>
+
 #include <bitscrape/types/dht_node.hpp>
 #include <bitscrape/types/info_hash.hpp>
 #include <bitscrape/types/metadata_info.hpp>
@@ -30,6 +35,7 @@ public:
           event_bus_(event::create_event_bus()),
           event_processor_(event::create_event_processor()),
           beacon_(std::make_shared<beacon::Beacon>()),
+          lock_manager_(lock::create_lock_manager()),
           is_running_(false),
           is_crawling_(false) {
 
@@ -39,6 +45,11 @@ public:
         // Create a storage manager with a default path from config
         std::string db_path = config_->get_string("database.path", "bitscrape.db");
         storage_manager_ = storage::create_storage_manager(db_path);
+
+        dht_session_ = std::make_unique<dht::DHTSession>(lock_manager_);
+        bit_torrent_manager_ = std::make_unique<bittorrent::PeerManager>(
+            types::InfoHash(), types::NodeID().to_vector());
+        tracker_manager_ = std::make_unique<tracker::TrackerManager>(types::InfoHash());
     }
 
     ~Impl() {
@@ -106,7 +117,9 @@ public:
 
         try {
             // Start components
-            // TODO: Start DHT, BitTorrent, and Tracker components
+            dht_session_->start({});
+            bit_torrent_manager_->start();
+            // Note: TrackerManager does not have a start() method
 
             is_running_ = true;
             beacon_->info("Controller started successfully");
@@ -136,7 +149,9 @@ public:
             }
 
             // Stop components
-            // TODO: Stop DHT, BitTorrent, and Tracker components
+            dht_session_->stop();
+            bit_torrent_manager_->stop();
+            // Note: TrackerManager does not have a stop() method
 
             // Stop event processor
             event_processor_->stop();
@@ -360,6 +375,10 @@ public:
     std::shared_ptr<event::EventBus> event_bus_;
     std::shared_ptr<event::EventProcessor> event_processor_;
     std::shared_ptr<beacon::Beacon> beacon_;
+    std::shared_ptr<lock::LockManager> lock_manager_;
+    std::unique_ptr<dht::DHTSession> dht_session_;
+    std::unique_ptr<bittorrent::PeerManager> bit_torrent_manager_;
+    std::unique_ptr<tracker::TrackerManager> tracker_manager_;
     std::atomic<bool> is_running_;
     std::atomic<bool> is_crawling_;
 };

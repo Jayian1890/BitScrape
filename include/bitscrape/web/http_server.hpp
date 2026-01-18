@@ -6,10 +6,10 @@
 #include "bitscrape/web/web_controller.hpp"
 
 #include <atomic>
-#include <functional>
-#include <map>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
+#include <unordered_map>
 #include <string>
 #include <thread>
 #include <vector>
@@ -25,8 +25,8 @@ struct HTTPRequest {
     std::string version;
     std::map<std::string, std::string> headers;
     network::Buffer body;
-    std::map<std::string, std::string> query_params;
-    std::map<std::string, std::string> path_params;
+    std::unordered_map<std::string, std::string> query_params;
+    std::unordered_map<std::string, std::string> path_params;
 };
 
 /**
@@ -101,7 +101,7 @@ private:
     HTTPRequest parse_request(const network::Buffer& buffer);
     network::Buffer generate_response(const HTTPResponse& response);
     std::string url_decode(const std::string& encoded);
-    std::map<std::string, std::string> parse_query_params(const std::string& query_string);
+    std::unordered_map<std::string, std::string> parse_query_params(const std::string& query_string);
 
     uint16_t port_;
     std::shared_ptr<WebController> web_controller_;
